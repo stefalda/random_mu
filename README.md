@@ -15,7 +15,8 @@ song selection with options such as:
 Currently, the app has been tested on **Web** and **Android** platforms, with
 **Navidrome** as the Subsonic-compatible server.
 
-[Icon](https://thenounproject.com/icon/cow-7450755/) by [Made x Made] (https://thenounproject.com/creator/christian933/)
+[Icon](https://thenounproject.com/icon/cow-7450755/) by
+[Made x Made](https://thenounproject.com/creator/christian933/)
 
 ## Features
 
