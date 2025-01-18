@@ -178,10 +178,10 @@ packages:
     dependency: "direct dev"
     description:
       name: flutter_launcher_icons
-      sha256: "31cd0885738e87c72d6f055564d37fabcdacee743b396b78c7636c169cac64f5"
+      sha256: bfa04787c85d80ecb3f8777bde5fc10c3de809240c48fa061a2c2bf15ea5211c
       url: "https://pub.dev"
     source: hosted
-    version: "0.14.2"
+    version: "0.14.3"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -236,10 +236,10 @@ packages:
     dependency: transitive
     description:
       name: http_parser
-      sha256: "76d306a1c3afb33fe82e2bbacad62a61f409b5634c915fceb0d799de1a913360"
+      sha256: "178d74305e7866013777bab2c3d8726205dc5a4dd935297175b19a23a2e66571"
       url: "https://pub.dev"
     source: hosted
-    version: "4.1.1"
+    version: "4.1.2"
   image:
     dependency: transitive
     description:
@@ -268,10 +268,10 @@ packages:
     dependency: "direct main"
     description:
       name: just_audio
-      sha256: a49e7120b95600bd357f37a2bb04cd1e88252f7cdea8f3368803779b925b1049
+      sha256: "1a1eb86e7d81e69a1d36943f2b3efd62dece3dad2cafd9ec2e62e6db7c04d9b7"
       url: "https://pub.dev"
     source: hosted
-    version: "0.9.42"
+    version: "0.9.43"
   just_audio_background:
     dependency: "direct main"
     description:
@@ -468,10 +468,10 @@ packages:
     dependency: transitive
     description:
       name: shared_preferences_android
-      sha256: bf808be89fe9dc467475e982c1db6c2faf3d2acf54d526cd5ec37d86c99dbd84
+      sha256: "138b7bbbc7f59c56236e426c37afb8f78cbc57b094ac64c440e0bb90e380a4f5"
       url: "https://pub.dev"
     source: hosted
-    version: "2.4.1"
+    version: "2.4.2"
   shared_preferences_foundation:
     dependency: transitive
     description:
@@ -561,10 +561,10 @@ packages:
     dependency: transitive
     description:
       name: sqflite_darwin
-      sha256: "96a698e2bc82bd770a4d6aab00b42396a7c63d9e33513a56945cbccb594c2474"
+      sha256: "22adfd9a2c7d634041e96d6241e6e1c8138ca6817018afc5d443fef91dcefa9c"
       url: "https://pub.dev"
     source: hosted
-    version: "2.4.1"
+    version: "2.4.1+1"
   sqflite_platform_interface:
     dependency: transitive
     description:
