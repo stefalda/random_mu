@@ -1,5 +1,7 @@
 # Random Muu
 
+<img src="./assets/icon_round.png" alt="App Icon" width="200" height="200">
+
 Random Muu is a simple, yet powerful music player app written in Flutter. It
 leverages the Subsonic API to provide a seamless music experience, allowing you
 to quickly play random songs from various categories. The app supports quick
@@ -12,6 +14,8 @@ song selection with options such as:
 
 Currently, the app has been tested on **Web** and **Android** platforms, with
 **Navidrome** as the Subsonic-compatible server.
+
+[Icon](https://thenounproject.com/icon/cow-7450755/) by [Made x Made] (https://thenounproject.com/creator/christian933/)
 
 ## Features
 
