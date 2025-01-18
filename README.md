@@ -77,8 +77,10 @@ flutter run -d android
 
 ### Features and Usage
 
-- **All Random**: Play a random song from your entire music library.
-- **Random by Artist**: Choose a random song from a specific artist.
+- **All Random**: Play a random song from your entire music library (limited to
+  50 songs).
+- **Random by Artist**: Choose a random song from a specific artist (limited to
+  50 songs).
 - **Random by Playlist**: Select a random song from your playlists.
 - **Random by Favorites**: Play a random song from your favorite tracks.
 
