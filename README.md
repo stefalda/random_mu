@@ -83,6 +83,7 @@ flutter run -d android
   50 songs).
 - **Random by Playlist**: Select a random song from your playlists.
 - **Random by Favorites**: Play a random song from your favorite tracks.
+- **Random by Playing**: Play a random song from the current playng song
 
 ### Supported Platforms
 
