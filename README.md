@@ -1,4 +1,4 @@
-# Random Muu
+# Random Muu(sic)
 
 <img src="./assets/icon_round.png" alt="App Icon" width="200" height="200">
 
@@ -11,12 +11,17 @@ song selection with options such as:
 - **Random by Artist**
 - **Random by Playlist**
 - **Random by Favorites**
+- **Random by Playing**
 
 Currently, the app has been tested on **Web** and **Android** platforms, with
 **Navidrome** as the Subsonic-compatible server.
 
 [Icon](https://thenounproject.com/icon/cow-7450755/) by
 [Made x Made](https://thenounproject.com/creator/christian933/)
+
+The app should be considered a POC, I've scaffolded the code using different
+LLMs (ChatGPT and Claude), to check how they perform but some code could be
+optimized.
 
 ## Features
 
