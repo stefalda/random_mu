@@ -149,6 +149,10 @@ class PlayerService extends ChangeNotifier {
     await audioPlayer.seekToNext();
   }
 
+  bool isPlaying(){
+    return audioPlayer.playing;
+  }
+
   Future updatePlayingInfo(MediaItem mediaItem) async {
     // if (kIsWeb) return;
     // await audioPlayerHandler.updateMediaMetadata(

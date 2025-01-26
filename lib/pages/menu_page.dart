@@ -15,9 +15,12 @@ class MenuPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final playerService = ref.read(playerServiceProvider);
+    final playerStateAsyncValue = ref.watch(playerStateProvider);
+    final isPlaying = playerStateAsyncValue.hasValue && playerService.isPlaying();
     return Scaffold(
       appBar: AppBar(
         title: Header(),
+        actions: [ if (isPlaying) IconButton(onPressed: ()=> _navigateToPlayer(context), icon:Icon(Icons.music_note)) ],
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 30),
@@ -30,11 +33,7 @@ class MenuPage extends ConsumerWidget {
               onPressed: () async {
                 if (context.mounted) {
                   ref.read(loadingProvider.notifier).setLoading(true);
-                  unawaited(Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const PlayerPage(),
-                      )));
+                  _navigateToPlayer(context);
                   await playerService.randomAll();
                   ref.read(loadingProvider.notifier).setLoading(false);
                 }
@@ -71,25 +70,36 @@ class MenuPage extends ConsumerWidget {
               onPressed: () async {
                 if (context.mounted) {
                   ref.read(loadingProvider.notifier).setLoading(true);
-                  unawaited(Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const PlayerPage(),
-                      )));
+                  _navigateToPlayer(context);
                   await playerService.randomFavorites();
                   ref.read(loadingProvider.notifier).setLoading(false);
                 }
               },
             ),
-            /* const SizedBox(height: 16),
+            const SizedBox(height: 16),
             MenuButton(
-              icon: Icons.category,
-              text: 'Random by Genre',
-              onPressed: () => {},
-            ),*/
+              icon: Icons.shuffle,
+              text: 'Random by Playing',
+              onPressed: !isPlaying ? null :  () async {
+                if (context.mounted) {
+                  ref.read(loadingProvider.notifier).setLoading(true);
+                  _navigateToPlayer(context);
+                  await playerService.randomByPlayingSong();
+                  ref.read(loadingProvider.notifier).setLoading(false);
+                }
+              },
+            ),
           ],
         ),
       ),
     );
+  }
+
+  void _navigateToPlayer(BuildContext context) {
+    unawaited(Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const PlayerPage(),
+        )));
   }
 }

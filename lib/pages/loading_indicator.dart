@@ -39,7 +39,9 @@ class LoadingState extends ConsumerState<LoadingIndicator>
       _controller.repeat();
     } else {
       _controller.stop();
+      return Container();
     }
+
     return Padding(
       padding: const EdgeInsets.only(right: 10.0),
       child: RotationTransition(
