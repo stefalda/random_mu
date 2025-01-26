@@ -19,6 +19,7 @@ class MenuPage extends ConsumerWidget {
     final isPlaying = playerStateAsyncValue.hasValue && playerService.isPlaying();
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: 32,
         title: Header(),
         actions: [ if (isPlaying) IconButton(onPressed: ()=> _navigateToPlayer(context), icon:Icon(Icons.music_note)) ],
       ),

@@ -39,14 +39,16 @@ class LoadingState extends ConsumerState<LoadingIndicator>
       _controller.repeat();
     } else {
       _controller.stop();
-      return Container();
+      return SizedBox(width: 32,);
     }
 
-    return Padding(
+    return SizedBox(
+        width: 32,
+        child: Padding(
       padding: const EdgeInsets.only(right: 10.0),
       child: RotationTransition(
           turns: _controller,
           child: const Icon(Icons.sync, color: Colors.white)),
-    );
+    ));
   }
 }
