@@ -59,6 +59,19 @@ jobs:
           path: /usr/local/lib/android/sdk
           key: ${{ runner.os }}-android-sdk-${{ hashFiles('**/build.gradle') }}
 
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/keystore.jks
+        shell: bash
+
+      - name: Build signed APK
+        run: |
+          flutter build apk --release --split-per-abi \
+            --dart-define=ANDROID_KEYSTORE_PATH=android/app/keystore.jks \
+            --dart-define=ANDROID_KEYSTORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
+            --dart-define=ANDROID_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }} \
+            --dart-define=ANDROID_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}
+
       - name: Build artifacts
         run: flutter build apk --release
 
