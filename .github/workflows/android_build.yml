@@ -16,7 +16,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          channel: "stable"
+          flutter-version: '3.27.3'
+          channel: 'stable'
+          cache: true
 
       # Set Current Date As Env Variable
       - name: Set current date as env variable
@@ -27,45 +29,27 @@ jobs:
         run: echo "repository_name=$(echo '${{ github.repository }}' | awk -F '/' '{print $2}')" >> $GITHUB_ENV
 
       # Install Java
-      - name: Set Up JDK
-        uses: actions/setup-java@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
         with:
-          distribution: "zulu" # See 'Supported distributions' for available options
-          java-version: "17"
-          cache: "gradle"
+          java-version: '17'
+          distribution: 'temurin'
 
-      - name: Set up Android SDK
-        run: |
-          # Install Android command-line tools
-          mkdir -p $ANDROID_HOME/cmdline-tools
-          curl -o commandlinetools.zip https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
-          unzip -q commandlinetools.zip -d $ANDROID_HOME/cmdline-tools
-          mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
-
-          # Update PATH to include Android tools
-          echo "export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH" >> $GITHUB_ENV
-
-          # Accept SDK licenses
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
-
-          # Install required SDK components
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-        env:
-          ANDROID_HOME: ${{ runner.temp }}/android-sdk
-
-      - name: Cache Android SDK
-        uses: actions/cache@v3
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
         with:
-          path: /usr/local/lib/android/sdk
-          key: ${{ runner.os }}-android-sdk-${{ hashFiles('**/build.gradle') }}
+          sdk-version: '35'      
+
+      - name: Accept Android licenses
+        run: yes | sdkmanager --licenses
+
+      - name: Get dependencies
+        run: flutter pub get
 
       - name: Decode Keystore
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/keystore.jks
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > /home/runner/work/random_mu/random_mu/keystore.jks
         shell: bash
-
-      - name: Verify Keystore File
-        run: ls -l android/app/
       
       - name: Debug Environment Variables
         run: |
