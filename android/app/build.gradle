@@ -28,6 +28,15 @@ android {
         targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        buildToolsVersion = "35.0.0"
+    }
+
+    // Force specific SDK platform
+    configurations.all {
+        resolutionStrategy {
+            force 'android.arch.core:runtime:1.1.1'
+            force 'android.arch.lifecycle:runtime:1.1.1'
+        }
     }
 
   signingConfigs {
@@ -42,13 +51,21 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
+            matchingFallbacks = ['release', 'debug']
         }
     }
 
     dependencies {
-        implementation "androidx.media2:media2-session:1.3.0"
-        implementation "androidx.media2:media2-common:1.3.0"
-        implementation "androidx.car.app:app-automotive:1.4.0"
+          // Specify exact versions and constrain transitive dependencies
+        implementation("androidx.media2:media2-session:1.3.0") {
+            exclude group: 'androidx.core', module: 'core'
+        }
+        implementation("androidx.media2:media2-common:1.3.0") {
+            exclude group: 'androidx.core', module: 'core'
+        }
+        implementation("androidx.car.app:app-automotive:1.4.0") {
+            exclude group: 'androidx.core', module: 'core'
+        }
     }
 }
 flutter {

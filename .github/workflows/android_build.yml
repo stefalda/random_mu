@@ -43,6 +43,12 @@ jobs:
       - name: Accept Android licenses
         run: yes | sdkmanager --licenses
 
+      # Install specific platform tools and build tools
+      - name: Install Android SDK components
+        run: |
+          sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+          yes | sdkmanager --licenses
+
       - name: Get dependencies
         run: flutter pub get
 
@@ -51,19 +57,14 @@ jobs:
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > /home/runner/work/random_mu/random_mu/keystore.jks
         shell: bash
       
-      - name: Debug Environment Variables
+      - name: Build APK
+        env:
+          ANDROID_KEYSTORE_PATH: "/home/runner/work/random_mu/random_mu/keystore.jks"
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          echo "ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}"
-          echo "ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}"
-          echo "ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}"
-
-      - name: Build signed APK
-        run: |
-          flutter build apk --release \
-            --dart-define=ANDROID_KEYSTORE_PATH=android/app/keystore.jks \
-            --dart-define=ANDROID_KEYSTORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
-            --dart-define=ANDROID_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }} \
-            --dart-define=ANDROID_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}
+          flutter build apk --release
 
       - name: Build artifacts
         run: flutter build apk --release
