@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/main.dart';
+import 'package:random_mu/pages/albums/albums_page.dart';
 import 'package:random_mu/pages/artists/artists_page.dart';
 import 'package:random_mu/pages/header.dart';
 import 'package:random_mu/pages/menu_button.dart';
@@ -16,12 +17,18 @@ class MenuPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final playerService = ref.read(playerServiceProvider);
     final playerStateAsyncValue = ref.watch(playerStateProvider);
-    final isPlaying = playerStateAsyncValue.hasValue && playerService.isPlaying();
+    final isPlaying =
+        playerStateAsyncValue.hasValue && playerService.isPlaying();
     return Scaffold(
       appBar: AppBar(
         leadingWidth: 32,
         title: Header(),
-        actions: [ if (isPlaying) IconButton(onPressed: ()=> _navigateToPlayer(context), icon:Icon(Icons.music_note)) ],
+        actions: [
+          if (isPlaying)
+            IconButton(
+                onPressed: () => _navigateToPlayer(context),
+                icon: Icon(Icons.music_note))
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 30),
@@ -66,6 +73,18 @@ class MenuPage extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             MenuButton(
+              icon: Icons.library_music,
+              text: 'Random by Album',
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AlbumsPage(),
+                    ));
+              },
+            ),
+            const SizedBox(height: 16),
+            MenuButton(
               icon: Icons.favorite,
               text: 'Random by Favorites',
               onPressed: () async {
@@ -81,14 +100,16 @@ class MenuPage extends ConsumerWidget {
             MenuButton(
               icon: Icons.shuffle,
               text: 'Random by Playing',
-              onPressed: !isPlaying ? null :  () async {
-                if (context.mounted) {
-                  ref.read(loadingProvider.notifier).setLoading(true);
-                  _navigateToPlayer(context);
-                  await playerService.randomByPlayingSong();
-                  ref.read(loadingProvider.notifier).setLoading(false);
-                }
-              },
+              onPressed: !isPlaying
+                  ? null
+                  : () async {
+                      if (context.mounted) {
+                        ref.read(loadingProvider.notifier).setLoading(true);
+                        _navigateToPlayer(context);
+                        await playerService.randomByPlayingSong();
+                        ref.read(loadingProvider.notifier).setLoading(false);
+                      }
+                    },
             ),
           ],
         ),

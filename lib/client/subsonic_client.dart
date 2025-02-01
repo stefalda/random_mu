@@ -88,6 +88,104 @@ class SubsonicClient {
     return Album.fromJson(response['album']);
   }
 
+  Future<List<Album>> getAlbumList({
+    AlbumListType type = AlbumListType.newest,
+    int? size,
+    int? offset,
+    String? genre,
+    String? fromYear,
+    String? toYear,
+    String? musicFolderId,
+  }) async {
+    final params = <String, String>{
+      'type': type.toValue(),
+    };
+
+    // Add optional parameters if they're provided
+    if (size != null) params['size'] = size.toString();
+    if (offset != null) params['offset'] = offset.toString();
+    if (genre != null) params['genre'] = genre;
+    if (fromYear != null) params['fromYear'] = fromYear;
+    if (toYear != null) params['toYear'] = toYear;
+    if (musicFolderId != null) params['musicFolderId'] = musicFolderId;
+
+    final response = await _makeRequest('getAlbumList2.view', params);
+    // debugPrint(jsonEncode(response));
+    final List<Album> list = (response['albumList2']['album'] as List)
+        //.expand((index) => (index['album'] as List))
+        .map((album) => Album.fromJson(album))
+        .toList();
+
+    return list.map((Album album) {
+      album.coverArt = getCoverArtUrl(album.coverArt);
+      return album;
+    }).toList();
+  }
+
+  // Stream-based progressive loader
+  Stream<Album> _getAllAlbums({
+    AlbumListType type = AlbumListType.newest,
+    String? genre,
+    String? fromYear,
+    String? toYear,
+    String? musicFolderId,
+    int batchSize = 500, // Maximum size per request
+  }) async* {
+    int offset = 0;
+    bool hasMore = true;
+
+    while (hasMore) {
+      final batch = await getAlbumList(
+        type: type,
+        size: batchSize,
+        offset: offset,
+        genre: genre,
+        fromYear: fromYear,
+        toYear: toYear,
+        musicFolderId: musicFolderId,
+      );
+
+      // Yield each album individually
+      for (final album in batch) {
+        yield album;
+      }
+
+      // Check if we should continue
+      if (batch.length < batchSize) {
+        hasMore = false;
+      } else {
+        offset += batchSize;
+      }
+    }
+  }
+
+// List-based loader that collects all albums
+  Future<List<Album>> getAllAlbumsList({
+    AlbumListType type = AlbumListType.newest,
+    String? genre,
+    String? fromYear,
+    String? toYear,
+    String? musicFolderId,
+    void Function(int count)? onProgress,
+  }) async {
+    final albums = <Album>[];
+    int count = 0;
+
+    await for (final album in _getAllAlbums(
+      type: type,
+      genre: genre,
+      fromYear: fromYear,
+      toYear: toYear,
+      musicFolderId: musicFolderId,
+    )) {
+      albums.add(album);
+      count++;
+      onProgress?.call(count);
+    }
+
+    return albums;
+  }
+
   String getCoverArtUrl(String? coverId) {
     if (coverId == null) return '';
 
@@ -124,8 +222,8 @@ class SubsonicClient {
 
     // Get songs from all albums
     for (var album in artist['artist']['album'] as List) {
-      final albumDetails = await getAlbum(album['id']);
-      allSongs.addAll(albumDetails.songs);
+      final songs = await getSongsByAlbum(albumId: album['id']);
+      allSongs.addAll(songs);
     }
 
     // Randomize songs
@@ -133,6 +231,12 @@ class SubsonicClient {
 
     // Return requested count or all songs if count not specified
     return count != null ? allSongs.take(count).toList() : allSongs;
+  }
+
+  /// Get Songs by AlbumId
+  Future<List<Song>> getSongsByAlbum({required String albumId}) async {
+    final albumDetails = await getAlbum(albumId);
+    return albumDetails.songs;
   }
 
   Future<List<ArtistSearchResult>> searchArtists(String query) async {

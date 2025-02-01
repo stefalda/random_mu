@@ -108,7 +108,7 @@ class Album {
   final String name;
   final String? artist;
   final String? artistId;
-  final String? coverArt;
+  String? coverArt;
   final int songCount;
   final int duration;
   final int? playCount;
@@ -419,6 +419,42 @@ class SearchResult {
     );
   }
 }
+
+enum AlbumListType {
+  random,
+  newest,
+  frequent,
+  recent,
+  starred,
+  alphabeticalByName,
+  alphabeticalByArtist,
+  byYear,
+  byGenre;
+
+  String toValue() {
+    switch (this) {
+      case AlbumListType.random:
+        return 'random';
+      case AlbumListType.newest:
+        return 'newest';
+      case AlbumListType.frequent:
+        return 'frequent';
+      case AlbumListType.recent:
+        return 'recent';
+      case AlbumListType.starred:
+        return 'starred';
+      case AlbumListType.alphabeticalByName:
+        return 'alphabeticalByName';
+      case AlbumListType.alphabeticalByArtist:
+        return 'alphabeticalByArtist';
+      case AlbumListType.byYear:
+        return 'byYear';
+      case AlbumListType.byGenre:
+        return 'byGenre';
+    }
+  }
+}
+
 /*
 /// Represents an artist in the Subsonic library (ID3)
 class Artist {

@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:random_mu/pages/home_page.dart';
+import 'package:random_mu/providers/albums_notifier.dart';
 import 'package:random_mu/providers/artists_notifier.dart';
+import 'package:random_mu/providers/albums_state.dart';
 import 'package:random_mu/providers/artists_state.dart';
 import 'package:random_mu/providers/loading_notifier.dart';
 import 'package:random_mu/providers/playlists_notifier.dart';
@@ -31,6 +33,11 @@ final playerStateProvider = StreamProvider<PlayerState>((ref) {
 final artistsProvider =
     AsyncNotifierProvider<ArtistsNotifier, ArtistsState>(() {
   return ArtistsNotifier();
+});
+
+// Albums
+final albumsProvider = AsyncNotifierProvider<AlbumsNotifier, AlbumsState>(() {
+  return AlbumsNotifier();
 });
 
 // Playlists

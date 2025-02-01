@@ -49,6 +49,12 @@ class PlayerService extends ChangeNotifier {
     return artists;
   }
 
+  Future<List<Album>> getAlbums() async {
+    final albums =
+        await client.getAllAlbumsList(type: AlbumListType.alphabeticalByName);
+    return albums;
+  }
+
   Future<List<Playlist>> getPlaylists() async {
     final playlists = await client.getPlaylists();
     for (var playlist in playlists) {
@@ -86,6 +92,12 @@ class PlayerService extends ChangeNotifier {
     final randomSongs =
         await client.getArtistSongsRandomized(artistId, count: count);
 
+    await _enqueueSongs(randomSongs);
+  }
+
+  Future randomByAlbum({required String albumId}) async {
+    final randomSongs = await client.getSongsByAlbum(albumId: albumId);
+    randomSongs.shuffle();
     await _enqueueSongs(randomSongs);
   }
 
@@ -149,7 +161,7 @@ class PlayerService extends ChangeNotifier {
     await audioPlayer.seekToNext();
   }
 
-  bool isPlaying(){
+  bool isPlaying() {
     return audioPlayer.playing;
   }
 
