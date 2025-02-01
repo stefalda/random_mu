@@ -213,6 +213,27 @@ class Song {
       path: json['path'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'parent': parent,
+      'isDir': isDir,
+      'title': title,
+      'album': album,
+      'artist': artist,
+      'track': track,
+      'year': year,
+      'genre': genre,
+      'coverArt': coverArt,
+      'size': size,
+      'contentType': contentType,
+      'suffix': suffix,
+      'duration': duration,
+      'bitRate': bitRate,
+      'path': path,
+    };
+  }
 }
 
 class Directory {

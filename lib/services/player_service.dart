@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
@@ -112,12 +113,30 @@ class PlayerService extends ChangeNotifier {
     if (playingSongIndex == null) return;
     final playingSong =
         audioPlayer.audioSource!.sequence.elementAt(playingSongIndex);
-    final similarSongs = await client.getSimilarSongs(playingSong.tag.id);
+    final String currentSongId = playingSong.tag.id;
+    final similarSongs = await client.getSimilarSongs(currentSongId);
     if (similarSongs.isEmpty) return;
-    await _enqueueSongs(similarSongs);
+    // Check if the source soung is included
+    late Song currentSong;
+    int idx = similarSongs.indexWhere((song) => song.id == currentSongId);
+    if (idx >= 0) {
+      debugPrint("Current playing song index in new List = $idx");
+      currentSong = similarSongs[idx];
+      similarSongs.removeAt(idx);
+    } else {
+      final json = jsonDecode(playingSong.tag.extras['songJson']);
+      currentSong = Song.fromJson(json);
+    }
+    // Move in first
+    similarSongs.insert(0, currentSong);
+    Duration? position;
+    if (audioPlayer.playing) {
+      position = await audioPlayer.positionStream.first;
+    }
+    await _enqueueSongs(similarSongs, restartAt: position);
   }
 
-  _enqueueSongs(List<Song> songs) async {
+  _enqueueSongs(List<Song> songs, {Duration? restartAt}) async {
     // for (var randomSong in songs) {
     //   debugPrint(randomSong.title);
     // }
@@ -133,7 +152,7 @@ class PlayerService extends ChangeNotifier {
     if (audioPlayer.playing) {
       await audioPlayer.stop();
     }
-    await audioPlayer.setAudioSource(playlist);
+    await audioPlayer.setAudioSource(playlist, initialPosition: restartAt);
 
     // Play
     unawaited(play());

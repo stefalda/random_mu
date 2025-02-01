@@ -1,4 +1,6 @@
 // MediaItem factory for just_audio_background support
+import 'dart:convert';
+
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:random_mu/client/subsonic_client.dart';
 import 'package:random_mu/client/subsonic_models.dart';
@@ -19,5 +21,6 @@ MediaItem createMediaItem(Song song, SubsonicClient client) {
         'contentType': song.contentType,
         'size': song.size,
         'path': song.path,
+        'songJson': jsonEncode(song)
       });
 }
