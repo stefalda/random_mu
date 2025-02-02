@@ -6,6 +6,15 @@ plugins {
 }
 
 android {
+    def keystoreProperties = new Properties()
+    def keystorePropertiesFile = rootProject.file('app/key.properties')
+
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    } else {
+        throw new GradleException("Keystore properties file not found: ${keystorePropertiesFile}")
+    }
+
     namespace = "com.babisoft.random_mu"
     compileSdk = 35
     ndkVersion = "27.0.12077973"
@@ -41,10 +50,10 @@ android {
 
   signingConfigs {
         release {
-            storeFile file(System.getenv("ANDROID_KEYSTORE_PATH") ?: "./../../keystore.jks")
-            storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
-            keyAlias System.getenv("ANDROID_KEY_ALIAS")
-            keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+           keyAlias keystoreProperties['keyAlias']
+           keyPassword keystoreProperties['keyPassword']
+           storeFile file(System.getenv("ANDROID_KEYSTORE_PATH") ?: "./../../keystore.jks")
+           storePassword keystoreProperties['storePassword']
         }
     }
 
@@ -63,9 +72,9 @@ android {
         implementation("androidx.media2:media2-common:1.3.0") {
             exclude group: 'androidx.core', module: 'core'
         }
-        implementation("androidx.car.app:app-automotive:1.4.0") {
-            exclude group: 'androidx.core', module: 'core'
-        }
+        //implementation("androidx.car.app:app-automotive:1.4.0") {
+        //    exclude group: 'androidx.core', module: 'core'
+       // }
     }
 }
 flutter {
