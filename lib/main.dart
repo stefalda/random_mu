@@ -4,8 +4,8 @@ import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:random_mu/pages/home_page.dart';
 import 'package:random_mu/providers/albums_notifier.dart';
-import 'package:random_mu/providers/artists_notifier.dart';
 import 'package:random_mu/providers/albums_state.dart';
+import 'package:random_mu/providers/artists_notifier.dart';
 import 'package:random_mu/providers/artists_state.dart';
 import 'package:random_mu/providers/loading_notifier.dart';
 import 'package:random_mu/providers/playlists_notifier.dart';
@@ -83,7 +83,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'RandomMusic',
+      title: 'Random Muu(sic)',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         primaryColor: Colors.indigo, // Customize primary color
@@ -105,7 +105,7 @@ class MyApp extends StatelessWidget {
         ),
         //colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
       ),
-      home: const HomePage(title: 'RandomMusic'),
+      home: const HomePage(title: 'Random Muu(sic)'),
     );
   }
 }

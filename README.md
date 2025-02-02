@@ -39,7 +39,7 @@ This is the usable web version:
 [Web version](https://stefalda.github.io/random_mu/)
 
 while the android apks can be downloaded from the
-[Release](https://github.com/stefalda/random_mu/releases) section.
+[Releases](https://github.com/stefalda/random_mu/releases) section.
 
 ## Setup and Installation
 
