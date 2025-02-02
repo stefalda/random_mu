@@ -15,9 +15,9 @@ class PlayerPage extends ConsumerWidget {
       appBar: AppBar(
         title: Header(),
         actions: [
+          LoadingIndicator(),
           IconButton(
               onPressed: () => _displayQueue(context), icon: Icon(Icons.list)),
-          LoadingIndicator()
         ],
       ),
       floatingActionButton: FloatingActionButton(
