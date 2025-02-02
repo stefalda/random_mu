@@ -54,15 +54,7 @@ jobs:
           echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> /home/runner/work/random_mu/random_mu/android/app/key.properties
           echo "✅ key.properties file generated successfully!"
 
-      #- name: Verify key.properties file
-      #  run: cat /home/runner/work/random_mu/random_mu/android/app/key.properties  # Debugging step, remove if not needed
-
       - name: Build APK
-        #env:
-        #  ANDROID_KEYSTORE_PATH: "/home/runner/work/random_mu/random_mu/keystore.jks"
-        #  ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-        #  ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-        #  ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           flutter build apk --release
 
