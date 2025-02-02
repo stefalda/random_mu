@@ -30,7 +30,7 @@ jobs:
       # Build Web version
       - name: Build Web
         run: |
-          flutter build web --release
+          flutter build web --release --base-href="/random_mu/"
 
       # Deploy on GitHub Pages
       - name: Deploy to GitHub Pages
