@@ -61,7 +61,7 @@ jobs:
           echo "✅ key.properties file generated successfully!"
 
       - name: Verify key.properties file
-        run: cat app/key.properties  # Debugging step, remove if not needed
+        run: cat /home/runner/work/random_mu/random_mu/android/app/key.properties  # Debugging step, remove if not needed
 
       - name: Build APK
         env:
