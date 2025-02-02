@@ -90957,7 +90957,7 @@ $1(a){throw A.c(A.cP("Initialize this provider in your main.dart"))},
 $S:589}
 A.Pe.prototype={
 J(a){var s=null,r=A.ts(B.a7,s,s),q=A.ts(B.a7,s,s).p2.ap9(A.es(s,s,B.k,s,s,s,s,s,s,s,s,20,s,s,s,s,s,!0,s,s,s,s,s,s,s,s),A.es(s,s,B.fg,s,s,s,s,s,s,s,s,s,s,s,s,s,s,!0,s,s,s,s,s,s,s,s))
-return new A.Cs(B.Gb,"RandomMusic",r.apf(A.aIM(s,A.a0(a).ax.b,s,0,s,s,s,s,s,s,s,s,A.es(s,s,B.k,s,s,s,s,s,s,s,s,20,s,s,s,s,s,!0,s,s,s,s,s,s,s,s),s,s),A.aJ8(B.Lc,s,s,s,s,s,s,s,B.lI),B.fm,B.Ld,B.n,q),!1,s)}}
+return new A.Cs(B.Gb,"Random Muu(sic)",r.apf(A.aIM(s,A.a0(a).ax.b,s,0,s,s,s,s,s,s,s,s,A.es(s,s,B.k,s,s,s,s,s,s,s,s,20,s,s,s,s,s,!0,s,s,s,s,s,s,s,s),s,s),A.aJ8(B.Lc,s,s,s,s,s,s,s,B.lI),B.fm,B.Ld,B.n,q),!1,s)}}
 A.KU.prototype={
 iQ(a,b){var s=null,r=b.fB($.a2q(),t.k2),q=b.fB($.aEe(),t.QX),p=q.a.a.length!==0?A.kB(s,B.jb,s,new A.a2S(q,b),s,s):s
 return A.eZ(A.b([new A.bZ(B.c8,A.aqc(!0,B.ca,!1,s,!0,B.Z,s,A.aHA(),q,s,s,s,s,s,2,A.adh(s,new A.ih(4,A.iF(12),B.f9),s,s,s,s,s,s,!0,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,"Search albums...",s,s,s,s,s,s,s,s,s,!0,s,B.j8,s,s,s,s,s,s,p,s,s,s,s),B.ai,!0,s,!0,s,!1,s,B.cl,s,s,s,s,s,s,s,1,s,s,!1,"\u2022",s,new A.a2T(b),s,s,s,!1,s,!1,s,!0,s,B.fE,s,s,B.c2,B.bE,s,s,s,s,s,s,s,B.aA,s,B.hM,s,s,s,s),s),A.a9K(A.aEv(r,new A.a2U(a,b),new A.a2V(b),new A.a2W(),t.T9,t.l7))],t.p),B.X,B.a8,B.an)}}
