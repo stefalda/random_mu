@@ -9,9 +9,11 @@ import 'package:random_mu/pages/header.dart';
 import 'package:random_mu/pages/menu_button.dart';
 import 'package:random_mu/pages/player_page.dart';
 import 'package:random_mu/pages/playlists/playlists_page.dart';
+import 'package:random_mu/services/update_checker.dart';
 
 class MenuPage extends ConsumerWidget {
   const MenuPage({super.key});
+  static bool _initialCheckDone = false;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -19,6 +21,18 @@ class MenuPage extends ConsumerWidget {
     final playerStateAsyncValue = ref.watch(playerStateProvider);
     final isPlaying =
         playerStateAsyncValue.hasValue && playerService.isPlaying();
+
+    // Run on first build only
+    if (!_initialCheckDone) {
+      _initialCheckDone = true;
+      // Small delay to ensure the app is fully rendered
+      Future.delayed(const Duration(seconds: 2), () {
+        if (context.mounted) {
+          checkForUpdates(context);
+        }
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         leadingWidth: 32,
