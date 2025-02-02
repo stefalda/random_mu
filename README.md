@@ -1,6 +1,6 @@
 # Random Muu(sic)
 
-<img src="./assets/icon_round.png" alt="App Icon" width="200" height="200">
+<img src="./assets/icon_round_purple.png" alt="App Icon" width="200" height="200">
 
 Random Muu is a simple, yet powerful music player app written in Flutter. It
 leverages the Subsonic API to provide a seamless music experience, allowing you
@@ -11,6 +11,7 @@ song selection with options such as:
 - **Random by Artist**
 - **Random by Playlist**
 - **Random by Favorites**
+- **Random by Albums**
 - **Random by Playing**
 
 Currently, the app has been tested on **Web** and **Android** platforms, with
@@ -31,12 +32,21 @@ optimized.
   (Navidrome supported).
 - **Cross-Platform**: Currently tested on Web and Android.
 
+## Web
+
+This is the usable web version:
+
+[Web version](https://stefalda.github.io/random_mu/)
+
+while the android apks can be downloaded from the
+[Release](https://github.com/stefalda/random_mu/releases) section.
+
 ## Setup and Installation
 
 ### Prerequisites
 
 1. Flutter 3.x or later installed on your machine.
-2. A running **Navidrome** instance or any compatible Subsonic server.
+2. A running **Navidrome** instance or any compatible Subsonic server (I guess).
 3. Access to your Subsonic server credentials (username and password).
 
 ### Clone the Repository
@@ -53,17 +63,6 @@ dependencies by running:
 
 ```bash
 flutter pub get
-```
-
-### Configure Navidrome (or Subsonic) API
-
-In the `lib` folder, navigate to the `config.dart` file and add your Subsonic
-server URL, username, and password.
-
-```dart
-const String serverUrl = 'http://your-navidrome-server';
-const String username = 'your-username';
-const String password = 'your-password';
 ```
 
 ### Run the Application
