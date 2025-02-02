@@ -4,6 +4,7 @@ import 'package:random_mu/main.dart';
 import 'package:random_mu/pages/header.dart';
 import 'package:random_mu/pages/loading_indicator.dart';
 import 'package:random_mu/pages/music_player.dart';
+import 'package:random_mu/pages/queue/queue_page.dart';
 
 class PlayerPage extends ConsumerWidget {
   const PlayerPage({super.key});
@@ -13,7 +14,11 @@ class PlayerPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Header(),
-        actions: [LoadingIndicator()],
+        actions: [
+          IconButton(
+              onPressed: () => _displayQueue(context), icon: Icon(Icons.list)),
+          LoadingIndicator()
+        ],
       ),
       floatingActionButton: FloatingActionButton(
           onPressed: () async {
@@ -36,5 +41,13 @@ class PlayerPage extends ConsumerWidget {
           )),
       body: SafeArea(child: Center(child: MusicPlayerScreen())),
     );
+  }
+
+  void _displayQueue(BuildContext context) {
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const QueuePage(),
+        ));
   }
 }
