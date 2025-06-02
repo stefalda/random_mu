@@ -11,7 +11,7 @@ on:
 jobs:
   build-and-release-android:
     runs-on: ubuntu-latest
-  
+
     steps:
       # Checkout sources
       - uses: actions/checkout@v4
@@ -19,10 +19,10 @@ jobs:
       # Install flutter
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.3'
-          channel: 'stable'
+          flutter-version: "3.32.1"
+          channel: "stable"
           cache: true
-          
+
       # Install dependencies
       - name: Get dependencies
         run: flutter pub get
@@ -38,4 +38,3 @@ jobs:
         with:
           branch: gh-pages
           folder: build/web
-  
