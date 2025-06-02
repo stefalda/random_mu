@@ -12,9 +12,9 @@ import 'package:random_mu/pages/playlists/playlists_page.dart';
 import 'package:random_mu/services/update_checker.dart';
 
 class MenuPage extends ConsumerWidget {
-  const MenuPage({super.key});
+  MenuPage({super.key});
   static bool _initialCheckDone = false;
-
+  bool _firstLoad = true;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final playerService = ref.read(playerServiceProvider);
@@ -32,6 +32,13 @@ class MenuPage extends ConsumerWidget {
         }
       });
     }
+    // After first build if playng go to the play screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_firstLoad && playerService.isPlaying()) {
+        _firstLoad = false;
+        _navigateToPlayer(context);
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(

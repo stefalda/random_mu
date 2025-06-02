@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:inject_x/inject_x.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
+import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/pages/home_page.dart';
 import 'package:random_mu/providers/albums_notifier.dart';
 import 'package:random_mu/providers/albums_state.dart';
@@ -12,6 +14,7 @@ import 'package:random_mu/providers/playlists_notifier.dart';
 import 'package:random_mu/providers/playlists_state.dart';
 import 'package:random_mu/providers/subsonic_preferences_provider.dart';
 import 'package:random_mu/services/player_service.dart';
+import 'package:random_mu/services/preference_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Providers
@@ -65,12 +68,14 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
+  InjectX.add(PreferenceService());
   // Initialize background audio integration
   await JustAudioBackground.init(
     androidNotificationChannelId: 'com.ryanheise.bg_demo.channel.audio',
     androidNotificationChannelName: 'Audio playback',
     androidNotificationOngoing: true,
   );
+ 
   runApp(ProviderScope(overrides: [
     sharedPreferencesProvider.overrideWithValue(prefs),
   ], child: const MyApp()));

@@ -3,10 +3,12 @@ import 'dart:convert';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:inject_x/inject_x.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:random_mu/client/just_audio_client.dart';
 import 'package:random_mu/client/subsonic_client.dart';
 import 'package:random_mu/client/subsonic_models.dart';
+import 'package:random_mu/services/preference_service.dart';
 
 const defaultCount = 50;
 
@@ -18,6 +20,10 @@ class PlayerService extends ChangeNotifier {
   final audioPlayer = AudioPlayer();
   //late AudioPlayerHandler audioPlayerHandler;
   late SubsonicClient client;
+  StreamSubscription<int?>? _indexSubscription;
+
+  int _lastPlayingSongIndex = 0;
+
   PlayerService(
       {required this.serverUrl,
       required this.username,
@@ -32,6 +38,26 @@ class PlayerService extends ChangeNotifier {
       username: username,
       password: password,
     );
+    // Listen for song index changes and store in preferences...
+    _indexSubscription = audioPlayer.currentIndexStream.listen((index) {
+      if (index != null) {
+        debugPrint('Now playing track at index: $index');
+        if (_lastPlayingSongIndex != index) {
+          _lastPlayingSongIndex = index;
+          final PreferenceService ps = inject<PreferenceService>();
+          ps.storeCurrentPlayingSong(index);
+        }
+      }
+    });
+
+    await restoreSongs();
+  }
+
+  @override
+  dispose() {
+    _indexSubscription?.cancel();
+    audioPlayer.dispose();
+    super.dispose();
   }
 
   Future<List<Genre>> getGenres() async {
@@ -75,8 +101,20 @@ class PlayerService extends ChangeNotifier {
     await _enqueueSongs(randomSongs);
   }
 
+  ///
+  ///  Restore previous session playng song list
+  ///
+  Future restoreSongs() async {
+    final PreferenceService ps = inject<PreferenceService>();
+    final List<Song>? songs = await ps.retrieveLatestPlaylist();
+    if (songs != null) {
+      final songIndex = await ps.retrieveCurrentPlayingSongIndex();
+      await _enqueueSongs(songs, songIndex: songIndex);
+    }
+  }
+
   /// Return all the favorited songs and songs in favorited albums
-  Future randomFavorites({count = defaultCount}) async {
+  Future randomFavorites({int count = defaultCount}) async {
     final searchResult = await client.getStarred();
     final starredSongs = searchResult.songs;
     for (Album album in searchResult.albums) {
@@ -111,9 +149,9 @@ class PlayerService extends ChangeNotifier {
   Future randomByPlayingSong() async {
     final playingSongIndex = audioPlayer.currentIndex;
     if (playingSongIndex == null) return;
-    final playingSong =
-        audioPlayer.audioSource!.sequence.elementAt(playingSongIndex);
-    final String currentSongId = playingSong.tag.id;
+    final AudioSource playingSong = audioPlayer.audioSources[playingSongIndex];
+    //audioPlayer.audioSource!.sequence.elementAt(playingSongIndex);
+    final String currentSongId = (playingSong as ProgressiveAudioSource).tag.id;
     final similarSongs = await client.getSimilarSongs(currentSongId);
     if (similarSongs.isEmpty) return;
     // Check if the source soung is included
@@ -136,7 +174,8 @@ class PlayerService extends ChangeNotifier {
     await _enqueueSongs(similarSongs, restartAt: position);
   }
 
-  _enqueueSongs(List<Song> songs, {Duration? restartAt}) async {
+  Future<void> _enqueueSongs(List<Song> songs,
+      {Duration? restartAt, songIndex = 0}) async {
     // for (var randomSong in songs) {
     //   debugPrint(randomSong.title);
     // }
@@ -148,14 +187,23 @@ class PlayerService extends ChangeNotifier {
         .toList();
     debugPrint("AudioSources enqueued: ${audioSources.length}");
     // Set up a playlist with metadata.
-    final playlist = ConcatenatingAudioSource(children: audioSources);
+    //final AudioSource playlist = ConcatenatingAudioSource(
+    //    children: audioSources, useLazyPreparation: true);
     if (audioPlayer.playing) {
       await audioPlayer.stop();
     }
-    await audioPlayer.setAudioSource(playlist, initialPosition: restartAt);
-
+    //await audioPlayer.setAudioSources(audioSources, initialPosition: restartAt);
+    //await audioPlayer.setAudioSource(playlist, initialPosition: restartAt);
+    await audioPlayer.setAudioSources(
+      audioSources,
+      initialIndex: songIndex, // Which track to start with (0-based)
+      initialPosition: restartAt,
+    );
     // Play
     unawaited(play());
+    // Store in preferences the current audio sources...
+    final PreferenceService ps = inject<PreferenceService>();
+    await ps.storeLatestPlaylist(songs);
   }
 
   Future<String> fetchData() async {

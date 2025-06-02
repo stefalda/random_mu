@@ -17,8 +17,8 @@ class MusicPlayerScreen extends ConsumerWidget {
     }
     return StreamBuilder<MediaItem?>(
       stream: audioPlayer.currentIndexStream.map((index) {
-        if (index != null && index < audioPlayer.sequence!.length) {
-          return audioPlayer.sequence![index].tag as MediaItem;
+        if (index != null && index < audioPlayer.sequence.length) {
+          return audioPlayer.sequence[index].tag as MediaItem;
         }
         return null;
       }),

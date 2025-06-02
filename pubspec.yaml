@@ -2,7 +2,7 @@ name: random_mu
 description: "Random music player"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.0.19+1
+version: 0.0.20+1
 
 environment:
   sdk: ^3.6.0
@@ -31,21 +31,19 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^1.3.0
-  just_audio: ^0.9.46
+  just_audio: ^0.10.3
   just_audio_background: ^0.0.1-beta.15
   audio_service: ^0.18.17
   flutter_riverpod: ^2.3.3
   shared_preferences: ^2.5.1
   url_launcher: ^6.3.1
   package_info_plus: ^8.2.1
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  #cupertino_icons: ^1.0.8
+  inject_x: ^0.0.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
   flutter_native_splash: ^2.4.4
   flutter_launcher_icons: ^0.14.3
 
@@ -54,7 +52,6 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
