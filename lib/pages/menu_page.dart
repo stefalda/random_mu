@@ -13,7 +13,6 @@ import 'package:random_mu/services/update_checker.dart';
 
 class MenuPage extends ConsumerWidget {
   MenuPage({super.key});
-  static bool _initialCheckDone = false;
   bool _firstLoad = true;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,16 +21,6 @@ class MenuPage extends ConsumerWidget {
     final isPlaying =
         playerStateAsyncValue.hasValue && playerService.isPlaying();
 
-    // Run on first build only
-    if (!_initialCheckDone) {
-      _initialCheckDone = true;
-      // Small delay to ensure the app is fully rendered
-      Future.delayed(const Duration(seconds: 2), () {
-        if (context.mounted) {
-          checkForUpdates(context);
-        }
-      });
-    }
     // After first build if playng go to the play screen
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_firstLoad && playerService.isPlaying()) {

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:inject_x/inject_x.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
-import 'package:random_mu/client/subsonic_models.dart';
+import 'package:random_mu/lifecycle_watched.dart';
 import 'package:random_mu/pages/home_page.dart';
 import 'package:random_mu/providers/albums_notifier.dart';
 import 'package:random_mu/providers/albums_state.dart';
@@ -20,10 +20,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Providers
 final playerServiceProvider = Provider<PlayerService>((ref) {
   final connectionDetails = ref.watch(connectionDetailsProvider);
-  return PlayerService(
+  final playerService = PlayerService(
       serverUrl: connectionDetails.serverUrl,
       username: connectionDetails.username,
       password: connectionDetails.password);
+  InjectX.add(playerService);
+  return playerService;
 });
 
 // Provider for the player's state stream
@@ -75,10 +77,10 @@ void main() async {
     androidNotificationChannelName: 'Audio playback',
     androidNotificationOngoing: true,
   );
- 
+
   runApp(ProviderScope(overrides: [
     sharedPreferencesProvider.overrideWithValue(prefs),
-  ], child: const MyApp()));
+  ], child: LifecycleWatcher(child: MyApp())));
 }
 
 class MyApp extends StatelessWidget {

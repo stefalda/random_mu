@@ -68,15 +68,37 @@ class GithubUpdateChecker {
   }
 
   bool _isNewerVersion(String latest, String current) {
-    List<int> latestParts = latest.split('.').map(int.parse).toList();
-    List<int> currentParts = current.split('.').map(int.parse).toList();
-
-    for (int i = 0; i < latestParts.length && i < currentParts.length; i++) {
-      if (latestParts[i] > currentParts[i]) return true;
-      if (latestParts[i] < currentParts[i]) return false;
+    List<int> parseVersionParts(String version) {
+      String core = version.split('+').first;
+      return core.split('.').map(int.parse).toList();
     }
 
-    return latestParts.length > currentParts.length;
+    int parseBuild(String version) {
+      return version.contains('+')
+          ? int.tryParse(version.split('+')[1]) ?? 0
+          : 0;
+    }
+
+    List<int> latestParts = parseVersionParts(latest);
+    List<int> currentParts = parseVersionParts(current);
+
+    int maxLength = latestParts.length > currentParts.length
+        ? latestParts.length
+        : currentParts.length;
+
+    for (int i = 0; i < maxLength; i++) {
+      int latestPart = i < latestParts.length ? latestParts[i] : 0;
+      int currentPart = i < currentParts.length ? currentParts[i] : 0;
+
+      if (latestPart > currentPart) return true;
+      if (latestPart < currentPart) return false;
+    }
+
+    // If MAJOR.MINOR.PATCH are equal, compare build metadata
+    int latestBuild = parseBuild(latest);
+    int currentBuild = parseBuild(current);
+
+    return latestBuild > currentBuild;
   }
 
   Future<void> showUpdateDialog(

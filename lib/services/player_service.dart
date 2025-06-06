@@ -50,7 +50,7 @@ class PlayerService extends ChangeNotifier {
       }
     });
 
-    await restoreSongs();
+    //await restoreSongs();
   }
 
   @override
