@@ -106,10 +106,12 @@ class PlayerService extends ChangeNotifier {
   ///
   Future restoreSongs() async {
     final PreferenceService ps = inject<PreferenceService>();
-    final List<Song>? songs = await ps.retrieveLatestPlaylist();
-    if (songs != null) {
-      final songIndex = await ps.retrieveCurrentPlayingSongIndex();
-      await _enqueueSongs(songs, songIndex: songIndex);
+    if (!audioPlayer.playing && audioPlayer.sequence.isEmpty) {
+      final List<Song>? songs = await ps.retrieveLatestPlaylist();
+      if (songs != null) {
+        final songIndex = await ps.retrieveCurrentPlayingSongIndex();
+        await _enqueueSongs(songs, songIndex: songIndex);
+      }
     }
   }
 
