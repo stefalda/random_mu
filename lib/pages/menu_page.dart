@@ -9,7 +9,6 @@ import 'package:random_mu/pages/header.dart';
 import 'package:random_mu/pages/menu_button.dart';
 import 'package:random_mu/pages/player_page.dart';
 import 'package:random_mu/pages/playlists/playlists_page.dart';
-import 'package:random_mu/services/update_checker.dart';
 
 class MenuPage extends ConsumerWidget {
   MenuPage({super.key});

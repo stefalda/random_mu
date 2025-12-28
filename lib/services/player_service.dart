@@ -110,7 +110,7 @@ class PlayerService extends ChangeNotifier {
       final List<Song>? songs = await ps.retrieveLatestPlaylist();
       if (songs != null) {
         final songIndex = await ps.retrieveCurrentPlayingSongIndex();
-        await _enqueueSongs(songs, songIndex: songIndex);
+        await _enqueueSongs(songs, songIndex: songIndex, pause: true);
       }
     }
   }
@@ -177,7 +177,7 @@ class PlayerService extends ChangeNotifier {
   }
 
   Future<void> _enqueueSongs(List<Song> songs,
-      {Duration? restartAt, songIndex = 0}) async {
+      {Duration? restartAt, songIndex = 0, pause = false}) async {
     // for (var randomSong in songs) {
     //   debugPrint(randomSong.title);
     // }
@@ -201,8 +201,10 @@ class PlayerService extends ChangeNotifier {
       initialIndex: songIndex, // Which track to start with (0-based)
       initialPosition: restartAt,
     );
-    // Play
-    unawaited(play());
+    if (!pause) {
+      // Play
+      unawaited(play());
+    }
     // Store in preferences the current audio sources...
     final PreferenceService ps = inject<PreferenceService>();
     await ps.storeLatestPlaylist(songs);

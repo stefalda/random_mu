@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:random_mu/pages/connection/connection_notifier.dart';
 import 'package:random_mu/pages/connection/connection_state.dart';
 import 'package:random_mu/providers/subsonic_preferences_provider.dart';

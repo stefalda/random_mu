@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:random_mu/client/subsonic_client.dart';
 import 'package:random_mu/pages/connection/connection_state.dart';
 
