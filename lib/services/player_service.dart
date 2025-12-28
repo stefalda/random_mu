@@ -204,6 +204,10 @@ class PlayerService extends ChangeNotifier {
     if (!pause) {
       // Play
       unawaited(play());
+    } else {
+      unawaited(play());
+      await Future.delayed(Duration(milliseconds: 500));
+      await audioPlayer.stop();
     }
     // Store in preferences the current audio sources...
     final PreferenceService ps = inject<PreferenceService>();
