@@ -37,7 +37,7 @@ dependencies:
   flutter_riverpod: ^3.1.0
   shared_preferences: ^2.5.1
   url_launcher: ^6.3.1
-  package_info_plus: ^9.0.0
+  package_info_plus: ^10.2.1
   inject_x: ^0.0.4
 
 dev_dependencies:

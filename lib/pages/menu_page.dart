@@ -10,11 +10,18 @@ import 'package:random_mu/pages/menu_button.dart';
 import 'package:random_mu/pages/player_page.dart';
 import 'package:random_mu/pages/playlists/playlists_page.dart';
 
-class MenuPage extends ConsumerWidget {
-  MenuPage({super.key});
-  bool _firstLoad = true;
+class MenuPage extends ConsumerStatefulWidget {
+  const MenuPage({super.key});
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MenuPage> createState() => _MenuPageState();
+}
+
+class _MenuPageState extends ConsumerState<MenuPage> {
+  bool _firstLoad = true;
+
+  @override
+  Widget build(BuildContext context) {
     final playerService = ref.read(playerServiceProvider);
     final playerStateAsyncValue = ref.watch(playerStateProvider);
     final isPlaying =
