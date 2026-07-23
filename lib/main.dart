@@ -1,9 +1,10 @@
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:inject_x/inject_x.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:just_audio_background/just_audio_background.dart';
+import 'package:random_mu/client/audio_player_handler.dart';
 import 'package:random_mu/lifecycle_watched.dart';
 import 'package:random_mu/pages/home_page.dart';
 import 'package:random_mu/providers/albums_notifier.dart';
@@ -14,6 +15,7 @@ import 'package:random_mu/providers/loading_notifier.dart';
 import 'package:random_mu/providers/playlists_notifier.dart';
 import 'package:random_mu/providers/playlists_state.dart';
 import 'package:random_mu/providers/subsonic_preferences_provider.dart';
+import 'package:random_mu/services/download_service.dart';
 import 'package:random_mu/services/player_service.dart';
 import 'package:random_mu/services/preference_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -25,7 +27,15 @@ final playerServiceProvider = Provider<PlayerService>((ref) {
       serverUrl: connectionDetails.serverUrl,
       username: connectionDetails.username,
       password: connectionDetails.password);
+
+  // Wire the PlayerService into the AudioPlayerHandler for AA/OS integration
+  AudioPlayerHandler.instance?.setPlayerService(playerService);
+
   InjectX.add(playerService);
+  
+  // Register DownloadService so PlayerService can find it for offline fallback
+  final ds = DownloadService(client: playerService.client);
+  InjectX.add(ds);
   return playerService;
 });
 
@@ -72,11 +82,16 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   InjectX.add(PreferenceService());
-  // Initialize background audio integration
-  await JustAudioBackground.init(
-    androidNotificationChannelId: 'com.ryanheise.bg_demo.channel.audio',
-    androidNotificationChannelName: 'Audio playback',
-    androidNotificationOngoing: true,
+
+  // Initialize audio_service (handles MediaSession, MediaBrowserService, notifications)
+  await AudioService.init(
+    builder: () => AudioPlayerHandler(),
+    config: AudioServiceConfig(
+      androidNotificationChannelId: 'com.ryanheise.bg_demo.channel.audio',
+      androidNotificationChannelName: 'Audio playback',
+      androidNotificationOngoing: true,
+      androidStopForegroundOnPause: false,
+    ),
   );
 
   runApp(ProviderScope(overrides: [

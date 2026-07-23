@@ -38,7 +38,8 @@ dependencies:
   shared_preferences: ^2.5.1
   url_launcher: ^6.3.1
   package_info_plus: ^10.2.1
-  inject_x: ^0.0.4
+  inject_x: ^0.0.6
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:

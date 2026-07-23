@@ -8,6 +8,7 @@ import 'package:random_mu/pages/artists/artists_page.dart';
 import 'package:random_mu/pages/header.dart';
 import 'package:random_mu/pages/menu_button.dart';
 import 'package:random_mu/pages/player_page.dart';
+import 'package:random_mu/pages/downloads_page.dart';
 import 'package:random_mu/pages/playlists/playlists_page.dart';
 
 class MenuPage extends ConsumerStatefulWidget {
@@ -126,6 +127,18 @@ class _MenuPageState extends ConsumerState<MenuPage> {
                         ref.read(loadingProvider.notifier).setLoading(false);
                       }
                     },
+            ),
+            const SizedBox(height: 16),
+            MenuButton(
+              icon: Icons.download,
+              text: 'Downloads',
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DownloadsPage(),
+                    ));
+              },
             ),
           ],
         ),

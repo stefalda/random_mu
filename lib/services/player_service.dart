@@ -8,6 +8,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:random_mu/client/just_audio_client.dart';
 import 'package:random_mu/client/subsonic_client.dart';
 import 'package:random_mu/client/subsonic_models.dart';
+import 'package:random_mu/services/download_service.dart';
 import 'package:random_mu/services/preference_service.dart';
 
 const defaultCount = 50;
@@ -178,15 +179,32 @@ class PlayerService extends ChangeNotifier {
 
   Future<void> _enqueueSongs(List<Song> songs,
       {Duration? restartAt, songIndex = 0, pause = false}) async {
-    // for (var randomSong in songs) {
-    //   debugPrint(randomSong.title);
-    // }
-    final audioSources = songs
-        .map((song) => createMediaItem(song, client))
-        .map((mediaItem) => AudioSource.uri(
-            Uri.parse(mediaItem.extras!['streamUrl']),
-            tag: mediaItem))
-        .toList();
+    // Try to create download service for offline file resolution
+    DownloadService? ds;
+    try {
+      ds = inject<DownloadService>();
+    } catch (_) {
+      // DownloadService may not be registered yet
+    }
+
+    final audioSources = await Future.wait(songs.map((song) async {
+      final mediaItem = createMediaItem(song, client);
+
+      // Check for local file (offline fallback)
+      Uri sourceUri;
+      if (ds != null) {
+        final localPath = await ds.getLocalPath(song.id);
+        if (localPath != null) {
+          sourceUri = Uri.file(localPath);
+        } else {
+          sourceUri = Uri.parse(mediaItem.extras!['streamUrl']);
+        }
+      } else {
+        sourceUri = Uri.parse(mediaItem.extras!['streamUrl']);
+      }
+
+      return AudioSource.uri(sourceUri, tag: mediaItem);
+    }).toList());
     debugPrint("AudioSources enqueued: ${audioSources.length}");
     // Set up a playlist with metadata.
     //final AudioSource playlist = ConcatenatingAudioSource(
