@@ -11,6 +11,7 @@ import 'package:random_mu/client/subsonic_client.dart';
 import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/services/browse_cache.dart';
 import 'package:random_mu/services/download_models.dart';
+import 'package:random_mu/services/notification_service.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:random_mu/client/audio_player_handler.dart';
 
@@ -21,6 +22,9 @@ class DownloadService extends ChangeNotifier {
   /// Persistent Android Auto browse metadata, primed on completion.
   final BrowseCache browseCache;
 
+  /// Optional download notifications.
+  final NotificationService? notifications;
+
   List<DownloadItem> _queue = [];
   StorageInfo _storageInfo = const StorageInfo();
   bool _isRunning = false;
@@ -28,7 +32,11 @@ class DownloadService extends ChangeNotifier {
   static const int maxConcurrent = 2;
   final Set<String> _activeDownloads = {};
 
-  DownloadService({required this.client, this.browseCache = const BrowseCache()}) {
+  DownloadService({
+    required this.client,
+    this.browseCache = const BrowseCache(),
+    this.notifications,
+  }) {
     _loadState();
   }
 
@@ -288,6 +296,7 @@ class DownloadService extends ChangeNotifier {
         progress: 1.0,
       );
       await _primeBrowseCache(_queue[index], songs);
+      notifications?.downloadCompleted(_queue[index]);
       _saveState();
       notifyListeners();
     } catch (e) {
@@ -295,6 +304,7 @@ class DownloadService extends ChangeNotifier {
         status: DownloadStatus.failed,
         errorMessage: e.toString(),
       );
+      unawaited(notifications?.downloadFailed(_queue[index]) ?? Future.value());
       _saveState();
       notifyListeners();
     }

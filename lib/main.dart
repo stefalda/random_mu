@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +18,7 @@ import 'package:random_mu/providers/playlists_notifier.dart';
 import 'package:random_mu/providers/playlists_state.dart';
 import 'package:random_mu/providers/subsonic_preferences_provider.dart';
 import 'package:random_mu/services/download_service.dart';
+import 'package:random_mu/services/notification_service.dart';
 import 'package:random_mu/services/player_service.dart';
 import 'package:random_mu/services/preference_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -34,7 +37,10 @@ final playerServiceProvider = Provider<PlayerService>((ref) {
   InjectX.add(playerService);
   
   // Register DownloadService so PlayerService can find it for offline fallback
-  final ds = DownloadService(client: playerService.client);
+  final ds = DownloadService(
+    client: playerService.client,
+    notifications: _notificationService,
+  );
   InjectX.add(ds);
   return playerService;
 });
@@ -78,10 +84,18 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError('Initialize this provider in your main.dart');
 });
 
+/// Download notifications, initialised in [main] and read by the download service.
+NotificationService? _notificationService;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   InjectX.add(PreferenceService());
+
+  // Download notifications are best-effort: never block startup on them.
+  final notifications = NotificationService();
+  _notificationService = notifications;
+  unawaited(notifications.init());
 
   // Initialize audio_service (handles MediaSession, MediaBrowserService, notifications)
   await AudioService.init(
