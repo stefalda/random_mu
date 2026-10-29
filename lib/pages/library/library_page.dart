@@ -6,6 +6,8 @@ import 'package:random_mu/pages/artists/artists_list.dart';
 import 'package:random_mu/pages/header.dart';
 import 'package:random_mu/pages/player_page.dart';
 import 'package:random_mu/pages/search/search_tab.dart';
+import 'package:random_mu/pages/tracks/songs_tab.dart';
+import 'package:random_mu/widgets/playback_mode_button.dart';
 
 /// The library: rows of content, alphabetical, with a per-tab filter.
 class LibraryPage extends ConsumerWidget {
@@ -14,14 +16,16 @@ class LibraryPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DefaultTabController(
-      length: 4,
+      length: 5,
       child: Scaffold(
         appBar: AppBar(
           title: const Header(),
           actions: [
+            // The mode control lives here: everything else follows it.
+            const PlaybackModeButton(),
             IconButton(
-              tooltip: 'Casuale',
-              icon: const Icon(Icons.shuffle),
+              tooltip: 'Comandi casuali (una tantum)',
+              icon: const Icon(Icons.casino_outlined),
               onPressed: () => _showRandomSheet(context, ref),
             ),
             const SizedBox(width: 8),
@@ -32,6 +36,7 @@ class LibraryPage extends ConsumerWidget {
             tabs: [
               Tab(text: 'Artisti'),
               Tab(text: 'Album'),
+              Tab(text: 'Brani'),
               Tab(text: 'Preferiti'),
               Tab(text: 'Generi'),
             ],
@@ -41,6 +46,7 @@ class LibraryPage extends ConsumerWidget {
           children: [
             ArtistList(),
             AlbumsList(),
+            SongsTab(),
             FavoritesTab(),
             GenresTab(),
           ],

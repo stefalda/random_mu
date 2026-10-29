@@ -10,6 +10,7 @@ import 'package:random_mu/pages/playlist_actions.dart';
 import 'package:random_mu/pages/tracks/track_list.dart';
 import 'package:random_mu/services/download_models.dart';
 import 'package:random_mu/services/playback_mode.dart';
+import 'package:random_mu/widgets/playback_mode_button.dart';
 
 /// Playlist detail: tracks in the saved order, playable, removable and
 /// augmented from the playlist picker.
@@ -40,7 +41,7 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
   });
 
   Future<void> _play(List<Song> songs,
-      {int startIndex = 0, bool shuffle = false}) async {
+      {int startIndex = 0, bool? shuffle}) async {
     final messenger = ScaffoldMessenger.of(context);
     var tracks = songs;
     if (tracks.isEmpty) {
@@ -71,12 +72,14 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
         tracks,
         startAtSongId:
             startIndex < tracks.length ? tracks[startIndex].id : null,
-        modeOverride: shuffle ? PlaybackMode.casuale : null,
+        modeOverride: shuffle == null
+            ? null
+            : (shuffle ? PlaybackMode.casuale : PlaybackMode.sequenziale),
       );
       messenger.showSnackBar(
         SnackBar(
           duration: const Duration(milliseconds: 1200),
-          content: Text(shuffle ? 'Riproduzione casuale' : 'Riproduzione sequenziale'),
+          content: Text('Riproduzione ${playerService.mode.label}'),
         ),
       );
     } finally {
@@ -109,6 +112,7 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
       appBar: AppBar(
         title: Header(title: _name),
         actions: [
+          const PlaybackModeButton(),
           IconButton(
             tooltip: 'Rinomina',
             icon: const Icon(Icons.edit_outlined),
@@ -198,11 +202,6 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
                                 icon: const Icon(Icons.play_arrow),
                                 label: const Text('Riproduci'),
                                 onPressed: () => _play(songs),
-                              ),
-                              IconButton(
-                                tooltip: 'Casuale',
-                                icon: const Icon(Icons.shuffle),
-                                onPressed: () => _play(songs, shuffle: true),
                               ),
                               IconButton(
                                 tooltip: 'Accoda',

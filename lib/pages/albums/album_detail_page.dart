@@ -9,6 +9,7 @@ import 'package:random_mu/pages/player_page.dart';
 import 'package:random_mu/pages/tracks/track_list.dart';
 import 'package:random_mu/services/download_models.dart';
 import 'package:random_mu/services/playback_mode.dart';
+import 'package:random_mu/widgets/playback_mode_button.dart';
 
 /// Album detail: cover, metadata and the track list in album order.
 class AlbumDetailPage extends ConsumerStatefulWidget {
@@ -79,7 +80,7 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
       SnackBar(
         duration: const Duration(milliseconds: 1200),
         content: Text(
-          shuffle == true ? 'Riproduzione casuale' : 'Riproduzione sequenziale',
+          'Riproduzione ${(mode ?? playerService.mode).label}',
         ),
       ),
     );
@@ -100,7 +101,7 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
     return Scaffold(
       appBar: AppBar(
         title: Header(title: widget.albumName ?? 'Album'),
-        actions: const [SizedBox(width: 8)],
+        actions: const [PlaybackModeButton(), SizedBox(width: 8)],
       ),
       body: FutureBuilder<Album>(
         future: _album,
@@ -166,18 +167,8 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
                               FilledButton.icon(
                                 icon: const Icon(Icons.play_arrow),
                                 label: const Text('Riproduci'),
-                                onPressed: () => _play(
-                                      songs,
-                                      shuffle: false,
-                                    ),
-                              ),
-                              IconButton(
-                                tooltip: 'Casuale',
-                                icon: const Icon(Icons.shuffle),
-                                onPressed: () => _play(
-                                      songs,
-                                      shuffle: true,
-                                    ),
+                                // Follows the title bar mode toggle.
+                                onPressed: () => _play(songs),
                               ),
                               IconButton(
                                 tooltip: 'Accoda',
@@ -217,8 +208,7 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
                     ? const Center(child: Text('Album senza brani'))
                     : TrackList(
                         songs: songs,
-                        onPlay: (index) =>
-                            _play(songs, startIndex: index, shuffle: false),
+                        onPlay: (index) => _play(songs, startIndex: index),
                       ),
               ),
             ],

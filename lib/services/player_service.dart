@@ -204,9 +204,13 @@ class PlayerService extends ChangeNotifier {
     }
 
     final container = List<Song>.of(songs);
-    final tappedIndex = startAtSongId == null
-        ? 0
-        : container.indexWhere((song) => song.id == startAtSongId);
+    final tappedIndex = resolveStartIndex(
+      container.length,
+      foundIndex: startAtSongId == null
+          ? -1
+          : container.indexWhere((song) => song.id == startAtSongId),
+      shuffle: _mode.isShuffle,
+    );
 
     final plan = planQueue(
       container,

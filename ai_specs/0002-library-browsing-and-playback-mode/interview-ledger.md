@@ -175,3 +175,22 @@ Decision: Il dettaglio playlist consente di rimuovere brani e di aggiungerne; la
 Constraints:
 - La lista mostrata deve riflettere l'ordine reale della playlist, perché la rimozione è per indice.
 - Non è previsto il riordino dei brani: l'API Subsonic non lo supporta.
+
+### L12
+
+Status: current
+
+Question: Come si sceglie la modalità di riproduzione mentre si sfoglia, e cosa deve fare "Casuale" su un contenitore?
+
+Answer:
+- Un solo toggle nel titolo (icona shuffle accesa = casuale), visibile in Libreria e nei dettagli; da lì dipende se la riproduzione parte mescolata.
+- I pulsanti "Casuale" dentro gli header di album/artista/playlist vanno rimossi: "Riproduci" segue il toggle.
+- Avviare un contenitore in casuale senza aver scelto un brano deve partire da un brano casuale, non dal primo.
+- L'icona del toggle deve essere la stessa coppia usata in Android Auto (shuffle / lista+play).
+- La Libreria deve avere anche un tab "Brani" con tutti i brani in ordine alfabetico.
+
+Decision: Il toggle nel titolo è l'unico controllo della modalità; i dettagli non hanno più un pulsante Casuale e "Riproduci" segue la modalità corrente; in casuale senza selezione si parte da un brano casuale; le icone sono allineate all'auto; la Libreria espone il tab Brani.
+
+Constraints:
+- Il comando "All Random" resta separato, con icona dedicata (dado), per non confonderlo con il toggle.
+- Il tab Brani usa `search3` con query vuota paginata (Navidrome restituisce l'intera libreria), ordinato per titolo.

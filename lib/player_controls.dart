@@ -117,11 +117,10 @@ class PlayerControls extends ConsumerWidget {
               return IconButton(
                 tooltip: 'Riproduzione: ${playerService.mode.label}',
                 icon: Icon(
-                  Icons.shuffle,
+                  // Same glyph pair as the Android Auto mode action.
+                  shuffled ? Icons.shuffle : Icons.playlist_play,
                   size: iconSize * 0.8,
-                  color: shuffled
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).disabledColor,
+                  color: shuffled ? Theme.of(context).colorScheme.primary : null,
                 ),
                 onPressed: () async {
                   await playerService.toggleMode();

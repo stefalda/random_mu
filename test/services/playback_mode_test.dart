@@ -77,6 +77,36 @@ void main() {
     });
   });
 
+  group('resolveStartIndex', () {
+    test('an explicit track always wins', () {
+      expect(
+        resolveStartIndex(5, foundIndex: 3, shuffle: true, random: Random(1)),
+        3,
+      );
+      expect(resolveStartIndex(5, foundIndex: 2, shuffle: false), 2);
+    });
+
+    test('shuffled without a selection starts on a random track', () {
+      final picks = <int>{};
+      for (var seed = 0; seed < 30; seed++) {
+        picks.add(
+          resolveStartIndex(10, shuffle: true, random: Random(seed)),
+        );
+      }
+      expect(picks.length, greaterThan(1));
+      expect(picks.every((index) => index >= 0 && index < 10), isTrue);
+    });
+
+    test('sequential without a selection starts from the first track', () {
+      expect(resolveStartIndex(10, shuffle: false), 0);
+    });
+
+    test('handles an empty container and an out of range selection', () {
+      expect(resolveStartIndex(0, shuffle: true), 0);
+      expect(resolveStartIndex(4, foundIndex: 9, shuffle: false), 0);
+    });
+  });
+
   group('shuffledKeepingCurrent', () {
     test('the current index keeps its position', () {
       for (var current = 0; current < 6; current++) {

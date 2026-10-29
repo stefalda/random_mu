@@ -52,9 +52,9 @@ A traditional library browsing experience, with sequential or randomized playbac
 2. The mode is persisted in preferences and restored at startup; when no preference exists the mode is `Sequenziale`. [L1]
 3. Starting a container (album, artist, playlist, favorites, genre, search result set) builds the queue as follows:
    - `Sequenziale`: queue = container order, current index = the tapped track.
-   - `Casuale`: queue = container order shuffled, current index = the tapped track, which stays first in the listening order.
-4. The player page exposes a shuffle toggle that shows the current mode and switches it.
-5. The detail pages expose both `Riproduci` (mode `Sequenziale`) and `Casuale` (mode `Casuale`) as container actions; using one of them also sets the persisted mode, because it is an explicit choice.
+   - `Casuale`: queue = container order shuffled; when a track was tapped it stays first, otherwise playback starts from a random track. [L12]
+4. The title bar toggle (requirement 5) and the player control both show the current mode with the same glyph pair used by the Android Auto action and switch it. [L12]
+5. The playback mode has a single control: a toggle in the title bar, visible in the library and in the detail pages, whose icon shows the current mode (shuffle when `Casuale`, list+play when `Sequenziale`, matching the Android Auto action). Detail pages have no separate "Casuale" button: `Riproduci` follows the toggle. [L12]
 6. The one-shot random commands (`All Random`, `Random by Playlist`, `Random by Artist`, `Random by Album`, `Random by Favorites`, `Random by Playing`) produce a shuffled queue without changing the persisted mode. [L8]
 7. Changing mode while a queue is playing reorders the existing queue immediately:
    - to `Casuale`: the current track keeps its position in the listening order and the remaining tracks are shuffled;
@@ -73,7 +73,7 @@ A traditional library browsing experience, with sequential or randomized playbac
 ### Library navigation
 
 13. The app shell has four destinations — Libreria, Playlist, Downloads, Cerca — and opens on Libreria. [L4][L9]
-14. Libreria exposes four tabs: Artisti, Album, Preferiti, Generi. Artisti and Album are alphabetical with a visible index/scroll affordance; Preferiti groups starred tracks, albums and artists; Generi lists genres. [L9]
+14. Libreria exposes five tabs: Artisti, Album, Brani, Preferiti, Generi. [L12] Artisti and Album are alphabetical with a visible index/scroll affordance; Preferiti groups starred tracks, albums and artists; Generi lists genres. [L9]
 15. Each list keeps a local instant filter driven by its own state; a page must never drive another page's filter. [L3]
 16. The random commands (`All Random`, `Random by Playing`, `Random by Favorites`) are reachable from a `Casuale` entry in Libreria and no longer from a first-screen button list. [L4]
 17. `Cerca` performs a global server search and shows Artists, Albums and Tracks sections; track results support the same track actions. [L3]

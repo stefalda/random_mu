@@ -42,6 +42,22 @@ class PlaybackPlan<T> {
   final int index;
 }
 
+/// Picks the track a container should start from.
+///
+/// An explicit choice ([foundIndex] >= 0) always wins. Without one, a shuffled
+/// container starts on a random track and a sequential one from the beginning.
+int resolveStartIndex(
+  int length, {
+  int foundIndex = -1,
+  required bool shuffle,
+  Random? random,
+}) {
+  if (length <= 0) return 0;
+  if (foundIndex >= 0 && foundIndex < length) return foundIndex;
+  if (!shuffle) return 0;
+  return (random ?? Random()).nextInt(length);
+}
+
 /// Builds the listening order for [container] starting at [startIndex].
 ///
 /// Sequential keeps the container order; casuale puts the selected item first

@@ -10,6 +10,7 @@ import 'package:random_mu/pages/player_page.dart';
 import 'package:random_mu/pages/tracks/track_list.dart';
 import 'package:random_mu/services/download_models.dart';
 import 'package:random_mu/services/playback_mode.dart';
+import 'package:random_mu/widgets/playback_mode_button.dart';
 
 /// Artist detail: the artist's albums plus all of their tracks in album order.
 class ArtistDetailPage extends ConsumerStatefulWidget {
@@ -37,7 +38,7 @@ class _ArtistDetailPageState extends ConsumerState<ArtistDetailPage> {
         );
   }
 
-  Future<void> _playAll({bool shuffle = false}) async {
+  Future<void> _playAll({bool? shuffle}) async {
     final playerService = ref.read(playerServiceProvider);
     ref.read(loadingProvider.notifier).setLoading(true);
     Navigator.push(
@@ -47,7 +48,9 @@ class _ArtistDetailPageState extends ConsumerState<ArtistDetailPage> {
     try {
       await playerService.playContainer(
         await playerService.fetchArtistSongs(widget.artistId),
-        modeOverride: shuffle ? PlaybackMode.casuale : null,
+        modeOverride: shuffle == null
+            ? null
+            : (shuffle ? PlaybackMode.casuale : PlaybackMode.sequenziale),
       );
     } finally {
       ref.read(loadingProvider.notifier).setLoading(false);
@@ -60,6 +63,7 @@ class _ArtistDetailPageState extends ConsumerState<ArtistDetailPage> {
       appBar: AppBar(
         title: Header(title: widget.artistName),
         actions: [
+          const PlaybackModeButton(),
           IconButton(
             tooltip: 'Tutti i brani',
             icon: const Icon(Icons.queue_music),
@@ -100,11 +104,6 @@ class _ArtistDetailPageState extends ConsumerState<ArtistDetailPage> {
                       icon: const Icon(Icons.play_arrow),
                       label: const Text('Riproduci tutto'),
                       onPressed: () => _playAll(),
-                    ),
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.shuffle),
-                      label: const Text('Casuale'),
-                      onPressed: () => _playAll(shuffle: true),
                     ),
                     DownloadButton(
                       type: DownloadItemType.artist,

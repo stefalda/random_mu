@@ -514,6 +514,30 @@ class SubsonicClient {
     return SearchResult.fromJson(response, parentName: 'searchResult3');
   }
 
+  /// Every song of the library, sorted by title.
+  ///
+  /// The Subsonic API has no "all songs" endpoint; Navidrome (and other servers)
+  /// answer `search3` with an empty query with the whole library, paged by
+  /// `songOffset`/`songCount`, so the list is walked page by page.
+  Future<List<Song>> getAllSongs({int pageSize = 500, int maxPages = 40}) async {
+    final songs = <Song>[];
+    for (var page = 0; page < maxPages; page++) {
+      final result = await search(
+        query: '',
+        songCount: pageSize,
+        songOffset: page * pageSize,
+        artistCount: 0,
+        albumCount: 0,
+      );
+      songs.addAll(result.songs);
+      if (result.songs.length < pageSize) break;
+    }
+    songs.sort(
+      (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+    );
+    return songs;
+  }
+
   Future<List<Song>> getSongsByGenre(
       {required int count, String? genre}) async {
     final params = {
