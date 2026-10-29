@@ -153,8 +153,7 @@ class AlbumsList extends ConsumerWidget {
                                 )));
                             final playerService =
                                 ref.read(playerServiceProvider);
-                            await playerService.randomByAlbum(
-                                albumId: album.id);
+                            await playerService.playAlbum(album.id);
                             ref
                                 .read(loadingProvider.notifier)
                                 .setLoading(false);

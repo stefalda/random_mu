@@ -148,8 +148,7 @@ class ArtistList extends ConsumerWidget {
                                 )));
                             final playerService =
                                 ref.read(playerServiceProvider);
-                            await playerService.randomByArtist(
-                                artistId: artist.id);
+                            await playerService.playArtist(artist.id);
                             ref
                                 .read(loadingProvider.notifier)
                                 .setLoading(false);

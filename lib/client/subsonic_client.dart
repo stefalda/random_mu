@@ -368,6 +368,15 @@ class SubsonicClient {
     return count != null ? allSongs.take(count).toList() : allSongs;
   }
 
+  /// Albums of an artist, in the server's order (usually chronological).
+  Future<List<Album>> getArtistAlbums(String artistId) async {
+    final artist = await _makeRequest('getArtist.view', {'id': artistId});
+    final albums = artist['artist']['album'] as List? ?? const [];
+    return albums
+        .map((album) => Album.fromJson(album as Map<String, dynamic>))
+        .toList();
+  }
+
   /// Get Songs by AlbumId
   Future<List<Song>> getSongsByAlbum({required String albumId}) async {
     final albumDetails = await getAlbum(albumId);

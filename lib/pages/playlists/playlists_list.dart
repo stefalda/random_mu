@@ -190,8 +190,7 @@ class PlaylistsList extends ConsumerWidget {
                                 )));
                             final playerService =
                                 ref.read(playerServiceProvider);
-                            await playerService.randomByPlaylist(
-                                playlistId: playlist.id);
+                            await playerService.playPlaylist(playlist.id);
                             ref
                                 .read(loadingProvider.notifier)
                                 .setLoading(false);

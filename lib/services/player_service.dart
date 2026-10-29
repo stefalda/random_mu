@@ -12,6 +12,7 @@ import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/services/browse_cache.dart';
 import 'package:random_mu/services/download_service.dart';
 import 'package:random_mu/services/offline_source.dart';
+import 'package:random_mu/services/playback_mode.dart';
 import 'package:random_mu/services/preference_service.dart';
 
 const defaultCount = 50;
@@ -27,6 +28,18 @@ class PlayerService extends ChangeNotifier {
   StreamSubscription<int?>? _indexSubscription;
 
   int _lastPlayingSongIndex = 0;
+
+  /// How a container becomes a queue. Persisted, restored on startup.
+  PlaybackMode _mode = PlaybackMode.sequenziale;
+
+  /// Songs of the container that produced the current queue, in its own order.
+  ///
+  /// Needed to restore sequential order after the user switches back from
+  /// [PlaybackMode.casuale]. For queues without a container (Play Similar, a
+  /// restored session) this is the order they were queued in.
+  List<Song> _containerSongs = const [];
+
+  PlaybackMode get mode => _mode;
 
   PlayerService(
       {required this.serverUrl,
@@ -55,6 +68,11 @@ class PlayerService extends ChangeNotifier {
     });
 
     //await restoreSongs();
+
+    // Restore the last used playback mode.
+    final PreferenceService prefs = inject<PreferenceService>();
+    _mode = await prefs.retrievePlaybackMode();
+    notifyListeners();
   }
 
   @override
@@ -156,15 +174,117 @@ class PlayerService extends ChangeNotifier {
 
   /// Play [songs] starting at [songId].
   ///
-  /// [shuffle] matches the app identity: containers are shuffled, favorites keep
-  /// their server order.
+  /// Kept for the Android Auto playback path: when [shuffle] is true the
+  /// container is shuffled, otherwise it follows [PlaybackMode].
   Future<void> playSongsStartingAt(List<Song> songs,
       {required String songId, bool shuffle = true}) async {
     if (songs.isEmpty) return;
-    final list = List<Song>.of(songs);
-    if (shuffle) list.shuffle();
-    final index = list.indexWhere((song) => song.id == songId);
-    await _enqueueSongs(list, songIndex: index < 0 ? 0 : index);
+    await playContainer(
+      songs,
+      startAtSongId: songId,
+      modeOverride: shuffle ? PlaybackMode.casuale : PlaybackMode.sequenziale,
+    );
+  }
+
+  /// Plays [songs] (a container in its own order) starting at [startAtSongId].
+  ///
+  /// The queue follows the playback mode: sequential keeps the container order
+  /// and plays from the tapped track, casuale puts the tapped track first and
+  /// shuffles the rest. Passing [modeOverride] also persists that mode, which
+  /// is what an explicit "Riproduci / Casuale" choice in the UI means.
+  Future<void> playContainer(
+    List<Song> songs, {
+    String? startAtSongId,
+    PlaybackMode? modeOverride,
+  }) async {
+    if (songs.isEmpty) return;
+
+    if (modeOverride != null && modeOverride != _mode) {
+      await setMode(modeOverride);
+    }
+
+    final container = List<Song>.of(songs);
+    final tappedIndex = startAtSongId == null
+        ? 0
+        : container.indexWhere((song) => song.id == startAtSongId);
+
+    final plan = planQueue(
+      container,
+      shuffle: _mode.isShuffle,
+      startIndex: tappedIndex,
+    );
+
+    await _enqueueSongs(
+      plan.queue,
+      songIndex: plan.index,
+      containerSongs: container,
+    );
+  }
+
+  /// Switches the playback mode, persists it and reorders the live queue.
+  ///
+  /// The current track keeps playing: it keeps its index when switching to
+  /// [PlaybackMode.casuale] and returns to its container position when
+  /// switching back to [PlaybackMode.sequenziale].
+  Future<void> setMode(PlaybackMode mode) async {
+    if (_mode == mode) return;
+    _mode = mode;
+    final PreferenceService prefs = inject<PreferenceService>();
+    await prefs.storePlaybackMode(mode);
+    notifyListeners();
+    await _applyModeToQueue();
+  }
+
+  Future<void> toggleMode() => setMode(_mode.toggled);
+
+  /// Reorders the queue that is already loaded, without touching playback.
+  Future<void> _applyModeToQueue() async {
+    final sources = List<AudioSource>.of(audioPlayer.audioSources);
+    final currentIndex = audioPlayer.currentIndex;
+    if (sources.isEmpty ||
+        currentIndex == null ||
+        currentIndex < 0 ||
+        currentIndex >= sources.length) {
+      return;
+    }
+
+    final List<AudioSource> target;
+    if (_mode.isShuffle) {
+      final order = shuffledKeepingCurrent(sources.length, currentIndex);
+      target = [for (final index in order) sources[index]];
+    } else {
+      if (_containerSongs.isEmpty) return;
+      final bySongId = <String, AudioSource>{};
+      for (final source in sources) {
+        if (source is UriAudioSource) {
+          final tag = source.tag;
+          if (tag is MediaItem) bySongId[tag.id] = source;
+        }
+      }
+      target = [
+        for (final song in _containerSongs)
+          if (bySongId.containsKey(song.id)) bySongId[song.id]!,
+      ];
+      // Keep anything the container does not know about (should not happen).
+      for (final source in sources) {
+        if (!target.contains(source)) target.add(source);
+      }
+      if (target.length != sources.length) return;
+    }
+
+    await _moveIntoOrder(target);
+  }
+
+  /// Reorders the just_audio playlist with gapless moves, so audio keeps
+  /// playing from the same position.
+  Future<void> _moveIntoOrder(List<AudioSource> target) async {
+    for (var index = 0; index < target.length; index++) {
+      final wanted = target[index];
+      final sources = audioPlayer.audioSources;
+      final at = sources.indexOf(wanted);
+      if (at < 0 || at == index) continue;
+      await audioPlayer.moveAudioSource(at, index);
+    }
   }
 
   Future randomByArtist(
@@ -173,6 +293,36 @@ class PlayerService extends ChangeNotifier {
         await client.getArtistSongsRandomized(artistId, count: count);
 
     await _enqueueSongs(randomSongs);
+  }
+
+  // --- Container playback -------------------------------------------------
+  //
+  // These fetch the container in its own order and let the playback mode decide
+  // the queue. They are the entry points used by the app UI and by Android Auto.
+
+  Future<void> playPlaylist(String playlistId, {String? startAtSongId}) async {
+    final songs = await client.getPlaylistSongs(playlistId);
+    await playContainer(songs, startAtSongId: startAtSongId);
+  }
+
+  Future<void> playAlbum(String albumId, {String? startAtSongId}) async {
+    final songs = await client.getSongsByAlbum(albumId: albumId);
+    await playContainer(songs, startAtSongId: startAtSongId);
+  }
+
+  Future<void> playArtist(String artistId, {String? startAtSongId}) async {
+    final songs = await fetchArtistSongs(artistId);
+    await playContainer(songs, startAtSongId: startAtSongId);
+  }
+
+  /// All songs of [artistId] in album order (not shuffled).
+  Future<List<Song>> fetchArtistSongs(String artistId) async {
+    final albums = await client.getArtistAlbums(artistId);
+    final songs = <Song>[];
+    for (final album in albums) {
+      songs.addAll(await client.getSongsByAlbum(albumId: album.id));
+    }
+    return songs;
   }
 
   Future randomByAlbum({required String albumId}) async {
@@ -216,7 +366,10 @@ class PlayerService extends ChangeNotifier {
   }
 
   Future<void> _enqueueSongs(List<Song> songs,
-      {Duration? restartAt, songIndex = 0, pause = false}) async {
+      {Duration? restartAt,
+      songIndex = 0,
+      pause = false,
+      List<Song>? containerSongs}) async {
     // Try to create download service for offline file resolution
     DownloadService? ds;
     try {
@@ -248,6 +401,9 @@ class PlayerService extends ChangeNotifier {
       );
     }).toList());
     debugPrint("AudioSources enqueued: ${audioSources.length}");
+    // Remember the container order so the mode toggle can restore it. Queues
+    // without a container use their own queued order.
+    _containerSongs = List<Song>.of(containerSongs ?? songs);
     // Set up a playlist with metadata.
     //final AudioSource playlist = ConcatenatingAudioSource(
     //    children: audioSources, useLazyPreparation: true);

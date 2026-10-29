@@ -109,6 +109,38 @@ class PlayerControls extends ConsumerWidget {
                 size: iconSize,
               ),
               onPressed: playerService.next),
+          // Playback mode toggle (sequential / shuffled)
+          ListenableBuilder(
+            listenable: playerService,
+            builder: (context, _) {
+              final shuffled = playerService.mode.isShuffle;
+              return IconButton(
+                tooltip: 'Riproduzione: ${playerService.mode.label}',
+                icon: Icon(
+                  Icons.shuffle,
+                  size: iconSize * 0.8,
+                  color: shuffled
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).disabledColor,
+                ),
+                onPressed: () async {
+                  await playerService.toggleMode();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context)
+                      ..clearSnackBars()
+                      ..showSnackBar(
+                        SnackBar(
+                          duration: const Duration(milliseconds: 1200),
+                          content: Text(
+                            'Riproduzione ${playerService.mode.label}',
+                          ),
+                        ),
+                      );
+                  }
+                },
+              );
+            },
+          ),
         ],
       )
     ]);

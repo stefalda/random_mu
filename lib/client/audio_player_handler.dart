@@ -6,6 +6,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:random_mu/client/subsonic_client.dart';
 import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/services/browse_cache.dart';
+import 'package:random_mu/services/playback_mode.dart';
 import 'package:random_mu/services/player_service.dart';
 
 /// The root ID for Android Auto browsing.
@@ -63,11 +64,22 @@ class AudioPlayerHandler extends BaseAudioHandler
     _positionSubscription?.cancel();
     _bufferedSubscription?.cancel();
     _sequenceSubscription?.cancel();
+    _playerService?.removeListener(_onPlaybackModeChanged);
+  }
+
+  /// Re-publishes the playback state when the playback mode changes, so the car
+  /// picks up the new shuffle mode even while nothing is playing.
+  void _onPlaybackModeChanged() {
+    playbackState.add(
+      stateToPlaybackState(_playerService!.audioPlayer.playerState),
+    );
   }
 
   void _setupPlayerListeners() {
     final ps = _playerService;
     if (ps == null) return;
+
+    ps.addListener(_onPlaybackModeChanged);
 
     _playerStateSubscription =
         ps.audioPlayer.playerStateStream.listen((state) {
@@ -122,7 +134,12 @@ class AudioPlayerHandler extends BaseAudioHandler
         MediaAction.seek,
         MediaAction.seekForward,
         MediaAction.seekBackward,
+        MediaAction.setShuffleMode,
       },
+      // Android Auto's standard shuffle control reflects and changes this.
+      shuffleMode: (_playerService?.mode.isShuffle ?? false)
+          ? AudioServiceShuffleMode.all
+          : AudioServiceShuffleMode.none,
       processingState: switch (processingState) {
         ProcessingState.idle => AudioProcessingState.idle,
         ProcessingState.loading => AudioProcessingState.loading,
@@ -131,7 +148,6 @@ class AudioPlayerHandler extends BaseAudioHandler
         ProcessingState.ready => AudioProcessingState.ready,
       },
       repeatMode: AudioServiceRepeatMode.none,
-      shuffleMode: AudioServiceShuffleMode.none,
     );
   }
 
@@ -319,8 +335,9 @@ class AudioPlayerHandler extends BaseAudioHandler
   Future<List<MediaItem>> _buildPlaylistSongs(
       PlayerService ps, String playlistId) async {
     try {
+      // Browse lists keep the container order; the playback mode decides how
+      // they turn into a queue when a track is tapped.
       final songs = await ps.client.getPlaylistSongs(playlistId);
-      songs.shuffle();
       return songs.map((s) => _songToMediaItem(s, ps.client)).toList();
     } catch (_) {
       return [];
@@ -330,8 +347,7 @@ class AudioPlayerHandler extends BaseAudioHandler
   Future<List<MediaItem>> _buildArtistSongs(
       PlayerService ps, String artistId) async {
     try {
-      final songs =
-          await ps.client.getArtistSongsRandomized(artistId, count: null);
+      final songs = await ps.fetchArtistSongs(artistId);
       return songs.map((s) => _songToMediaItem(s, ps.client)).toList();
     } catch (_) {
       return [];
@@ -342,7 +358,6 @@ class AudioPlayerHandler extends BaseAudioHandler
       PlayerService ps, String albumId) async {
     try {
       final songs = await ps.client.getSongsByAlbum(albumId: albumId);
-      songs.shuffle();
       return songs.map((s) => _songToMediaItem(s, ps.client)).toList();
     } catch (_) {
       return [];
@@ -363,6 +378,17 @@ class AudioPlayerHandler extends BaseAudioHandler
       extras: song.coverArt != null ? {'coverArt': song.coverArt!} : null,
       playable: true,
     );
+  }
+
+  @override
+  Future<void> setShuffleMode(AudioServiceShuffleMode shuffleMode) async {
+    final ps = _playerService;
+    if (ps == null) return;
+    final wanted = switch (shuffleMode) {
+      AudioServiceShuffleMode.none => PlaybackMode.sequenziale,
+      _ => PlaybackMode.casuale,
+    };
+    await ps.setMode(wanted);
   }
 
   @override
@@ -403,8 +429,8 @@ class AudioPlayerHandler extends BaseAudioHandler
       await ps.playSongsStartingAt(
         songs,
         songId: mediaItem.id,
-        // Favorites keep server order (Requirement 5); containers are shuffled.
-        shuffle: parentId != favoritesCategoryId,
+        // The car follows the app's playback mode instead of always shuffling.
+        shuffle: ps.mode.isShuffle,
       );
     } catch (error) {
       debugPrint('Android Auto: cannot start playback for ${mediaItem.id}: $error');
