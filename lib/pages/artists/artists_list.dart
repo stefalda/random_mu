@@ -110,24 +110,23 @@ class ArtistList extends ConsumerWidget {
                     child: ListTile(
                         leading: ClipRRect(
                           borderRadius: BorderRadius.circular(25),
-                          child:
-                              /* const CircleAvatar(
-                              radius: 25,
-                              child: Icon(Icons.person),
-                            )
-                            */
-                              Image.network(
-                            artist.artistImageUrl!,
-                            width: 50,
-                            height: 50,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const CircleAvatar(
-                                radius: 25,
-                                child: Icon(Icons.person),
-                              );
-                            },
-                          ),
+                          child: artist.artistImageUrl == null
+                              ? const CircleAvatar(
+                                  radius: 25,
+                                  child: Icon(Icons.person),
+                                )
+                              : Image.network(
+                                  artist.artistImageUrl!,
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const CircleAvatar(
+                                      radius: 25,
+                                      child: Icon(Icons.person),
+                                    );
+                                  },
+                                ),
                         ),
                         title: Text(
                           artist.name,

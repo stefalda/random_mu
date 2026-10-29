@@ -420,6 +420,34 @@ void main() {
     expect(await service.getLocalPath('s1'), isNull);
   });
 
+  test('deleting an item while it downloads stops the in-flight task',
+      () async {
+    final service = buildService(
+      songs: {
+        'pl-1': [_song('s1'), _song('s2'), _song('s3')],
+        'pl-2': [_song('s4')],
+      },
+      byteDelay: const Duration(milliseconds: 40),
+    );
+    await service.ready;
+
+    await service.enqueuePlaylist('pl-1', 'One');
+    for (var i = 0; i < 200; i++) {
+      if (await service.getLocalPath('s1') != null) break;
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+    }
+
+    final item = service.queue.single;
+    await service.removeItem(item.id);
+
+    // Give the in-flight task time to notice the cancellation.
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+
+    expect(service.queue, isEmpty);
+    expect(await tempDir.list().toList(), isEmpty);
+    expect(await service.getLocalPath('s1'), isNull);
+  });
+
   test('deleting an item removes its files and metadata', () async {
     final service = buildService(songs: {
       'pl-1': [_song('s1'), _song('s2')],

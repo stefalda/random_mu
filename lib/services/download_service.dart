@@ -15,6 +15,11 @@ import 'package:random_mu/services/browse_cache.dart';
 import 'package:random_mu/services/download_models.dart';
 import 'package:random_mu/services/notification_service.dart';
 
+/// Raised when the item being downloaded is deleted mid-flight.
+class _DownloadCancelled implements Exception {
+  const _DownloadCancelled();
+}
+
 /// Manages offline downloads: queue, progress, storage, persistence.
 ///
 /// Queue rules (see Spec 0001): FIFO, at most [maxConcurrent] parallel items,
@@ -44,6 +49,10 @@ class DownloadService extends ChangeNotifier {
   List<DownloadItem> _queue = [];
   StorageInfo _storageInfo = const StorageInfo();
   final Set<String> _activeDownloads = {};
+
+  /// Items deleted while their download was running: the in-flight task must
+  /// stop writing files instead of continuing against a removed queue entry.
+  final Set<String> _cancelledDownloads = {};
   final Completer<void> _ready = Completer<void>();
   bool _processing = false;
   bool _limitBlocked = false;
@@ -167,6 +176,8 @@ class DownloadService extends ChangeNotifier {
     final index = _queue.indexWhere((i) => i.id == itemId);
     if (index == -1) return;
 
+    // Stop the in-flight task before touching the files it may be writing.
+    _cancelledDownloads.add(itemId);
     final item = _queue[index];
     await _deleteItemFiles(item);
     await _removeCachedBrowseNodes(item);
@@ -259,12 +270,13 @@ class DownloadService extends ChangeNotifier {
       await _processItem(item);
     } finally {
       _activeDownloads.remove(item.id);
+      _cancelledDownloads.remove(item.id);
       unawaited(_processQueue());
     }
   }
 
   Future<void> _processItem(DownloadItem item) async {
-    final index = _queue.indexWhere((i) => i.id == item.id);
+    var index = _queue.indexWhere((i) => i.id == item.id);
     if (index == -1) return;
 
     _queue[index] = _queue[index]
@@ -309,6 +321,10 @@ class DownloadService extends ChangeNotifier {
       if (dir == null) throw Exception('Cannot access storage directory');
 
       for (int i = 0; i < songs.length; i++) {
+        // The item may have been deleted while it was downloading.
+        index = _queue.indexWhere((q) => q.id == item.id);
+        if (index == -1) return;
+
         // A pause (notification action or Downloads page) stops the item in
         // flight: it goes back to the queue and resumes from the next song.
         if (_paused) {
@@ -325,7 +341,7 @@ class DownloadService extends ChangeNotifier {
         // Songs already on disk (resume after pause/restart) are not fetched
         // again.
         if (await getLocalPath(songs[i].id) == null) {
-          await _downloadSongWithRetries(songs[i], dir);
+          await _downloadSongWithRetries(songs[i], dir, item.id);
         }
 
         await _refreshStorageInfo();
@@ -352,6 +368,9 @@ class DownloadService extends ChangeNotifier {
       }
 
       await _completeItem(index, songs);
+    } on _DownloadCancelled {
+      // The item was deleted while downloading: nothing else to do.
+      debugPrint('Download of "${item.title}" cancelled.');
     } catch (error) {
       _queue[index] = _queue[index].copyWith(
         status: DownloadStatus.failed,
@@ -416,12 +435,15 @@ class DownloadService extends ChangeNotifier {
   }
 
   /// Downloads one song, retrying up to [retryDelays].length times.
-  Future<void> _downloadSongWithRetries(Song song, io.Directory dir) async {
+  Future<void> _downloadSongWithRetries(
+      Song song, io.Directory dir, String itemId) async {
     Object? lastError;
     for (var attempt = 0; attempt <= retryDelays.length; attempt++) {
       try {
-        await _downloadSongToFile(song, dir);
+        await _downloadSongToFile(song, dir, itemId);
         return;
+      } on _DownloadCancelled {
+        rethrow;
       } catch (error) {
         lastError = error;
         if (attempt == retryDelays.length) break;
@@ -431,14 +453,22 @@ class DownloadService extends ChangeNotifier {
     throw Exception('Failed to download "${song.title}": $lastError');
   }
 
-  Future<void> _downloadSongToFile(Song song, io.Directory dir) async {
+  Future<void> _downloadSongToFile(
+      Song song, io.Directory dir, String itemId) async {
     final filePath = '${song.id}.${song.suffix ?? 'mp3'}';
     final finalFile = io.File('${dir.path}/$filePath');
     final partFile = io.File('${finalFile.path}.part');
 
     try {
       final bytes = await fetchSongBytes(song);
+      if (_cancelledDownloads.contains(itemId)) throw const _DownloadCancelled();
+
       await partFile.writeAsBytes(bytes, flush: true);
+      if (_cancelledDownloads.contains(itemId)) {
+        await partFile.delete();
+        throw const _DownloadCancelled();
+      }
+
       if (await finalFile.exists()) {
         await finalFile.delete();
       }
