@@ -1,12 +1,10 @@
 // Create the ConsumerWidget
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/main.dart';
+import 'package:random_mu/pages/artists/artist_detail_page.dart';
 import 'package:random_mu/pages/download_button.dart';
 import 'package:random_mu/pages/list_filter_field.dart';
-import 'package:random_mu/pages/player_page.dart';
 import 'package:random_mu/services/download_models.dart';
 
 class ArtistList extends ConsumerWidget {
@@ -115,23 +113,16 @@ class ArtistList extends ConsumerWidget {
                           sourceId: artist.id,
                           title: artist.name,
                         ),
-                        onTap: () async {
-                          // Handle artist selection
-                          if (context.mounted) {
-                            ref.read(loadingProvider.notifier).setLoading(true);
-                            unawaited(Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const PlayerPage(),
-                                )));
-                            final playerService =
-                                ref.read(playerServiceProvider);
-                            await playerService.playArtist(artist.id);
-                            ref
-                                .read(loadingProvider.notifier)
-                                .setLoading(false);
-                          }
-                        }),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ArtistDetailPage(
+                              artistId: artist.id,
+                              artistName: artist.name,
+                            ),
+                          ),
+                        ),
+                    ),
                   );
                 },
               );

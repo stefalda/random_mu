@@ -1,10 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:random_mu/pages/artwork_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:random_mu/main.dart';
+import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/pages/playlist_actions.dart';
+import 'package:random_mu/pages/tracks/track_list.dart';
 
 class QueueList extends ConsumerWidget {
   const QueueList({super.key});
@@ -71,12 +75,24 @@ class QueueList extends ConsumerWidget {
               onTap: () {
                 audioPlayer.seek(Duration.zero, index: index);
               },
-              onLongPress: () => showAddToPlaylistSheet(
-                context,
-                ref,
-                songIds: [metadata.id],
-                songTitle: metadata.title,
-              ),
+              onLongPress: () async {
+                final song = _songFromMediaItem(metadata);
+                if (song == null) {
+                  await showAddToPlaylistSheet(
+                    context,
+                    ref,
+                    songIds: [metadata.id],
+                    songTitle: metadata.title,
+                  );
+                  return;
+                }
+                await showTrackActions(
+                  context,
+                  ref,
+                  song: song,
+                  onPlayNow: () => audioPlayer.seek(Duration.zero, index: index),
+                );
+              },
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -132,5 +148,17 @@ class _DefaultArtwork extends StatelessWidget {
         color: Colors.grey[600],
       ),
     );
+  }
+}
+
+/// Rebuilds the [Song] of a queued item; queue entries carry their song JSON in
+/// `extras`, so the queue can offer the same track actions as the library.
+Song? _songFromMediaItem(MediaItem item) {
+  final raw = item.extras?['songJson'];
+  if (raw is! String) return null;
+  try {
+    return Song.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+  } catch (_) {
+    return null;
   }
 }

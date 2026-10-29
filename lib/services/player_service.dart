@@ -365,11 +365,39 @@ class PlayerService extends ChangeNotifier {
     await _enqueueSongs(similarSongs, restartAt: position);
   }
 
-  Future<void> _enqueueSongs(List<Song> songs,
-      {Duration? restartAt,
-      songIndex = 0,
-      pause = false,
-      List<Song>? containerSongs}) async {
+  /// Appends [songs] at the end of the queue without touching playback.
+  Future<void> appendToQueue(List<Song> songs) async {
+    if (songs.isEmpty) return;
+    final sources = await _buildAudioSources(songs);
+    await audioPlayer.addAudioSources(sources);
+    _containerSongs = [..._containerSongs, ...songs];
+    notifyListeners();
+  }
+
+  /// Inserts [songs] right after the current track.
+  Future<void> playNext(List<Song> songs) async {
+    if (songs.isEmpty) return;
+    final sources = await _buildAudioSources(songs);
+    final currentIndex = audioPlayer.currentIndex;
+    final insertAt = (currentIndex ?? audioPlayer.audioSources.length) + 1;
+    await audioPlayer.insertAudioSources(insertAt, sources);
+
+    // Keep the container order consistent: place the songs after the current one.
+    final order = List<Song>.of(_containerSongs);
+    final currentSource =
+        currentIndex == null ? null : audioPlayer.audioSources[currentIndex];
+    final currentId = currentSource is UriAudioSource
+        ? (currentSource.tag as MediaItem?)?.id
+        : null;
+    final position = currentId == null
+        ? order.length
+        : order.indexWhere((song) => song.id == currentId);
+    order.insertAll(position < 0 ? order.length : position + 1, songs);
+    _containerSongs = order;
+    notifyListeners();
+  }
+
+  Future<List<AudioSource>> _buildAudioSources(List<Song> songs) async {
     // Try to create download service for offline file resolution
     DownloadService? ds;
     try {
@@ -378,7 +406,7 @@ class PlayerService extends ChangeNotifier {
       // DownloadService may not be registered yet
     }
 
-    final audioSources = await Future.wait(songs.map((song) async {
+    return Future.wait(songs.map((song) async {
       var mediaItem = createMediaItem(song, client);
 
       // Downloaded songs play from disk, everything else streams.
@@ -399,7 +427,15 @@ class PlayerService extends ChangeNotifier {
         resolveSongUri(mediaItem: mediaItem, localPath: localPath),
         tag: mediaItem,
       );
-    }).toList());
+    }));
+  }
+
+  Future<void> _enqueueSongs(List<Song> songs,
+      {Duration? restartAt,
+      songIndex = 0,
+      pause = false,
+      List<Song>? containerSongs}) async {
+    final audioSources = await _buildAudioSources(songs);
     debugPrint("AudioSources enqueued: ${audioSources.length}");
     // Remember the container order so the mode toggle can restore it. Queues
     // without a container use their own queued order.
