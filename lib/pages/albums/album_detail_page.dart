@@ -23,41 +23,72 @@ class AlbumDetailPage extends ConsumerStatefulWidget {
 
 class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
   late Future<Album> _album;
+  List<Song>? _cachedSongs;
 
   @override
   void initState() {
     super.initState();
     _album = ref.read(playerServiceProvider).client.getAlbum(widget.albumId);
+    // Cache the tracks so the header actions work even if tapped before the
+    // page has finished loading.
+    _album.then((album) {
+      _cachedSongs = album.songs;
+    }).catchError((_) {});
   }
 
-  Future<void> _play(List<Song> songs, {int startIndex = 0}) async {
-    final playerService = ref.read(playerServiceProvider);
-    ref.read(loadingProvider.notifier).setLoading(true);
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const PlayerPage()),
-    );
-    try {
-      await playerService.playContainer(
-        songs,
-        startAtSongId: startIndex < songs.length ? songs[startIndex].id : null,
-      );
-    } finally {
-      ref.read(loadingProvider.notifier).setLoading(false);
+  /// Plays the album starting at [startIndex], in the current mode or in the
+  /// mode given by [shuffle].
+  ///
+  /// The tracks are fetched on demand, so the button is never a silent no-op
+  /// while the page is still loading.
+  Future<void> _play(
+    List<Song> songs, {
+    int startIndex = 0,
+    bool? shuffle,
+  }) async {
+    final messenger = ScaffoldMessenger.of(context);
+    var tracks = songs;
+    if (tracks.isEmpty) {
+      try {
+        tracks = _cachedSongs ?? (await _album).songs;
+      } catch (error) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Impossibile caricare l\'album: $error')),
+        );
+        return;
+      }
     }
-  }
+    if (tracks.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Questo album non ha brani')),
+      );
+      return;
+    }
 
-  Future<void> _playShuffled(List<Song> songs) async {
     final playerService = ref.read(playerServiceProvider);
     ref.read(loadingProvider.notifier).setLoading(true);
+    final mode = shuffle == null
+        ? null
+        : (shuffle ? PlaybackMode.casuale : PlaybackMode.sequenziale);
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const PlayerPage()),
     );
+    messenger.showSnackBar(
+      SnackBar(
+        duration: const Duration(milliseconds: 1200),
+        content: Text(
+          shuffle == true ? 'Riproduzione casuale' : 'Riproduzione sequenziale',
+        ),
+      ),
+    );
     try {
       await playerService.playContainer(
-        songs,
-        modeOverride: PlaybackMode.casuale,
+        tracks,
+        startAtSongId:
+            startIndex < tracks.length ? tracks[startIndex].id : null,
+        modeOverride: mode,
       );
     } finally {
       ref.read(loadingProvider.notifier).setLoading(false);
@@ -135,16 +166,18 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
                               FilledButton.icon(
                                 icon: const Icon(Icons.play_arrow),
                                 label: const Text('Riproduci'),
-                                onPressed: songs.isEmpty
-                                    ? null
-                                    : () => _play(songs),
+                                onPressed: () => _play(
+                                      songs,
+                                      shuffle: false,
+                                    ),
                               ),
                               IconButton(
                                 tooltip: 'Casuale',
                                 icon: const Icon(Icons.shuffle),
-                                onPressed: songs.isEmpty
-                                    ? null
-                                    : () => _playShuffled(songs),
+                                onPressed: () => _play(
+                                      songs,
+                                      shuffle: true,
+                                    ),
                               ),
                               IconButton(
                                 tooltip: 'Accoda',
@@ -184,7 +217,8 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
                     ? const Center(child: Text('Album senza brani'))
                     : TrackList(
                         songs: songs,
-                        onPlay: (index) => _play(songs, startIndex: index),
+                        onPlay: (index) =>
+                            _play(songs, startIndex: index, shuffle: false),
                       ),
               ),
             ],

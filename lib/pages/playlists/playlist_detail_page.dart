@@ -39,19 +39,45 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
     _songs = _load();
   });
 
-  Future<void> _play(List<Song> songs, {int startIndex = 0, bool shuffle = false}) async {
-    if (songs.isEmpty) return;
+  Future<void> _play(List<Song> songs,
+      {int startIndex = 0, bool shuffle = false}) async {
+    final messenger = ScaffoldMessenger.of(context);
+    var tracks = songs;
+    if (tracks.isEmpty) {
+      try {
+        tracks = await _songs;
+      } catch (error) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Impossibile caricare la playlist: $error')),
+        );
+        return;
+      }
+    }
+    if (tracks.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Questa playlist è vuota')),
+      );
+      return;
+    }
     final playerService = ref.read(playerServiceProvider);
     ref.read(loadingProvider.notifier).setLoading(true);
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const PlayerPage()),
     );
     try {
       await playerService.playContainer(
-        songs,
-        startAtSongId: songs[startIndex].id,
+        tracks,
+        startAtSongId:
+            startIndex < tracks.length ? tracks[startIndex].id : null,
         modeOverride: shuffle ? PlaybackMode.casuale : null,
+      );
+      messenger.showSnackBar(
+        SnackBar(
+          duration: const Duration(milliseconds: 1200),
+          content: Text(shuffle ? 'Riproduzione casuale' : 'Riproduzione sequenziale'),
+        ),
       );
     } finally {
       ref.read(loadingProvider.notifier).setLoading(false);
@@ -171,15 +197,12 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
                               FilledButton.icon(
                                 icon: const Icon(Icons.play_arrow),
                                 label: const Text('Riproduci'),
-                                onPressed:
-                                    songs.isEmpty ? null : () => _play(songs),
+                                onPressed: () => _play(songs),
                               ),
                               IconButton(
                                 tooltip: 'Casuale',
                                 icon: const Icon(Icons.shuffle),
-                                onPressed: songs.isEmpty
-                                    ? null
-                                    : () => _play(songs, shuffle: true),
+                                onPressed: () => _play(songs, shuffle: true),
                               ),
                               IconButton(
                                 tooltip: 'Accoda',
