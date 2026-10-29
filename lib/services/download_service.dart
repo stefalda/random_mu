@@ -9,11 +9,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:random_mu/client/subsonic_client.dart';
 import 'package:random_mu/client/subsonic_models.dart';
+import 'package:random_mu/services/browse_cache.dart';
 import 'package:random_mu/services/download_models.dart';
+import 'package:audio_service/audio_service.dart';
+import 'package:random_mu/client/audio_player_handler.dart';
 
 /// Manages offline downloads: queue, progress, storage, persistence.
 class DownloadService extends ChangeNotifier {
   final SubsonicClient client;
+
+  /// Persistent Android Auto browse metadata, primed on completion.
+  final BrowseCache browseCache;
 
   List<DownloadItem> _queue = [];
   StorageInfo _storageInfo = const StorageInfo();
@@ -22,7 +28,7 @@ class DownloadService extends ChangeNotifier {
   static const int maxConcurrent = 2;
   final Set<String> _activeDownloads = {};
 
-  DownloadService({required this.client}) {
+  DownloadService({required this.client, this.browseCache = const BrowseCache()}) {
     _loadState();
   }
 
@@ -91,6 +97,7 @@ class DownloadService extends ChangeNotifier {
       orElse: () => throw Exception('Item not found'),
     );
     await _deleteItemFiles(item);
+    await _removeCachedBrowseNodes(item);
     _queue.removeWhere((i) => i.id == itemId);
     _saveState();
     notifyListeners();
@@ -113,9 +120,12 @@ class DownloadService extends ChangeNotifier {
   Future<void> clearAll() async {
     for (final item in _queue) {
       await _deleteItemFiles(item);
+      await _removeCachedBrowseNodes(item);
     }
     _queue.clear();
     await _clearMetadataCache();
+    await browseCache.clear();
+    _invalidateBrowserCache();
     _saveState();
     notifyListeners();
   }
@@ -257,6 +267,7 @@ class DownloadService extends ChangeNotifier {
         status: DownloadStatus.completed,
         progress: 1.0,
       );
+      await _primeBrowseCache(_queue[index], songs);
       _saveState();
       notifyListeners();
     } catch (e) {
@@ -277,6 +288,86 @@ class DownloadService extends ChangeNotifier {
           'Failed to download ${song.title}: HTTP ${response.statusCode}');
     }
     return response.bodyBytes;
+  }
+
+  // --- Android Auto browse metadata ---
+
+  /// Caches the browse nodes of a finished download so the tree works offline.
+  Future<void> _primeBrowseCache(DownloadItem item, List<Song> songs) async {
+    final songItems = songs.map(_songToMediaItem).toList();
+    final nodeId = _browseNodeId(item);
+    await browseCache.saveNode(nodeId, songItems);
+
+    final categoryId = _browseCategoryId(item);
+    if (categoryId != null) {
+      await browseCache.upsertInCategory(
+        categoryId,
+        MediaItem(
+          id: nodeId,
+          title: item.title,
+          playable: false,
+        ),
+      );
+    }
+
+    _invalidateBrowserCache();
+  }
+
+  Future<void> _removeCachedBrowseNodes(DownloadItem item) async {
+    final nodeId = _browseNodeId(item);
+    await browseCache.removeNode(nodeId);
+    final categoryId = _browseCategoryId(item);
+    if (categoryId != null) {
+      await browseCache.removeFromCategory(categoryId, nodeId);
+    }
+    _invalidateBrowserCache();
+  }
+
+  /// Browse node id for a download item (favorites use the category itself).
+  String _browseNodeId(DownloadItem item) {
+    switch (item.type) {
+      case DownloadItemType.playlist:
+        return 'playlist-${item.sourceId}';
+      case DownloadItemType.album:
+        return 'album-${item.sourceId}';
+      case DownloadItemType.artist:
+        return 'artist-${item.sourceId}';
+      case DownloadItemType.favorites:
+        return favoritesCategoryId;
+    }
+  }
+
+  /// Parent category of the item in the browse tree, null for favorites.
+  String? _browseCategoryId(DownloadItem item) {
+    switch (item.type) {
+      case DownloadItemType.playlist:
+        return playlistsCategoryId;
+      case DownloadItemType.album:
+        return albumsCategoryId;
+      case DownloadItemType.artist:
+        return artistsCategoryId;
+      case DownloadItemType.favorites:
+        return null;
+    }
+  }
+
+  MediaItem _songToMediaItem(Song song) {
+    return MediaItem(
+      id: song.id,
+      title: song.title,
+      artist: song.artist ?? '',
+      album: song.album ?? '',
+      duration: song.duration != null ? Duration(seconds: song.duration!) : null,
+      artUri: song.coverArt != null
+          ? Uri.parse(client.getCoverArtUrl(song.coverArt))
+          : null,
+      extras: song.coverArt != null ? {'coverArt': song.coverArt!} : null,
+      playable: true,
+    );
+  }
+
+  void _invalidateBrowserCache() {
+    AudioPlayerHandler.instance?.clearBrowseCache();
   }
 
   // --- Storage ---

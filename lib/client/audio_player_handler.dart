@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:random_mu/client/subsonic_client.dart';
 import 'package:random_mu/client/subsonic_models.dart';
+import 'package:random_mu/services/browse_cache.dart';
 import 'package:random_mu/services/player_service.dart';
 
 /// The root ID for Android Auto browsing.
@@ -34,6 +35,9 @@ class AudioPlayerHandler extends BaseAudioHandler
 
   /// Global reference so providers can wire the PlayerService after init.
   static AudioPlayerHandler? instance;
+
+  /// Persistent browse metadata, so the tree survives restarts and offline use.
+  final BrowseCache _persistentCache = const BrowseCache();
 
   AudioPlayerHandler() {
     instance = this;
@@ -110,48 +114,66 @@ class AudioPlayerHandler extends BaseAudioHandler
   @override
   Future<List<MediaItem>> getChildren(String parentMediaId,
       [Map<String, dynamic>? options]) async {
-    if (_browseCache.containsKey(parentMediaId)) {
-      return _browseCache[parentMediaId]!;
-    }
+    final inMemory = _browseCache[parentMediaId];
+    if (inMemory != null) return inMemory;
+
+    List<MediaItem> children = const [];
+    var loadedFromNetwork = false;
 
     final ps = _playerService;
-    if (ps == null) return [];
+    if (parentMediaId == rootId) {
+      // Static node, no client needed.
+      children = _buildRootCategories();
+      loadedFromNetwork = true;
+    } else if (ps != null) {
+      try {
+        children = await _loadChildrenFromNetwork(ps, parentMediaId);
+        loadedFromNetwork = children.isNotEmpty;
+      } catch (error) {
+        debugPrint('Android Auto: cannot load children of $parentMediaId: $error');
+      }
+    }
 
-    List<MediaItem> children;
-    switch (parentMediaId) {
-      case rootId:
-        children = _buildRootCategories();
-        break;
-      case playlistsCategoryId:
-        children = await _buildPlaylists(ps);
-        break;
-      case artistsCategoryId:
-        children = await _buildArtists(ps);
-        break;
-      case albumsCategoryId:
-        children = await _buildAlbums(ps);
-        break;
-      case favoritesCategoryId:
-        children = await _buildFavorites(ps);
-        break;
-      default:
-        if (parentMediaId.startsWith('playlist-')) {
-          final playlistId = parentMediaId.substring('playlist-'.length);
-          children = await _buildPlaylistSongs(ps, playlistId);
-        } else if (parentMediaId.startsWith('artist-')) {
-          final artistId = parentMediaId.substring('artist-'.length);
-          children = await _buildArtistSongs(ps, artistId);
-        } else if (parentMediaId.startsWith('album-')) {
-          final albumId = parentMediaId.substring('album-'.length);
-          children = await _buildAlbumSongs(ps, albumId);
-        } else {
-          children = [];
-        }
+    if (!loadedFromNetwork) {
+      // Offline or failed fetch: fall back to what we cached before.
+      children = await _persistentCache.loadNode(parentMediaId) ?? const [];
+    } else if (parentMediaId != rootId) {
+      await _persistentCache.saveNode(parentMediaId, children);
     }
 
     _browseCache[parentMediaId] = children;
     _registerChildren(parentMediaId, children);
     return children;
+  }
+
+  Future<List<MediaItem>> _loadChildrenFromNetwork(
+      PlayerService ps, String parentMediaId) async {
+    switch (parentMediaId) {
+      case rootId:
+        return _buildRootCategories();
+      case playlistsCategoryId:
+        return _buildPlaylists(ps);
+      case artistsCategoryId:
+        return _buildArtists(ps);
+      case albumsCategoryId:
+        return _buildAlbums(ps);
+      case favoritesCategoryId:
+        return _buildFavorites(ps);
+      default:
+        if (parentMediaId.startsWith('playlist-')) {
+          final playlistId = parentMediaId.substring('playlist-'.length);
+          return _buildPlaylistSongs(ps, playlistId);
+        }
+        if (parentMediaId.startsWith('artist-')) {
+          final artistId = parentMediaId.substring('artist-'.length);
+          return _buildArtistSongs(ps, artistId);
+        }
+        if (parentMediaId.startsWith('album-')) {
+          final albumId = parentMediaId.substring('album-'.length);
+          return _buildAlbumSongs(ps, albumId);
+        }
+        return const [];
+    }
   }
 
   void _registerChildren(String parentId, List<MediaItem> children) {
