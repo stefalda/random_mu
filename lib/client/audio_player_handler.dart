@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:random_mu/client/subsonic_client.dart';
 import 'package:random_mu/client/subsonic_models.dart';
@@ -24,6 +25,12 @@ class AudioPlayerHandler extends BaseAudioHandler
 
   /// Cached browse metadata for offline AA browsing.
   final Map<String, List<MediaItem>> _browseCache = {};
+
+  /// Every item returned by [getChildren], indexable by id.
+  final Map<String, MediaItem> _itemCache = {};
+
+  /// The browse node that produced each item (used to rebuild a container).
+  final Map<String, String> _itemParent = {};
 
   /// Global reference so providers can wire the PlayerService after init.
   static AudioPlayerHandler? instance;
@@ -143,7 +150,36 @@ class AudioPlayerHandler extends BaseAudioHandler
     }
 
     _browseCache[parentMediaId] = children;
+    _registerChildren(parentMediaId, children);
     return children;
+  }
+
+  void _registerChildren(String parentId, List<MediaItem> children) {
+    for (final child in children) {
+      _itemCache[child.id] = child;
+      _itemParent[child.id] = parentId;
+    }
+  }
+
+  /// The top-level category that owns [parentId], if any.
+  static String? categoryForParent(String? parentId) {
+    if (parentId == null) return null;
+    if (parentId == favoritesCategoryId) return favoritesCategoryId;
+    if (parentId.startsWith('playlist-')) return playlistsCategoryId;
+    if (parentId.startsWith('album-')) return albumsCategoryId;
+    if (parentId.startsWith('artist-')) return artistsCategoryId;
+    return null;
+  }
+
+  /// The Subsonic id inside a container node such as `playlist-<id>`.
+  static String? containerIdForParent(String? parentId) {
+    if (parentId == null) return null;
+    for (final prefix in ['playlist-', 'album-', 'artist-']) {
+      if (parentId.startsWith(prefix)) {
+        return parentId.substring(prefix.length);
+      }
+    }
+    return null;
   }
 
   List<MediaItem> _buildRootCategories() {
@@ -272,12 +308,69 @@ class AudioPlayerHandler extends BaseAudioHandler
       artUri: song.coverArt != null
           ? Uri.parse(client.getCoverArtUrl(song.coverArt))
           : null,
+      extras: song.coverArt != null ? {'coverArt': song.coverArt!} : null,
       playable: true,
     );
   }
 
   @override
   Future<void> play() => _playerService?.play() ?? Future<void>.value();
+
+  @override
+  Future<void> playFromMediaId(String mediaId,
+      [Map<String, dynamic>? extras]) async {
+    final item = _itemCache[mediaId];
+    if (item == null) return;
+    await playMediaItem(item);
+  }
+
+  @override
+  Future<void> playMediaItem(MediaItem mediaItem) async {
+    final ps = _playerService;
+    if (ps == null) return;
+
+    // Browse the item on demand so the AA now-playing sheet reacts on tap.
+    this.mediaItem.add(mediaItem);
+
+    final parentId = _itemParent[mediaItem.id];
+    try {
+      final songs = await ps.fetchContainerSongs(
+        categoryId: categoryForParent(parentId),
+        containerId: containerIdForParent(parentId),
+      );
+
+      if (songs.isEmpty) {
+        await ps.playSongsStartingAt(
+          [_songFromMediaItem(mediaItem)],
+          songId: mediaItem.id,
+          shuffle: false,
+        );
+        return;
+      }
+
+      await ps.playSongsStartingAt(
+        songs,
+        songId: mediaItem.id,
+        // Favorites keep server order (Requirement 5); containers are shuffled.
+        shuffle: parentId != favoritesCategoryId,
+      );
+    } catch (error) {
+      debugPrint('Android Auto: cannot start playback for ${mediaItem.id}: $error');
+    }
+  }
+
+  /// Minimal [Song] for an item selected without a known parent container.
+  Song _songFromMediaItem(MediaItem item) {
+    return Song(
+      id: item.id,
+      isDir: false,
+      title: item.title,
+      album: item.album,
+      artist: item.artist,
+      duration: item.duration?.inSeconds,
+      coverArt: item.extras?['coverArt'] as String?,
+    );
+  }
 
   @override
   Future<void> pause() => _playerService?.pause() ?? Future<void>.value();
@@ -312,5 +405,7 @@ class AudioPlayerHandler extends BaseAudioHandler
   /// Clears the browse cache (e.g., when refreshing).
   void clearBrowseCache() {
     _browseCache.clear();
+    _itemCache.clear();
+    _itemParent.clear();
   }
 }

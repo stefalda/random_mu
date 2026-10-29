@@ -118,15 +118,50 @@ class PlayerService extends ChangeNotifier {
 
   /// Return all the favorited songs and songs in favorited albums
   Future randomFavorites({int count = defaultCount}) async {
-    final searchResult = await client.getStarred();
-    final starredSongs = searchResult.songs;
-    for (Album album in searchResult.albums) {
-      final albumDetail = await client.getAlbum(album.id);
-      starredSongs.addAll(albumDetail.songs);
-      starredSongs.shuffle();
-    }
+    final starredSongs = await fetchFavoriteSongs();
     starredSongs.shuffle();
     await _enqueueSongs(starredSongs);
+  }
+
+  /// All favorited songs plus all songs of favorited albums.
+  Future<List<Song>> fetchFavoriteSongs() async {
+    final searchResult = await client.getStarred();
+    final songs = <Song>[...searchResult.songs];
+    for (final Album album in searchResult.albums) {
+      final albumDetail = await client.getAlbum(album.id);
+      songs.addAll(albumDetail.songs);
+    }
+    return songs;
+  }
+
+  /// Songs of the container identified by [categoryId] and [containerId].
+  Future<List<Song>> fetchContainerSongs(
+      {String? categoryId, String? containerId}) async {
+    if (categoryId == 'favorites') return fetchFavoriteSongs();
+    if (containerId == null) return [];
+    switch (categoryId) {
+      case 'playlists':
+        return client.getPlaylistSongs(containerId);
+      case 'albums':
+        return client.getSongsByAlbum(albumId: containerId);
+      case 'artists':
+        return client.getArtistSongsRandomized(containerId, count: null);
+      default:
+        return [];
+    }
+  }
+
+  /// Play [songs] starting at [songId].
+  ///
+  /// [shuffle] matches the app identity: containers are shuffled, favorites keep
+  /// their server order.
+  Future<void> playSongsStartingAt(List<Song> songs,
+      {required String songId, bool shuffle = true}) async {
+    if (songs.isEmpty) return;
+    final list = List<Song>.of(songs);
+    if (shuffle) list.shuffle();
+    final index = list.indexWhere((song) => song.id == songId);
+    await _enqueueSongs(list, songIndex: index < 0 ? 0 : index);
   }
 
   Future randomByArtist(
