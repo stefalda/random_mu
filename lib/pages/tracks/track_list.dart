@@ -18,6 +18,7 @@ class TrackList extends ConsumerWidget {
     required this.songs,
     required this.onPlay,
     this.showAlbum = false,
+    this.shrinkWrap = false,
     this.trailingBuilder,
   });
 
@@ -29,6 +30,9 @@ class TrackList extends ConsumerWidget {
   /// Shows the album name in the subtitle.
   final bool showAlbum;
 
+  /// Wraps the list to its content, for use inside another scroll view.
+  final bool shrinkWrap;
+
   /// Optional extra widget at the end of the row (e.g. a remove button).
   final Widget Function(BuildContext context, Song song, int index)?
       trailingBuilder;
@@ -38,6 +42,8 @@ class TrackList extends ConsumerWidget {
     final client = ref.read(playerServiceProvider).client;
 
     return ListView.separated(
+      shrinkWrap: shrinkWrap,
+      physics: shrinkWrap ? const NeverScrollableScrollPhysics() : null,
       itemCount: songs.length,
       separatorBuilder: (context, index) => const Divider(height: 1),
       itemBuilder: (context, index) {

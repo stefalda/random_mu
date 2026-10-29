@@ -31,19 +31,9 @@ class _FavoritesTabState extends ConsumerState<FavoritesTab> {
   Widget build(BuildContext context) {
     final client = ref.read(playerServiceProvider).client;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Header(title: 'Preferiti'),
-        actions: [
-          IconButton(
-            tooltip: 'Ricarica',
-            icon: const Icon(Icons.refresh),
-            onPressed: _reload,
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: FutureBuilder<SearchResult>(
+    // No Scaffold/AppBar here: this tab lives inside the library, which already
+    // provides the app bar and the tab bar.
+    return FutureBuilder<SearchResult>(
         future: _starred,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
@@ -66,14 +56,17 @@ class _FavoritesTabState extends ConsumerState<FavoritesTab> {
             return const Center(child: Text('Nessun preferito'));
           }
 
-          return ListView(
+          return RefreshIndicator(
+            onRefresh: () async => _reload(),
+            child: ListView(
             children: [
               if (starred.songs.isNotEmpty) ...[
                 const _SectionHeader('Brani'),
-                SizedBox(
-                  height: 320,
-                  child: TrackList(songs: starred.songs, showAlbum: true,
-                      onPlay: (index) => _play(starred.songs, index)),
+                TrackList(
+                  songs: starred.songs,
+                  showAlbum: true,
+                  shrinkWrap: true,
+                  onPlay: (index) => _play(starred.songs, index),
                 ),
               ],
               if (starred.albums.isNotEmpty) ...[
@@ -128,10 +121,10 @@ class _FavoritesTabState extends ConsumerState<FavoritesTab> {
                   ),
               ],
             ],
+            ),
           );
         },
-      ),
-    );
+      );
   }
 
   void _play(List<Song> songs, int index) {
@@ -156,14 +149,12 @@ class GenresTab extends ConsumerStatefulWidget {
 }
 
 class _GenresTabState extends ConsumerState<GenresTab> {
-  late final Future<List<Genre>> _genres =
+  late Future<List<Genre>> _genres =
       ref.read(playerServiceProvider).client.getGenres();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Header(title: 'Generi')),
-      body: FutureBuilder<List<Genre>>(
+    return FutureBuilder<List<Genre>>(
         future: _genres,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
@@ -182,7 +173,11 @@ class _GenresTabState extends ConsumerState<GenresTab> {
             return const Center(child: Text('Nessun genere'));
           }
           genres.sort((a, b) => a.name.compareTo(b.name));
-          return ListView.separated(
+          return RefreshIndicator(
+            onRefresh: () async => setState(() {
+              _genres = ref.read(playerServiceProvider).client.getGenres();
+            }),
+            child: ListView.separated(
             itemCount: genres.length,
             separatorBuilder: (context, index) => const Divider(height: 1),
             itemBuilder: (context, index) {
@@ -200,10 +195,10 @@ class _GenresTabState extends ConsumerState<GenresTab> {
                 ),
               );
             },
+            ),
           );
         },
-      ),
-    );
+      );
   }
 }
 
