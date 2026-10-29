@@ -18,7 +18,13 @@ class Header extends StatelessWidget {
             fit: BoxFit.contain,
           )),
       SizedBox(width: 20),
-      Text(title)
+      Flexible(
+        child: Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
     ]);
   }
 }

@@ -555,3 +555,71 @@ class Album {
   }
 }
 */
+
+/// A single line of lyrics.
+///
+/// [start] is the offset from the beginning of the track in milliseconds and is
+/// only set when the lyrics are synced.
+class LyricLine {
+  final int? start;
+  final String value;
+
+  LyricLine({this.start, required this.value});
+
+  factory LyricLine.fromJson(Map<String, dynamic> json) {
+    return LyricLine(
+      start: json['start'] as int?,
+      value: (json['value'] as String?) ?? '',
+    );
+  }
+}
+
+/// Structured lyrics from OpenSubsonic `getLyricsBySongId`.
+class StructuredLyrics {
+  final String? displayArtist;
+  final String? displayTitle;
+  final String? lang;
+  final bool synced;
+  final List<LyricLine> lines;
+
+  StructuredLyrics({
+    this.displayArtist,
+    this.displayTitle,
+    this.lang,
+    this.synced = false,
+    required this.lines,
+  });
+
+  factory StructuredLyrics.fromJson(Map<String, dynamic> json) {
+    final rawLines = json['line'] as List?;
+    return StructuredLyrics(
+      displayArtist: json['displayArtist'] as String?,
+      displayTitle: json['displayTitle'] as String?,
+      lang: json['lang'] as String?,
+      synced: json['synced'] as bool? ?? false,
+      lines: (rawLines ?? const [])
+          .map((line) => LyricLine.fromJson(line as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  /// True when the lines carry timing information.
+  bool get hasTimings => lines.any((line) => line.start != null);
+}
+
+/// Plain, untimed lyrics from `getLyrics`.
+class Lyrics {
+  final String? artist;
+  final String? title;
+  final String value;
+
+  Lyrics({this.artist, this.title, required this.value});
+
+  factory Lyrics.fromJson(Map<String, dynamic> json) {
+    return Lyrics(
+      artist: json['artist'] as String?,
+      title: json['title'] as String?,
+      value: (json['value'] as String?) ?? '',
+    );
+  }
+}

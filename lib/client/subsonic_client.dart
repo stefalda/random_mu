@@ -21,9 +21,15 @@ class SubsonicClient {
     this.clientName = 'DartClient',
   });
 
+  /// Performs a Subsonic API call.
+  ///
+  /// Read endpoints use `GET` with query parameters. Mutating endpoints must use
+  /// `POST` (the API requires it, and OpenSubsonic advertises `formPost`), with
+  /// the parameters in a form body so repeated keys such as `songIdToAdd` and
+  /// `songIndexToRemove` survive.
   Future<Map<String, dynamic>> _makeRequest(String endpoint,
-      [Map<String, String>? params]) async {
-    final queryParams = {
+      [Map<String, dynamic>? params, bool post = false]) async {
+    final allParams = <String, dynamic>{
       'u': username,
       'p': password,
       'v': version,
@@ -32,10 +38,28 @@ class SubsonicClient {
       ...?params,
     };
 
-    final uri = Uri.parse('$baseUrl/rest/$endpoint')
-        .replace(queryParameters: queryParams);
+    final uri = Uri.parse('$baseUrl/rest/$endpoint');
 
-    final response = await http.get(uri);
+    final http.Response response;
+    if (post) {
+      response = await http.post(
+        uri,
+        headers: const {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: _encodeForm(allParams),
+      );
+    } else {
+      response = await http.get(uri.replace(
+        queryParameters: {
+          for (final entry in allParams.entries)
+            if (entry.value is Iterable)
+              entry.key: (entry.value as Iterable).first.toString()
+            else
+              entry.key: entry.value.toString(),
+        },
+      ));
+    }
 
     if (response.statusCode != 200) {
       throw Exception('Failed to make request: ${response.statusCode}');
@@ -53,6 +77,21 @@ class SubsonicClient {
     }
 
     return subsonicResponse;
+  }
+
+  /// Encodes [params] as a form body, repeating keys for list values.
+  String _encodeForm(Map<String, dynamic> params) {
+    final parts = <String>[];
+    params.forEach((key, value) {
+      if (value == null) return;
+      final values = value is Iterable ? value : [value];
+      for (final item in values) {
+        parts.add(
+          '${Uri.encodeQueryComponent(key)}=${Uri.encodeQueryComponent(item.toString())}',
+        );
+      }
+    });
+    return parts.join('&');
   }
 
   // Music Library Methods
@@ -213,6 +252,102 @@ class SubsonicClient {
     final response = await _makeRequest('getPlaylist.view', {'id': id});
     final playlistWithSongs = PlaylistWithSongs.fromJson(response['playlist']);
     return playlistWithSongs.songs;
+  }
+
+  /// Creates a playlist, optionally seeded with [songIds].
+  ///
+  /// Passing [playlistId] updates an existing playlist instead (the server then
+  /// appends [songIds] to it).
+  Future<Playlist> createPlaylist({
+    String? name,
+    String? playlistId,
+    List<String> songIds = const [],
+  }) async {
+    final response = await _makeRequest(
+      'createPlaylist.view',
+      {
+        if (name != null) 'name': name,
+        if (playlistId != null) 'playlistId': playlistId,
+        if (songIds.isNotEmpty) 'songId': songIds,
+      },
+      true,
+    );
+    return Playlist.fromJson(response['playlist'] as Map<String, dynamic>);
+  }
+
+  /// Updates a playlist: rename, edit metadata, append or remove songs.
+  ///
+  /// Removal is index based (`songIndexToRemove`, as positions in the current
+  /// playlist) because the Subsonic API has no "remove by song id".
+  Future<void> updatePlaylist(
+    String playlistId, {
+    String? name,
+    String? comment,
+    bool? public,
+    List<String> addSongIds = const [],
+    List<int> removeSongIndexes = const [],
+  }) async {
+    await _makeRequest(
+      'updatePlaylist.view',
+      {
+        'playlistId': playlistId,
+        if (name != null) 'name': name,
+        if (comment != null) 'comment': comment,
+        if (public != null) 'public': public.toString(),
+        if (addSongIds.isNotEmpty) 'songIdToAdd': addSongIds,
+        if (removeSongIndexes.isNotEmpty)
+          'songIndexToRemove': [
+            for (final index in removeSongIndexes) '$index',
+          ],
+      },
+      true,
+    );
+  }
+
+  Future<void> deletePlaylist(String playlistId) async {
+    await _makeRequest('deletePlaylist.view', {'id': playlistId}, true);
+  }
+
+  // Lyrics methods
+
+  /// Structured lyrics for [songId] (OpenSubsonic `getLyricsBySongId`).
+  ///
+  /// Navidrome returns `synced: true` plus a `start` offset per line when it has
+  /// timed lyrics; older servers answer with an empty list or an error.
+  Future<List<StructuredLyrics>> getLyricsBySongId(String songId) async {
+    try {
+      final response =
+          await _makeRequest('getLyricsBySongId.view', {'id': songId});
+      final lyricsList = response['lyricsList'];
+      final structured = lyricsList is Map
+          ? lyricsList['structuredLyrics'] as List?
+          : null;
+      if (structured == null) return const [];
+      return structured
+          .map((entry) =>
+              StructuredLyrics.fromJson(entry as Map<String, dynamic>))
+          .where((lyrics) => lyrics.lines.isNotEmpty)
+          .toList();
+    } catch (_) {
+      // Not every server implements the OpenSubsonic endpoint.
+      return const [];
+    }
+  }
+
+  /// Plain lyrics looked up by artist and title (`getLyrics`, Subsonic 1.2.0).
+  Future<Lyrics?> getLyrics({String? artist, String? title}) async {
+    try {
+      final response = await _makeRequest('getLyrics.view', {
+        if (artist != null && artist.isNotEmpty) 'artist': artist,
+        if (title != null && title.isNotEmpty) 'title': title,
+      });
+      final lyrics = response['lyrics'];
+      if (lyrics is! Map) return null;
+      final parsed = Lyrics.fromJson(lyrics.cast<String, dynamic>());
+      return parsed.value.trim().isEmpty ? null : parsed;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<List<Song>> getArtistSongsRandomized(String artistId,

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/main.dart';
 import 'package:random_mu/pages/download_button.dart';
 import 'package:random_mu/pages/player_page.dart';
+import 'package:random_mu/pages/playlist_actions.dart';
 import 'package:random_mu/services/download_models.dart';
 
 class PlaylistsList extends ConsumerWidget {
@@ -132,10 +133,51 @@ class PlaylistsList extends ConsumerWidget {
                           playlist.name,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
-                        trailing: DownloadButton(
-                          type: DownloadItemType.playlist,
-                          sourceId: playlist.id,
-                          title: playlist.name,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            DownloadButton(
+                              type: DownloadItemType.playlist,
+                              sourceId: playlist.id,
+                              title: playlist.name,
+                            ),
+                            PopupMenuButton<String>(
+                              tooltip: 'Gestisci playlist',
+                              onSelected: (value) async {
+                                if (value == 'rename') {
+                                  final name = await showPlaylistNameDialog(
+                                    context,
+                                    title: 'Rinomina playlist',
+                                    initialValue: playlist.name,
+                                  );
+                                  if (name == null || !context.mounted) return;
+                                  if (name == playlist.name) return;
+                                  await renamePlaylist(context, ref, playlist,
+                                      name: name);
+                                } else if (value == 'delete') {
+                                  await deletePlaylist(context, ref, playlist);
+                                }
+                              },
+                              itemBuilder: (context) => const [
+                                PopupMenuItem(
+                                  value: 'rename',
+                                  child: ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    leading: Icon(Icons.edit_outlined),
+                                    title: Text('Rinomina'),
+                                  ),
+                                ),
+                                PopupMenuItem(
+                                  value: 'delete',
+                                  child: ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    leading: Icon(Icons.delete_outline),
+                                    title: Text('Elimina'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                         onTap: () async {
                           // Handle artist selection

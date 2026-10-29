@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:random_mu/main.dart';
+import 'package:random_mu/pages/playlist_actions.dart';
 
 class QueueList extends ConsumerWidget {
   const QueueList({super.key});
@@ -70,6 +71,12 @@ class QueueList extends ConsumerWidget {
               onTap: () {
                 audioPlayer.seek(Duration.zero, index: index);
               },
+              onLongPress: () => showAddToPlaylistSheet(
+                context,
+                ref,
+                songIds: [metadata.id],
+                songTitle: metadata.title,
+              ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

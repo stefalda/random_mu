@@ -6,8 +6,10 @@ import 'package:flutter/foundation.dart';
 import 'package:inject_x/inject_x.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:random_mu/client/just_audio_client.dart';
+import 'package:random_mu/client/audio_player_handler.dart';
 import 'package:random_mu/client/subsonic_client.dart';
 import 'package:random_mu/client/subsonic_models.dart';
+import 'package:random_mu/services/browse_cache.dart';
 import 'package:random_mu/services/download_service.dart';
 import 'package:random_mu/services/offline_source.dart';
 import 'package:random_mu/services/preference_service.dart';
@@ -274,6 +276,49 @@ class PlayerService extends ChangeNotifier {
     // Store in preferences the current audio sources...
     final PreferenceService ps = inject<PreferenceService>();
     await ps.storeLatestPlaylist(songs);
+  }
+
+  // --- Playlist mutations -------------------------------------------------
+  //
+  // Navidrome stays the source of truth: these calls write through the Subsonic
+  // API and then drop the Android Auto browse caches, which otherwise keep
+  // serving the old playlist name/song list (in memory for 5 minutes and, for
+  // downloaded playlists, from the persistent offline copy).
+
+  Future<Playlist> createPlaylist(String name,
+      {List<String> songIds = const []}) async {
+    final playlist =
+        await client.createPlaylist(name: name, songIds: songIds);
+    await _invalidatePlaylistCaches();
+    return playlist;
+  }
+
+  Future<void> addSongsToPlaylist(String playlistId,
+      List<String> songIds) async {
+    if (songIds.isEmpty) return;
+    await client.updatePlaylist(playlistId, addSongIds: songIds);
+    await _invalidatePlaylistCaches(playlistId: playlistId);
+  }
+
+  Future<void> renamePlaylist(String playlistId, String name) async {
+    await client.updatePlaylist(playlistId, name: name);
+    await _invalidatePlaylistCaches(playlistId: playlistId);
+  }
+
+  Future<void> deletePlaylist(String playlistId) async {
+    await client.deletePlaylist(playlistId);
+    await _invalidatePlaylistCaches(playlistId: playlistId);
+  }
+
+  /// Drops every cached copy of the playlist list and, when given, of one
+  /// playlist node (its name and its song list).
+  Future<void> _invalidatePlaylistCaches({String? playlistId}) async {
+    const cache = BrowseCache();
+    await cache.removeNode(playlistsCategoryId);
+    if (playlistId != null) {
+      await cache.removeNode('playlist-$playlistId');
+    }
+    AudioPlayerHandler.instance?.clearBrowseCache();
   }
 
   Future<String> fetchData() async {
