@@ -16,6 +16,19 @@ class DownloadsPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Downloads'),
         actions: [
+          if (downloadService.queue.any((item) =>
+              item.status == DownloadStatus.queued ||
+              item.status == DownloadStatus.downloading))
+            IconButton(
+              icon: Icon(
+                  downloadService.isPaused ? Icons.play_arrow : Icons.pause),
+              tooltip: downloadService.isPaused
+                  ? 'Resume downloads'
+                  : 'Pause downloads',
+              onPressed: () => downloadService.isPaused
+                  ? downloadService.resumeQueue()
+                  : downloadService.pauseQueue(),
+            ),
           const DownloadButton(
             type: DownloadItemType.favorites,
             sourceId: 'favorites',

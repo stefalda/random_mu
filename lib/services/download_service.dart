@@ -47,6 +47,7 @@ class DownloadService extends ChangeNotifier {
   final Completer<void> _ready = Completer<void>();
   bool _processing = false;
   bool _limitBlocked = false;
+  bool _paused = false;
 
   static const int maxConcurrent = 2;
 
@@ -78,6 +79,24 @@ class DownloadService extends ChangeNotifier {
 
   /// True when queued work is waiting for space to be freed.
   bool get isBlockedByStorageLimit => _limitBlocked;
+
+  /// True when the user paused the queue from the notification.
+  bool get isPaused => _paused;
+
+  /// Stops starting new items; the item currently in flight finishes its song.
+  void pauseQueue() {
+    if (_paused) return;
+    _paused = true;
+    notifyListeners();
+  }
+
+  /// Resumes queue processing.
+  void resumeQueue() {
+    if (!_paused) return;
+    _paused = false;
+    notifyListeners();
+    unawaited(_processQueue());
+  }
 
   /// Queue item for a library item, or null when it was never enqueued.
   DownloadItem? itemFor({
@@ -133,6 +152,7 @@ class DownloadService extends ChangeNotifier {
     _limitBlocked = _limitBlocked && !_storageInfo.isLimitReached;
     await _saveState();
     notifyListeners();
+    unawaited(notifications?.ensurePermission() ?? Future<void>.value());
     unawaited(_processQueue());
   }
 
@@ -217,7 +237,7 @@ class DownloadService extends ChangeNotifier {
   }
 
   DownloadItem? _nextQueuedItem() {
-    if (_limitBlocked) return null;
+    if (_limitBlocked || _paused) return null;
     for (final item in _queue) {
       if (item.status == DownloadStatus.queued &&
           !_activeDownloads.contains(item.id)) {

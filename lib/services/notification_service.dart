@@ -25,6 +25,7 @@ class NotificationService {
   final List<DownloadItem> _pendingCompletions = [];
   Timer? _batchTimer;
   bool _ready = false;
+  bool _permissionRequested = false;
   int _nextId = 0;
 
   NotificationService({
@@ -34,7 +35,8 @@ class NotificationService {
 
   bool get isReady => _ready;
 
-  /// Initialises the plugin, its channel and the Android 13+ permission.
+  /// Initialises the plugin and its channel. Never asks for a permission here:
+  /// the Android 13+ prompt is requested lazily on the first download.
   Future<void> init() async {
     try {
       const settings = InitializationSettings(
@@ -51,11 +53,24 @@ class NotificationService {
           importance: Importance.low,
         ),
       );
-      await android?.requestNotificationsPermission();
       _ready = true;
     } catch (error) {
       debugPrint('Download notifications unavailable: $error');
       _ready = false;
+    }
+  }
+
+  /// Asks for notification permission once, when the user starts downloading.
+  Future<void> ensurePermission() async {
+    if (!_ready || _permissionRequested) return;
+    _permissionRequested = true;
+    try {
+      await _plugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.requestNotificationsPermission();
+    } catch (error) {
+      debugPrint('Cannot request notification permission: $error');
     }
   }
 

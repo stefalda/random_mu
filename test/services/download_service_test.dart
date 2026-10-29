@@ -312,6 +312,27 @@ void main() {
     expect((saved.single as Map)['sourceId'], 'pl-1');
   });
 
+  test('pausing the queue stops new items until resumed', () async {
+    final service = buildService(songs: {
+      'pl-1': [_song('s1')],
+    });
+    await service.ready;
+
+    service.pauseQueue();
+    await service.enqueuePlaylist('pl-1', 'Playlist');
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+
+    expect(service.isPaused, isTrue);
+    expect(service.songAttempts, 0);
+    expect(service.queue.single.status, DownloadStatus.queued);
+
+    service.resumeQueue();
+    final item = service.queue.single;
+    await _waitForTerminal(service, item.id);
+
+    expect(service.queue.single.status, DownloadStatus.completed);
+  });
+
   test('deleting an item removes its files and metadata', () async {
     final service = buildService(songs: {
       'pl-1': [_song('s1'), _song('s2')],
