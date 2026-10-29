@@ -485,6 +485,16 @@ class PlayerService extends ChangeNotifier {
     return playlist;
   }
 
+  /// Removes the tracks at [indexes] (positions in the playlist order) from
+  /// [playlistId]. The Subsonic API removes by index, not by song id.
+  Future<void> removeSongsFromPlaylist(
+      String playlistId, List<int> indexes) async {
+    if (indexes.isEmpty) return;
+    final sorted = List<int>.of(indexes)..sort();
+    await client.updatePlaylist(playlistId, removeSongIndexes: sorted);
+    await _invalidatePlaylistCaches(playlistId: playlistId);
+  }
+
   Future<void> addSongsToPlaylist(String playlistId,
       List<String> songIds) async {
     if (songIds.isEmpty) return;

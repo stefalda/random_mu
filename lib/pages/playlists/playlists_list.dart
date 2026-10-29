@@ -1,13 +1,11 @@
 // Create the ConsumerWidget
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/main.dart';
 import 'package:random_mu/pages/download_button.dart';
 import 'package:random_mu/pages/list_filter_field.dart';
-import 'package:random_mu/pages/player_page.dart';
 import 'package:random_mu/pages/playlist_actions.dart';
+import 'package:random_mu/pages/playlists/playlist_detail_page.dart';
 import 'package:random_mu/services/download_models.dart';
 
 class PlaylistsList extends ConsumerWidget {
@@ -157,23 +155,16 @@ class PlaylistsList extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        onTap: () async {
-                          // Handle artist selection
-                          if (context.mounted) {
-                            ref.read(loadingProvider.notifier).setLoading(true);
-                            unawaited(Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const PlayerPage(),
-                                )));
-                            final playerService =
-                                ref.read(playerServiceProvider);
-                            await playerService.playPlaylist(playlist.id);
-                            ref
-                                .read(loadingProvider.notifier)
-                                .setLoading(false);
-                          }
-                        }),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PlaylistDetailPage(
+                              playlistId: playlist.id,
+                              playlistName: playlist.name,
+                            ),
+                          ),
+                        ),
+                    ),
                   );
                 },
               );
