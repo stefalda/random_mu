@@ -150,6 +150,23 @@ void main() {
     expect(service.storageInfo.usedBytes, 20);
   });
 
+  test('resolves a downloaded song even if its metadata record is gone',
+      () async {
+    final service = buildService(songs: {
+      'pl-1': [_song('s1')],
+    });
+    await service.ready;
+
+    await service.enqueuePlaylist('pl-1', 'Playlist');
+    await _waitForTerminal(service, service.queue.single.id);
+
+    // Simulate a record lost to a crash between rename and metadata write.
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('song_s1');
+
+    expect(await service.getLocalPath('s1'), '${tempDir.path}/s1.mp3');
+  });
+
   test('processes queued items in FIFO order', () async {
     final service = buildService(songs: {
       'pl-1': [_song('s1')],

@@ -53,6 +53,11 @@ class DownloadService extends ChangeNotifier {
   /// Items deleted while their download was running: the in-flight task must
   /// stop writing files instead of continuing against a removed queue entry.
   final Set<String> _cancelledDownloads = {};
+
+  /// songId -> full path of the downloaded file. Rebuilt whenever the storage
+  /// directory is scanned, so playback does not hit SharedPreferences per song
+  /// and stale metadata cannot hide an existing file.
+  final Map<String, String> _localFiles = {};
   final Completer<void> _ready = Completer<void>();
   bool _processing = false;
   bool _limitBlocked = false;
@@ -592,10 +597,15 @@ class DownloadService extends ChangeNotifier {
     final dir = await _getStorageDir();
     if (dir == null) return;
     int totalBytes = 0;
+    _localFiles.clear();
     await for (final entity in dir.list()) {
-      if (entity is io.File) {
-        totalBytes += await entity.length();
-      }
+      if (entity is! io.File) continue;
+      totalBytes += await entity.length();
+      if (entity.path.endsWith('.part')) continue;
+      final name = entity.uri.pathSegments.last;
+      final dot = name.lastIndexOf('.');
+      final songId = dot > 0 ? name.substring(0, dot) : name;
+      _localFiles[songId] = entity.path;
     }
     _storageInfo = _storageInfo.copyWith(usedBytes: totalBytes);
   }
@@ -665,8 +675,15 @@ class DownloadService extends ChangeNotifier {
     }
   }
 
-  /// Get the local file path for a song ID, or null if not downloaded.
+  /// Local file for a song ID, or null when it was not downloaded.
+  ///
+  /// Playback uses this to prefer the offline copy over the stream URL.
   Future<String?> getLocalPath(String songId) async {
+    final indexed = _localFiles[songId];
+    if (indexed != null) return indexed;
+
+    // Fallback for the first moments after startup, before the directory scan
+    // has completed (or if the index was invalidated).
     final prefs = await SharedPreferences.getInstance();
     final data = prefs.getString('song_$songId');
     if (data == null) return null;
@@ -679,7 +696,10 @@ class DownloadService extends ChangeNotifier {
     if (dir == null) return null;
 
     final file = io.File('${dir.path}/$filePath');
-    if (await file.exists()) return file.path;
+    if (await file.exists()) {
+      _localFiles[songId] = file.path;
+      return file.path;
+    }
     return null;
   }
 

@@ -9,6 +9,7 @@ import 'package:random_mu/client/just_audio_client.dart';
 import 'package:random_mu/client/subsonic_client.dart';
 import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/services/download_service.dart';
+import 'package:random_mu/services/offline_source.dart';
 import 'package:random_mu/services/preference_service.dart';
 
 const defaultCount = 50;
@@ -225,21 +226,16 @@ class PlayerService extends ChangeNotifier {
     final audioSources = await Future.wait(songs.map((song) async {
       final mediaItem = createMediaItem(song, client);
 
-      // Check for local file (offline fallback)
-      Uri sourceUri;
-      if (ds != null) {
-        final localPath = await ds.getLocalPath(song.id);
-        if (localPath != null) {
-          debugPrint('Offline playback: ${song.title} -> $localPath');
-          sourceUri = Uri.file(localPath);
-        } else {
-          sourceUri = Uri.parse(mediaItem.extras!['streamUrl']);
-        }
-      } else {
-        sourceUri = Uri.parse(mediaItem.extras!['streamUrl']);
+      // Downloaded songs play from disk, everything else streams.
+      final localPath = ds == null ? null : await ds.getLocalPath(song.id);
+      if (localPath != null) {
+        debugPrint('Offline playback: ${song.title} -> $localPath');
       }
 
-      return AudioSource.uri(sourceUri, tag: mediaItem);
+      return AudioSource.uri(
+        resolveSongUri(mediaItem: mediaItem, localPath: localPath),
+        tag: mediaItem,
+      );
     }).toList());
     debugPrint("AudioSources enqueued: ${audioSources.length}");
     // Set up a playlist with metadata.

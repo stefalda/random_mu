@@ -14,6 +14,10 @@ song selection with options such as:
 - **Random by Albums**
 - **Random by Playing**
 
+It also works while driving: **Android Auto** support with a browsable library,
+and an **offline mode** where playlists, albums, artists and favorites can be
+downloaded and played without a network connection.
+
 Currently, the app has been tested on **Web** and **Android** platforms, with
 **Navidrome** as the Subsonic-compatible server.
 
@@ -30,6 +34,12 @@ optimized.
   artist, playlist, or favorites.
 - **Subsonic API Integration**: Fully integrates with the Subsonic API
   (Navidrome supported).
+- **Android Auto**: browse Playlists, Artists, Albums and Favorites on the car
+  screen, with now-playing metadata, artwork and a "Play Similar" action.
+- **Offline downloads**: download playlists, albums, artists or all favorites and
+  keep listening with no connection.
+- **Local-first playback**: downloaded songs are played from the phone, only the
+  missing ones are streamed.
 - **Cross-Platform**: Currently tested on Web and Android.
 
 ## Web
@@ -48,6 +58,8 @@ while the android apks can be downloaded from the
 1. Flutter 3.x or later installed on your machine.
 2. A running **Navidrome** instance or any compatible Subsonic server (I guess).
 3. Access to your Subsonic server credentials (username and password).
+4. For Android builds: Android SDK 36+ with the JDK bundled with Android Studio
+   (the project uses Gradle 9 / AGP 9 / Java 17 bytecode).
 
 ### Clone the Repository
 
@@ -79,7 +91,15 @@ For **Android**:
 flutter run -d android
 ```
 
-### Features and Usage
+### Checks
+
+```bash
+flutter analyze                                     # must stay clean
+flutter test                                        # unit + widget tests
+flutter build apk --debug                           # Android build
+```
+
+## Features and Usage
 
 - **All Random**: Play a random song from your entire music library (limited to
   50 songs).
@@ -88,8 +108,148 @@ flutter run -d android
 - **Random by Playlist**: Select a random song from your playlists.
 - **Random by Favorites**: Play a random song from your favorite tracks.
 - **Random by Playing**: Play a random song from the current playng song
+- **Downloads**: download content for offline playback, see below.
 
-### Supported Platforms
+## Android Auto
+
+The car UI is served by `audio_service`, which implements Android's
+`MediaBrowserService`; the browse tree is defined in Dart
+(`lib/client/audio_player_handler.dart`) and needs no native media browser code.
+
+Root categories:
+
+```
+Root
+├── Playlists  → songs of the playlist
+├── Artists    → all songs by the artist
+├── Albums     → tracks of the album
+└── Favorites  → starred songs + songs of starred albums
+```
+
+Behaviour:
+
+- Tapping a song inside a playlist, album or artist **shuffles the whole
+  container** and starts from the song you tapped (the app is a "random" player).
+  Favorites keep the server order.
+- The overflow menu exposes **Play Similar** ("Random by Playing"): it replaces
+  the queue with similar songs and starts from the current one.
+- Now playing shows title, artist, album, artwork and progress; play/pause,
+  skip and seek use the `MediaSession` managed by `audio_service`.
+- Browsing works **offline** for content that was downloaded: metadata is cached
+  (see below) and playback falls back to the local files.
+
+## Offline Downloads
+
+Everything is managed by `DownloadService`
+(`lib/services/download_service.dart`) and surfaced in three places: a download
+icon on the library pages, a **Downloads** page, and system notifications.
+
+### What you can download
+
+- a **playlist** (download icon on the Playlists page),
+- an **album** (download icon on the Albums page),
+- an **artist**, meaning all songs by that artist (Artists page),
+- **all favorites** (the cloud icon in the Downloads page app bar).
+
+### Queue behaviour
+
+- Items are processed **FIFO**, at most **2 at a time**.
+- Each song is fetched in its **original format** (no transcoding) and written to
+  the app's private storage: `getApplicationDocumentsDirectory()/offline_music/`.
+- Downloads run to a `<songId>.<ext>.part` file that is renamed only on success,
+  so an interrupted download never leaves a corrupt song behind. `.part` leftovers
+  from a crash are removed at startup.
+- A failing song is retried **3 times with backoff (5s, 15s, 45s)**; after that
+  the item is marked *failed* with the error and can be retried by tapping the
+  red icon (library page) or the refresh button (Downloads page).
+- Progress is persisted after every song, so closing the app keeps the queue and
+  its progress. In-progress items return to the queue on the next start.
+- **Pause / resume**: the pause button in the Downloads page or in the
+  foreground notification stops the item in flight (it goes back to the queue
+  with its partial progress). Resuming continues from the next missing song:
+  files already on disk are never downloaded twice.
+- Deleting an item (library checkmark or Downloads page) removes its files and
+  its metadata; deleting while it downloads cancels the in-flight work.
+
+### Storage limit
+
+A user-configurable limit (default **unlimited** in code, configurable from the
+storage card on the Downloads page: 1, 2, 5, 10, 20, 50 GB or unlimited).
+
+- The size of an item is estimated from the Subsonic song sizes **before**
+  starting it: if it does not fit, the item stays queued and the app shows
+  "Storage limit reached. Free up space in Downloads to continue." with a
+  shortcut to the Downloads page.
+- During a download the limit is checked after every song.
+- The storage card shows `Used: X / Limit: Y` and a progress bar.
+
+### Background downloads
+
+Downloads keep running when the app goes to the background thanks to a native
+foreground service (`android/app/src/main/kotlin/com/babisoft/random_mu/OfflineDownloadService.kt`),
+started and stopped by `DownloadForegroundService`
+(`lib/services/download_foreground_service.dart`) over a `MethodChannel`
+(`com.babisoft.randommu/downloads`).
+
+- The service is a `dataSync` foreground service with its own notification
+  channel: it shows the current item and `completed/total downloads complete`.
+- It has a **Pause** action that pauses the queue in the app.
+- It starts only while the queue has work and the app is in the foreground
+  (Android 12+ forbids starting a foreground service from the background), and it
+  stops as soon as the queue drains.
+- The queue itself lives in the Dart isolate: the service exists to keep the
+  process alive, not to run HTTP work in a second isolate.
+- On iOS/web/desktop no service is created; downloads follow the app lifecycle.
+
+### Notifications
+
+- One notification per completed item ("Playlist 'Chill' downloaded"), collapsed
+  into a summary ("3 downloads completed") when several finish within 3 seconds.
+- Failures are reported immediately with the error message.
+- The Android 13+ notification permission is requested **when the first download
+  starts** (`permission_handler`); if denied, downloads keep working silently.
+
+### Offline playback (local-first)
+
+`PlayerService._enqueueSongs` resolves every song through
+`resolveSongUri()` (`lib/services/offline_source.dart`):
+
+1. if a downloaded file exists for the song → play it from disk (`file://`),
+2. otherwise → stream it from the server as usual.
+
+The choice is transparent and identical on the phone and on Android Auto, so a
+partially downloaded library simply plays the songs it has, without prompts. The
+lookup uses an in-memory index of the offline folder (`songId → file`), rebuilt
+whenever storage is scanned, so a large queue does not hit SharedPreferences for
+every song and a missing metadata record cannot hide an existing file.
+
+Note: artwork of downloaded songs is still fetched from the server, so covers are
+not available while offline.
+
+## Architecture Notes
+
+| Concern | Where |
+| --- | --- |
+| Subsonic API client | `lib/client/subsonic_client.dart` |
+| Playback + queue | `lib/services/player_service.dart` |
+| Android Auto browse tree + media session | `lib/client/audio_player_handler.dart` |
+| Offline browse metadata cache | `lib/services/browse_cache.dart` |
+| Download queue, retries, storage limit | `lib/services/download_service.dart` |
+| Download foreground service bridge | `lib/services/download_foreground_service.dart` |
+| Download notifications | `lib/services/notification_service.dart` |
+| Runtime permissions | `lib/services/permissions.dart` |
+| Downloads UI | `lib/pages/downloads_page.dart`, `lib/pages/download_button.dart` |
+
+The offline browse cache is primed when an item finishes downloading: the
+container node (e.g. `playlist-<id>`) and its entry inside the category node are
+stored, so the Android Auto tree can be built with no network. Deleting a
+download removes those nodes again.
+
+## Development Notes
+
+Workflow specs, interview ledgers and work items live in `ai_specs/`.
+
+## Supported Platforms
 
 - Web (Tested)
 - Android (Tested)
