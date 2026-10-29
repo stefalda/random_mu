@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inject_x/inject_x.dart';
+import 'package:random_mu/pages/download_button.dart';
+import 'package:random_mu/providers/download_provider.dart';
 import 'package:random_mu/services/download_models.dart';
 import 'package:random_mu/services/download_service.dart';
-
-/// Provider for the DownloadService (shared instance from main.dart).
-final downloadServiceProvider = Provider<DownloadService>((ref) {
-  return inject<DownloadService>();
-});
 
 class DownloadsPage extends ConsumerWidget {
   const DownloadsPage({super.key});
@@ -20,6 +16,11 @@ class DownloadsPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Downloads'),
         actions: [
+          const DownloadButton(
+            type: DownloadItemType.favorites,
+            sourceId: 'favorites',
+            title: 'Favorites',
+          ),
           if (downloadService.queue.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete_sweep),

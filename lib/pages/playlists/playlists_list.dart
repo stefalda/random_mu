@@ -4,7 +4,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/main.dart';
+import 'package:random_mu/pages/download_button.dart';
 import 'package:random_mu/pages/player_page.dart';
+import 'package:random_mu/services/download_models.dart';
 
 class PlaylistsList extends ConsumerWidget {
   const PlaylistsList({super.key});
@@ -129,6 +131,11 @@ class PlaylistsList extends ConsumerWidget {
                         title: Text(
                           playlist.name,
                           style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        trailing: DownloadButton(
+                          type: DownloadItemType.playlist,
+                          sourceId: playlist.id,
+                          title: playlist.name,
                         ),
                         onTap: () async {
                           // Handle artist selection

@@ -4,7 +4,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/main.dart';
+import 'package:random_mu/pages/download_button.dart';
 import 'package:random_mu/pages/player_page.dart';
+import 'package:random_mu/services/download_models.dart';
 
 class AlbumsList extends ConsumerWidget {
   const AlbumsList({super.key});
@@ -135,6 +137,11 @@ class AlbumsList extends ConsumerWidget {
                                 style: Theme.of(context).textTheme.titleSmall,
                               )
                             : Container(),
+                        trailing: DownloadButton(
+                          type: DownloadItemType.album,
+                          sourceId: album.id,
+                          title: album.name,
+                        ),
                         onTap: () async {
                           // Handle artist selection
                           if (context.mounted) {

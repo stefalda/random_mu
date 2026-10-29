@@ -37,6 +37,26 @@ class DownloadService extends ChangeNotifier {
   List<DownloadItem> get queue => List.unmodifiable(_queue);
   StorageInfo get storageInfo => _storageInfo;
 
+  /// Queue item for a library item, or null when it was never enqueued.
+  DownloadItem? itemFor({
+    required DownloadItemType type,
+    required String sourceId,
+  }) {
+    for (final item in _queue) {
+      if (item.type == type && item.sourceId == sourceId) return item;
+    }
+    return null;
+  }
+
+  /// Whether a library item is queued, downloading or completed.
+  bool isDownloadedOrPending({
+    required DownloadItemType type,
+    required String sourceId,
+  }) {
+    final item = itemFor(type: type, sourceId: sourceId);
+    return item != null && item.status != DownloadStatus.failed;
+  }
+
   // --- Queue Management ---
 
   Future<void> enqueuePlaylist(String playlistId, String title) async {
@@ -373,12 +393,17 @@ class DownloadService extends ChangeNotifier {
   // --- Storage ---
 
   Future<io.Directory?> _getStorageDir() async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final musicDir = io.Directory('${appDir.path}/offline_music');
-    if (!await musicDir.exists()) {
-      await musicDir.create(recursive: true);
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      final musicDir = io.Directory('${appDir.path}/offline_music');
+      if (!await musicDir.exists()) {
+        await musicDir.create(recursive: true);
+      }
+      return musicDir;
+    } catch (_) {
+      // No documents directory (e.g. unsupported platform or tests).
+      return null;
     }
-    return musicDir;
   }
 
   Future<void> _refreshStorageInfo() async {
