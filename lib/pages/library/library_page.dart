@@ -5,6 +5,7 @@ import 'package:random_mu/pages/albums/albums_list.dart';
 import 'package:random_mu/pages/artists/artists_list.dart';
 import 'package:random_mu/pages/header.dart';
 import 'package:random_mu/pages/player_page.dart';
+import 'package:random_mu/pages/search/search_tab.dart';
 
 /// The library: rows of content, alphabetical, with a per-tab filter.
 class LibraryPage extends ConsumerWidget {
@@ -13,7 +14,7 @@ class LibraryPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DefaultTabController(
-      length: 2,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: const Header(),
@@ -26,9 +27,13 @@ class LibraryPage extends ConsumerWidget {
             const SizedBox(width: 8),
           ],
           bottom: const TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
             tabs: [
               Tab(text: 'Artisti'),
               Tab(text: 'Album'),
+              Tab(text: 'Preferiti'),
+              Tab(text: 'Generi'),
             ],
           ),
         ),
@@ -36,6 +41,8 @@ class LibraryPage extends ConsumerWidget {
           children: [
             ArtistList(),
             AlbumsList(),
+            FavoritesTab(),
+            GenresTab(),
           ],
         ),
       ),
