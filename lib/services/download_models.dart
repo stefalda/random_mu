@@ -37,6 +37,7 @@ class DownloadItem {
     int? totalSongs,
     int? downloadedSongs,
     String? errorMessage,
+    bool clearError = false,
   }) {
     return DownloadItem(
       id: id,
@@ -47,7 +48,8 @@ class DownloadItem {
       progress: progress ?? this.progress,
       totalSongs: totalSongs ?? this.totalSongs,
       downloadedSongs: downloadedSongs ?? this.downloadedSongs,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage:
+          clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 

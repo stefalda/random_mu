@@ -2,20 +2,24 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
 
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:random_mu/client/audio_player_handler.dart';
 import 'package:random_mu/client/subsonic_client.dart';
 import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/services/browse_cache.dart';
 import 'package:random_mu/services/download_models.dart';
 import 'package:random_mu/services/notification_service.dart';
-import 'package:audio_service/audio_service.dart';
-import 'package:random_mu/client/audio_player_handler.dart';
 
 /// Manages offline downloads: queue, progress, storage, persistence.
+///
+/// Queue rules (see Spec 0001): FIFO, at most [maxConcurrent] parallel items,
+/// [retryDelays]-driven retries per song, partial files never left behind, and a
+/// user-configurable storage limit that blocks new work.
 class DownloadService extends ChangeNotifier {
   final SubsonicClient client;
 
@@ -25,25 +29,55 @@ class DownloadService extends ChangeNotifier {
   /// Optional download notifications.
   final NotificationService? notifications;
 
+  /// Test seam: replaces the HTTP transport used to fetch audio bytes.
+  final http.Client httpClient;
+
+  /// Test seam: replaces `path_provider` for the storage directory.
+  final Future<io.Directory?> Function()? storageDirOverride;
+
+  /// Backoff delays after a failed attempt (3 retries by default).
+  final List<Duration> retryDelays;
+
+  /// Whether restored queue items start downloading on construction.
+  final bool autoStart;
+
   List<DownloadItem> _queue = [];
   StorageInfo _storageInfo = const StorageInfo();
-  bool _isRunning = false;
+  final Set<String> _activeDownloads = {};
+  final Completer<void> _ready = Completer<void>();
+  bool _processing = false;
+  bool _limitBlocked = false;
 
   static const int maxConcurrent = 2;
-  final Set<String> _activeDownloads = {};
+
+  static const List<Duration> defaultRetryDelays = [
+    Duration(seconds: 5),
+    Duration(seconds: 15),
+    Duration(seconds: 45),
+  ];
 
   DownloadService({
     required this.client,
     this.browseCache = const BrowseCache(),
     this.notifications,
-  }) {
-    _loadState();
+    http.Client? httpClient,
+    this.storageDirOverride,
+    this.retryDelays = defaultRetryDelays,
+    this.autoStart = true,
+  }) : httpClient = httpClient ?? http.Client() {
+    unawaited(_loadState());
   }
+
+  /// Completes once the persisted queue has been restored.
+  Future<void> get ready => _ready.future;
 
   // --- Getters ---
 
   List<DownloadItem> get queue => List.unmodifiable(_queue);
   StorageInfo get storageInfo => _storageInfo;
+
+  /// True when queued work is waiting for space to be freed.
+  bool get isBlockedByStorageLimit => _limitBlocked;
 
   /// Queue item for a library item, or null when it was never enqueued.
   DownloadItem? itemFor({
@@ -67,68 +101,55 @@ class DownloadService extends ChangeNotifier {
 
   // --- Queue Management ---
 
-  Future<void> enqueuePlaylist(String playlistId, String title) async {
+  Future<void> enqueuePlaylist(String playlistId, String title) {
+    return _enqueue(DownloadItemType.playlist, playlistId, title);
+  }
+
+  Future<void> enqueueAlbum(String albumId, String title) {
+    return _enqueue(DownloadItemType.album, albumId, title);
+  }
+
+  Future<void> enqueueArtist(String artistId, String title) {
+    return _enqueue(DownloadItemType.artist, artistId, title);
+  }
+
+  Future<void> enqueueFavorites() {
+    final exists = _queue.any((item) => item.type == DownloadItemType.favorites);
+    if (exists) return Future<void>.value();
+    return _enqueue(DownloadItemType.favorites, 'favorites', 'Favorites');
+  }
+
+  Future<void> _enqueue(
+      DownloadItemType type, String sourceId, String title) async {
+    final existing = itemFor(type: type, sourceId: sourceId);
+    if (existing != null) return;
+
     _queue.add(DownloadItem(
       id: _nextId(),
       title: title,
-      type: DownloadItemType.playlist,
-      sourceId: playlistId,
+      type: type,
+      sourceId: sourceId,
     ));
-    _saveState();
+    _limitBlocked = _limitBlocked && !_storageInfo.isLimitReached;
+    await _saveState();
     notifyListeners();
-    _processQueue();
-  }
-
-  Future<void> enqueueAlbum(String albumId, String title) async {
-    _queue.add(DownloadItem(
-      id: _nextId(),
-      title: title,
-      type: DownloadItemType.album,
-      sourceId: albumId,
-    ));
-    _saveState();
-    notifyListeners();
-    _processQueue();
-  }
-
-  Future<void> enqueueArtist(String artistId, String title) async {
-    _queue.add(DownloadItem(
-      id: _nextId(),
-      title: title,
-      type: DownloadItemType.artist,
-      sourceId: artistId,
-    ));
-    _saveState();
-    notifyListeners();
-    _processQueue();
-  }
-
-  Future<void> enqueueFavorites() async {
-    final exists =
-        _queue.any((item) => item.type == DownloadItemType.favorites);
-    if (exists) return;
-
-    _queue.add(DownloadItem(
-      id: _nextId(),
-      title: 'Favorites',
-      type: DownloadItemType.favorites,
-      sourceId: 'favorites',
-    ));
-    _saveState();
-    notifyListeners();
-    _processQueue();
+    unawaited(_processQueue());
   }
 
   Future<void> removeItem(String itemId) async {
-    final item = _queue.firstWhere(
-      (i) => i.id == itemId,
-      orElse: () => throw Exception('Item not found'),
-    );
+    final index = _queue.indexWhere((i) => i.id == itemId);
+    if (index == -1) return;
+
+    final item = _queue[index];
     await _deleteItemFiles(item);
     await _removeCachedBrowseNodes(item);
-    _queue.removeWhere((i) => i.id == itemId);
-    _saveState();
+    _queue.removeAt(index);
+    // Freeing space can unblock the queue.
+    _limitBlocked = false;
+    await _refreshStorageInfo();
+    await _saveState();
     notifyListeners();
+    unawaited(_processQueue());
   }
 
   Future<void> retryItem(String itemId) async {
@@ -138,11 +159,12 @@ class DownloadService extends ChangeNotifier {
       status: DownloadStatus.queued,
       progress: 0.0,
       downloadedSongs: 0,
-      errorMessage: null,
+      clearError: true,
     );
-    _saveState();
+    _limitBlocked = false;
+    await _saveState();
     notifyListeners();
-    _processQueue();
+    unawaited(_processQueue());
   }
 
   Future<void> clearAll() async {
@@ -154,7 +176,9 @@ class DownloadService extends ChangeNotifier {
     await _clearMetadataCache();
     await browseCache.clear();
     _invalidateBrowserCache();
-    _saveState();
+    _limitBlocked = false;
+    await _refreshStorageInfo();
+    await _saveState();
     notifyListeners();
   }
 
@@ -162,162 +186,228 @@ class DownloadService extends ChangeNotifier {
 
   Future<void> setStorageLimit(int? limitBytes) async {
     _storageInfo = _storageInfo.copyWith(limitBytes: limitBytes);
+    _limitBlocked = false;
     await _saveStorageLimit(limitBytes);
     notifyListeners();
+    unawaited(_processQueue());
   }
 
   // --- Processing ---
 
   Future<void> _processQueue() async {
-    if (_isRunning) return;
-    _isRunning = true;
+    if (_processing) return;
+    _processing = true;
+    try {
+      while (_activeDownloads.length < maxConcurrent) {
+        final next = _nextQueuedItem();
+        if (next == null) break;
 
-    while (_hasQueuedItems() && _activeDownloads.length < maxConcurrent) {
-      if (_storageInfo.isLimitReached) {
-        debugPrint('Storage limit reached. Blocking new downloads.');
-        break;
+        if (_storageInfo.isLimitReached) {
+          _limitBlocked = true;
+          debugPrint('Storage limit reached, not starting "${next.title}".');
+          break;
+        }
+
+        _activeDownloads.add(next.id);
+        unawaited(_runItem(next));
       }
-
-      final nextItem = _queue.firstWhere(
-        (i) => i.status == DownloadStatus.queued,
-        orElse: () => _queue.first,
-      );
-
-      if (_activeDownloads.contains(nextItem.id)) continue;
-
-      _activeDownloads.add(nextItem.id);
-      unawaited(_processItem(nextItem).then((_) {
-        _activeDownloads.remove(nextItem.id);
-        _processQueue();
-      }));
+    } finally {
+      _processing = false;
     }
-
-    _isRunning = false;
   }
 
-  bool _hasQueuedItems() =>
-      _queue.any((i) => i.status == DownloadStatus.queued);
+  DownloadItem? _nextQueuedItem() {
+    if (_limitBlocked) return null;
+    for (final item in _queue) {
+      if (item.status == DownloadStatus.queued &&
+          !_activeDownloads.contains(item.id)) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _runItem(DownloadItem item) async {
+    try {
+      await _processItem(item);
+    } finally {
+      _activeDownloads.remove(item.id);
+      unawaited(_processQueue());
+    }
+  }
 
   Future<void> _processItem(DownloadItem item) async {
     final index = _queue.indexWhere((i) => i.id == item.id);
     if (index == -1) return;
 
-    _queue[index] = _queue[index].copyWith(
-      status: DownloadStatus.downloading,
-      progress: 0.0,
-    );
+    _queue[index] = _queue[index]
+        .copyWith(status: DownloadStatus.downloading, progress: 0.0);
     notifyListeners();
 
     try {
-      List<Song> songs;
+      final songs = await fetchSongsFor(_queue[index]);
+      if (songs.isEmpty) {
+        await _completeItem(index, songs);
+        return;
+      }
 
-      switch (item.type) {
-        case DownloadItemType.playlist:
-          songs = await client.getPlaylistSongs(item.sourceId);
-          break;
-        case DownloadItemType.album:
-          songs = await client.getSongsByAlbum(albumId: item.sourceId);
-          break;
-        case DownloadItemType.artist:
-          songs = await client.getArtistSongsRandomized(
-            item.sourceId,
-            count: null,
-          );
-          break;
-        case DownloadItemType.favorites:
-          final starred = await client.getStarred();
-          songs = [...starred.songs];
-          for (final album in starred.albums) {
-            try {
-              final albumDetail = await client.getAlbum(album.id);
-              songs.addAll(albumDetail.songs);
-            } catch (_) {}
-          }
-          break;
+      // Block before starting work that cannot fit in the configured limit.
+      final estimatedSize = songs.fold<int>(
+          0, (total, song) => total + (song.size ?? 0));
+      if (_wouldExceedLimit(estimatedSize)) {
+        _queue[index] = _queue[index].copyWith(
+          status: DownloadStatus.queued,
+          progress: 0.0,
+          clearError: true,
+        );
+        _limitBlocked = true;
+        debugPrint('Not enough space to download "${item.title}".');
+        notifyListeners();
+        return;
       }
 
       _queue[index] = _queue[index].copyWith(
         totalSongs: songs.length,
         progress: 0.0,
         downloadedSongs: 0,
+        clearError: true,
       );
       notifyListeners();
 
       final dir = await _getStorageDir();
       if (dir == null) throw Exception('Cannot access storage directory');
 
-      int attempt = 0;
-      const maxRetries = 3;
-
       for (int i = 0; i < songs.length; i++) {
-        final song = songs[i];
-        bool success = false;
-
-        while (!success && attempt < maxRetries) {
-          try {
-            final bytes = await _downloadSong(song);
-            final filePath = '${song.id}.${song.suffix ?? 'mp3'}';
-            final file = io.File('${dir.path}/$filePath');
-            await file.writeAsBytes(bytes);
-
-            await _cacheSongMetadata(song, filePath);
-
-            success = true;
-            attempt = 0;
-
-            _queue[index] = _queue[index].copyWith(
-              downloadedSongs: i + 1,
-              progress: (i + 1) / songs.length,
-            );
-            notifyListeners();
-          } catch (e) {
-            attempt++;
-            if (attempt >= maxRetries) {
-              rethrow;
-            }
-            await Future.delayed(Duration(seconds: 5 * attempt));
-          }
-        }
+        await _downloadSongWithRetries(songs[i], dir);
 
         await _refreshStorageInfo();
+        _queue[index] = _queue[index].copyWith(
+          downloadedSongs: i + 1,
+          progress: (i + 1) / songs.length,
+        );
+        notifyListeners();
+
         if (_storageInfo.isLimitReached) {
           _queue[index] = _queue[index].copyWith(
             status: DownloadStatus.failed,
             errorMessage: 'Storage limit reached during download.',
           );
-          _saveState();
+          _limitBlocked = true;
+          await _storeItemSongIds(_queue[index], songs);
+          await _primeBrowseCache(_queue[index], songs);
+          unawaited(_notifyFailure(_queue[index]));
+          await _saveState();
           notifyListeners();
           return;
         }
       }
 
-      _queue[index] = _queue[index].copyWith(
-        status: DownloadStatus.completed,
-        progress: 1.0,
-      );
-      await _primeBrowseCache(_queue[index], songs);
-      notifications?.downloadCompleted(_queue[index]);
-      _saveState();
-      notifyListeners();
-    } catch (e) {
+      await _completeItem(index, songs);
+    } catch (error) {
       _queue[index] = _queue[index].copyWith(
         status: DownloadStatus.failed,
-        errorMessage: e.toString(),
+        errorMessage: error.toString(),
       );
-      unawaited(notifications?.downloadFailed(_queue[index]) ?? Future.value());
-      _saveState();
+      unawaited(_notifyFailure(_queue[index]));
+      await _saveState();
       notifyListeners();
     }
   }
 
-  Future<Uint8List> _downloadSong(Song song) async {
+  Future<void> _completeItem(int index, List<Song> songs) async {
+    _queue[index] = _queue[index].copyWith(
+      status: DownloadStatus.completed,
+      progress: 1.0,
+      downloadedSongs: songs.length,
+      totalSongs: songs.length,
+      clearError: true,
+    );
+    await _storeItemSongIds(_queue[index], songs);
+    await _primeBrowseCache(_queue[index], songs);
+    notifications?.downloadCompleted(_queue[index]);
+    await _saveState();
+    notifyListeners();
+  }
+
+  /// Songs belonging to the item. Test seam overrides this to avoid the network.
+  @protected
+  Future<List<Song>> fetchSongsFor(DownloadItem item) async {
+    switch (item.type) {
+      case DownloadItemType.playlist:
+        return client.getPlaylistSongs(item.sourceId);
+      case DownloadItemType.album:
+        return client.getSongsByAlbum(albumId: item.sourceId);
+      case DownloadItemType.artist:
+        return client.getArtistSongsRandomized(item.sourceId, count: null);
+      case DownloadItemType.favorites:
+        final starred = await client.getStarred();
+        final songs = <Song>[...starred.songs];
+        for (final album in starred.albums) {
+          try {
+            final albumDetail = await client.getAlbum(album.id);
+            songs.addAll(albumDetail.songs);
+          } catch (_) {
+            // Skip albums that fail: the rest of the favorites still download.
+          }
+        }
+        return songs;
+    }
+  }
+
+  /// Raw bytes of a song. Test seam overrides this to avoid the network.
+  @protected
+  Future<Uint8List> fetchSongBytes(Song song) async {
     final streamUrl = client.getStreamUrl(song.id);
-    final response = await http.get(Uri.parse(streamUrl));
+    final response = await httpClient.get(Uri.parse(streamUrl));
     if (response.statusCode != 200) {
       throw Exception(
           'Failed to download ${song.title}: HTTP ${response.statusCode}');
     }
     return response.bodyBytes;
+  }
+
+  /// Downloads one song, retrying up to [retryDelays].length times.
+  Future<void> _downloadSongWithRetries(Song song, io.Directory dir) async {
+    Object? lastError;
+    for (var attempt = 0; attempt <= retryDelays.length; attempt++) {
+      try {
+        await _downloadSongToFile(song, dir);
+        return;
+      } catch (error) {
+        lastError = error;
+        if (attempt == retryDelays.length) break;
+        await Future<void>.delayed(retryDelays[attempt]);
+      }
+    }
+    throw Exception('Failed to download "${song.title}": $lastError');
+  }
+
+  Future<void> _downloadSongToFile(Song song, io.Directory dir) async {
+    final filePath = '${song.id}.${song.suffix ?? 'mp3'}';
+    final finalFile = io.File('${dir.path}/$filePath');
+    final partFile = io.File('${finalFile.path}.part');
+
+    try {
+      final bytes = await fetchSongBytes(song);
+      await partFile.writeAsBytes(bytes, flush: true);
+      if (await finalFile.exists()) {
+        await finalFile.delete();
+      }
+      await partFile.rename(finalFile.path);
+      await _cacheSongMetadata(song, filePath);
+    } catch (_) {
+      // Never leave a partial file behind.
+      if (await partFile.exists()) {
+        await partFile.delete();
+      }
+      rethrow;
+    }
+  }
+
+  bool _wouldExceedLimit(int additionalBytes) {
+    final limit = _storageInfo.limitBytes;
+    if (limit == null) return false;
+    return _storageInfo.usedBytes + additionalBytes > limit;
   }
 
   // --- Android Auto browse metadata ---
@@ -332,11 +422,7 @@ class DownloadService extends ChangeNotifier {
     if (categoryId != null) {
       await browseCache.upsertInCategory(
         categoryId,
-        MediaItem(
-          id: nodeId,
-          title: item.title,
-          playable: false,
-        ),
+        MediaItem(id: nodeId, title: item.title, playable: false),
       );
     }
 
@@ -387,7 +473,8 @@ class DownloadService extends ChangeNotifier {
       title: song.title,
       artist: song.artist ?? '',
       album: song.album ?? '',
-      duration: song.duration != null ? Duration(seconds: song.duration!) : null,
+      duration:
+          song.duration != null ? Duration(seconds: song.duration!) : null,
       artUri: song.coverArt != null
           ? Uri.parse(client.getCoverArtUrl(song.coverArt))
           : null,
@@ -400,9 +487,15 @@ class DownloadService extends ChangeNotifier {
     AudioPlayerHandler.instance?.clearBrowseCache();
   }
 
+  Future<void> _notifyFailure(DownloadItem item) async {
+    await notifications?.downloadFailed(item);
+  }
+
   // --- Storage ---
 
   Future<io.Directory?> _getStorageDir() async {
+    final override = storageDirOverride;
+    if (override != null) return override();
     try {
       final appDir = await getApplicationDocumentsDirectory();
       final musicDir = io.Directory('${appDir.path}/offline_music');
@@ -435,12 +528,20 @@ class DownloadService extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final metadata = prefs.getString('download_metadata_${item.id}');
     if (metadata != null) {
-      final songIds = jsonDecode(metadata) as List<dynamic>;
+      final songIds = (jsonDecode(metadata) as List<dynamic>).cast<String>();
       for (final songId in songIds) {
-        await for (final entity in dir.list()) {
-          if (entity is io.File && entity.path.contains(songId.toString())) {
-            await entity.delete();
+        final songKey = 'song_$songId';
+        final data = prefs.getString(songKey);
+        if (data != null) {
+          final filePath =
+              (jsonDecode(data) as Map<String, dynamic>)['filePath'] as String?;
+          if (filePath != null) {
+            final file = io.File('${dir.path}/$filePath');
+            if (await file.exists()) {
+              await file.delete();
+            }
           }
+          await prefs.remove(songKey);
         }
       }
       await prefs.remove('download_metadata_${item.id}');
@@ -448,23 +549,38 @@ class DownloadService extends ChangeNotifier {
     await _refreshStorageInfo();
   }
 
+  Future<void> _storeItemSongIds(
+      DownloadItem item, List<Song> songs) async {
+    if (songs.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      'download_metadata_${item.id}',
+      jsonEncode(songs.map((song) => song.id).toList()),
+    );
+  }
+
   Future<void> _cacheSongMetadata(Song song, String filePath) async {
     final prefs = await SharedPreferences.getInstance();
-    final key = 'song_${song.id}';
-    await prefs.setString(key, jsonEncode({
-      'id': song.id,
-      'title': song.title,
-      'artist': song.artist,
-      'album': song.album,
-      'coverArt': song.coverArt,
-      'duration': song.duration,
-      'filePath': filePath,
-    }));
+    await prefs.setString(
+      'song_${song.id}',
+      jsonEncode({
+        'id': song.id,
+        'title': song.title,
+        'artist': song.artist,
+        'album': song.album,
+        'coverArt': song.coverArt,
+        'duration': song.duration,
+        'filePath': filePath,
+      }),
+    );
   }
 
   Future<void> _clearMetadataCache() async {
     final prefs = await SharedPreferences.getInstance();
-    final keys = prefs.getKeys().where((k) => k.startsWith('song_'));
+    final keys = prefs
+        .getKeys()
+        .where((k) => k.startsWith('song_') || k.startsWith('download_metadata_'))
+        .toList();
     for (final key in keys) {
       await prefs.remove(key);
     }
@@ -473,12 +589,12 @@ class DownloadService extends ChangeNotifier {
   /// Get the local file path for a song ID, or null if not downloaded.
   Future<String?> getLocalPath(String songId) async {
     final prefs = await SharedPreferences.getInstance();
-    final key = 'song_$songId';
-    final data = prefs.getString(key);
+    final data = prefs.getString('song_$songId');
     if (data == null) return null;
 
     final map = jsonDecode(data) as Map<String, dynamic>;
-    final filePath = map['filePath'] as String;
+    final filePath = map['filePath'] as String?;
+    if (filePath == null) return null;
 
     final dir = await _getStorageDir();
     if (dir == null) return null;
@@ -490,12 +606,14 @@ class DownloadService extends ChangeNotifier {
 
   // --- Persistence ---
 
-  String _nextId() => DateTime.now().millisecondsSinceEpoch.toString();
+  String _nextId() => DateTime.now().microsecondsSinceEpoch.toString();
 
   Future<void> _saveState() async {
     final prefs = await SharedPreferences.getInstance();
-    final jsonList = _queue.map((item) => item.toJson()).toList();
-    await prefs.setString('download_queue', jsonEncode(jsonList));
+    await prefs.setString(
+      'download_queue',
+      jsonEncode(_queue.map((item) => item.toJson()).toList()),
+    );
   }
 
   Future<void> _loadState() async {
@@ -514,8 +632,7 @@ class DownloadService extends ChangeNotifier {
 
     final limitStr = prefs.getString('storage_limit');
     if (limitStr != null) {
-      final limit = int.tryParse(limitStr);
-      _storageInfo = StorageInfo(limitBytes: limit);
+      _storageInfo = StorageInfo(limitBytes: int.tryParse(limitStr));
     }
 
     await _refreshStorageInfo();
@@ -529,10 +646,11 @@ class DownloadService extends ChangeNotifier {
         );
       }
     }
-    _saveState();
+    await _saveState();
+    if (!_ready.isCompleted) _ready.complete();
     notifyListeners();
 
-    unawaited(_processQueue());
+    if (autoStart) unawaited(_processQueue());
   }
 
   Future<void> _saveStorageLimit(int? limitBytes) async {
