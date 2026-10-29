@@ -69,13 +69,6 @@ final playlistsProvider =
   return PlaylistsNotifier();
 });
 
-// Create a search controller provider
-final searchControllerProvider = Provider.autoDispose((ref) {
-  final controller = TextEditingController();
-  ref.onDispose(() => controller.dispose());
-  return controller;
-});
-
 // Loading provider
 final loadingProvider =
     StateNotifierProvider<LoadingNotifier, bool>((ref) => LoadingNotifier());

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/main.dart';
 import 'package:random_mu/pages/download_button.dart';
+import 'package:random_mu/pages/list_filter_field.dart';
 import 'package:random_mu/pages/player_page.dart';
 import 'package:random_mu/pages/playlist_actions.dart';
 import 'package:random_mu/services/download_models.dart';
@@ -15,36 +16,13 @@ class PlaylistsList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final playlistAsync = ref.watch(playlistsProvider);
-    final searchController = ref.watch(searchControllerProvider);
 
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: TextField(
-            controller: searchController,
-            decoration: InputDecoration(
-              hintText: 'Search artists...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        searchController.clear();
-                        ref
-                            .read(artistsProvider.notifier)
-                            .updateSearchQuery('');
-                      },
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onChanged: (value) {
-              ref.read(artistsProvider.notifier).updateSearchQuery(value);
-            },
-          ),
+        ListFilterField(
+          hint: 'Cerca playlist…',
+          onChanged: (value) =>
+              ref.read(playlistsProvider.notifier).updateSearchQuery(value),
         ),
         Expanded(
           child: playlistAsync.when(

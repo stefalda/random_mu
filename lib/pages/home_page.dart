@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/pages/connection/connection_page.dart';
-import 'package:random_mu/pages/menu_page.dart';
+import 'package:random_mu/pages/library/library_shell.dart';
 import 'package:random_mu/providers/subsonic_preferences_provider.dart';
 
 class HomePage extends ConsumerWidget {
@@ -18,7 +18,7 @@ class HomePage extends ConsumerWidget {
         title: Text(title),
       ),*/
       body: SafeArea(
-          child: Center(child: shouldLogin ? ConnectionPage() : MenuPage())),
+          child: shouldLogin ? const Center(child: ConnectionPage()) : const LibraryShell()),
 
       /* floatingActionButton: FloatingActionButton(
         onPressed: () async {
