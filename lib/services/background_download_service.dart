@@ -2,14 +2,19 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:random_mu/services/download_models.dart';
 import 'package:random_mu/services/download_service.dart';
+import 'package:random_mu/services/notification_service.dart';
 
 /// Notification channel/id of the download foreground service.
 ///
-/// Separate from the audio playback channel owned by `AudioService`.
-const String backgroundDownloadChannelId = 'random_mu_downloads_service';
+/// Reuses [NotificationService.channelId]: that channel is created at startup,
+/// while a channel created lazily would race the first `startForeground` call
+/// (the plugin does not create channels itself).
+const String backgroundDownloadChannelId = NotificationService.channelId;
+const String backgroundDownloadChannelName = NotificationService.channelName;
 const int backgroundDownloadNotificationId = 8899;
 
 /// Entry point of the download foreground service isolate.
@@ -34,15 +39,25 @@ void backgroundDownloadEntryPoint(ServiceInstance service) {
 }
 
 /// Starts and stops the foreground service around download activity.
+///
+/// Android only allows starting a foreground service while the app is in the
+/// foreground, so the keeper tracks the lifecycle state and defers the start
+/// until the app is resumed again.
 class BackgroundDownloadKeeper {
   final DownloadService downloadService;
 
   bool _configured = false;
   bool _running = false;
+  bool _starting = false;
+  AppLifecycleState _lifecycle = AppLifecycleState.resumed;
   StreamSubscription<dynamic>? _pauseSubscription;
+  AppLifecycleListener? _lifecycleListener;
 
   BackgroundDownloadKeeper(this.downloadService) {
     downloadService.addListener(_sync);
+    if (isSupported) {
+      _lifecycleListener = AppLifecycleListener(onStateChange: _onLifecycle);
+    }
     unawaited(_configure());
   }
 
@@ -52,6 +67,15 @@ class BackgroundDownloadKeeper {
   @visibleForTesting
   bool get isRunning => _running;
 
+  bool get _canStartForeground =>
+      _lifecycle == AppLifecycleState.resumed ||
+      _lifecycle == AppLifecycleState.inactive;
+
+  void _onLifecycle(AppLifecycleState state) {
+    _lifecycle = state;
+    if (_canStartForeground) _sync();
+  }
+
   Future<void> _configure() async {
     if (!isSupported) return;
     try {
@@ -60,6 +84,9 @@ class BackgroundDownloadKeeper {
         androidConfiguration: AndroidConfiguration(
           onStart: backgroundDownloadEntryPoint,
           autoStart: false,
+          // Never resurrect the service from the background: Android forbids
+          // starting a foreground service that way.
+          autoStartOnBoot: false,
           isForegroundMode: true,
           notificationChannelId: backgroundDownloadChannelId,
           initialNotificationTitle: 'Random Muu',
@@ -81,14 +108,25 @@ class BackgroundDownloadKeeper {
   /// Keeps the service in sync with the queue state.
   void _sync() {
     if (!_configured) return;
+    unawaited(_syncAsync());
+  }
 
+  Future<void> _syncAsync() async {
     final hasWork = downloadService.queue.any((item) =>
         item.status == DownloadStatus.queued ||
         item.status == DownloadStatus.downloading);
 
-    if (hasWork && !_running) {
-      _running = true;
-      FlutterBackgroundService().startService();
+    if (hasWork && !_running && !_starting && _canStartForeground) {
+      _starting = true;
+      try {
+        await FlutterBackgroundService().startService();
+        _running = true;
+      } catch (error) {
+        debugPrint('Cannot start the download foreground service: $error');
+        _running = false;
+      } finally {
+        _starting = false;
+      }
     } else if (!hasWork && _running) {
       _running = false;
       FlutterBackgroundService().invoke('stopService');
@@ -118,5 +156,6 @@ class BackgroundDownloadKeeper {
   void dispose() {
     downloadService.removeListener(_sync);
     _pauseSubscription?.cancel();
+    _lifecycleListener?.dispose();
   }
 }

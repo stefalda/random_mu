@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -95,10 +93,11 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   InjectX.add(PreferenceService());
 
-  // Download notifications are best-effort: never block startup on them.
+  // Download notifications are best-effort, but the channel must exist before
+  // the download foreground service can post its notification.
   final notifications = NotificationService();
   _notificationService = notifications;
-  unawaited(notifications.init());
+  await notifications.init();
 
   // Initialize audio_service (handles MediaSession, MediaBrowserService, notifications)
   await AudioService.init(
