@@ -69,7 +69,9 @@ view), and the now-playing screen shows artwork, title, artist, progress and tra
 Gap found while driving the car UI: `customAction('playSimilar')` was handled but no custom control
 was ever declared, so the action never reached Android Auto. `stateToPlaybackState` now declares
 `MediaControl.custom(name: 'playSimilar')` and
-`android/app/src/main/res/drawable/ic_play_similar.xml` provides the shuffle icon. With that, AA
-shows the shuffle button in the now-playing bar and tapping it replaces the queue with similar songs
-starting from the current one. The vector drawable must not use a theme `android:tint`, otherwise AA
-falls back to a placeholder icon.
+`android/app/src/main/res/drawable/ic_play_similar.xml` provides the icon (Material `auto_awesome`,
+the recommendation glyph, so it stays distinct from the shuffle used for random playback). With
+that, AA shows the button in the now-playing bar and tapping it replaces the queue with similar
+songs starting from the current one. Two details worth keeping: the vector drawable must not use a
+theme `android:tint`, otherwise AA falls back to a placeholder icon, and AA caches the bitmap by
+resource id, so restarting the app is not enough to pick up a new glyph.
