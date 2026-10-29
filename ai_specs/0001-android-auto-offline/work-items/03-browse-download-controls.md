@@ -34,14 +34,14 @@ Let the user start, monitor and remove offline downloads from the library pages.
 
 ## Acceptance criteria
 
-- [ ] Playlists, Artists and Albums rows show the download state icon and update live.
-- [ ] Tapping the idle icon enqueues exactly one download item for that library item.
-- [ ] Tapping the completed icon requires confirmation before deleting the download.
-- [ ] Tapping the failed icon retries the item.
-- [ ] With the storage limit reached, the tap shows the limit message and a working action that opens
+- [x] Playlists, Artists and Albums rows show the download state icon and update live.
+- [x] Tapping the idle icon enqueues exactly one download item for that library item.
+- [x] Tapping the completed icon requires confirmation before deleting the download.
+- [x] Tapping the failed icon retries the item.
+- [x] With the storage limit reached, the tap shows the limit message and a working action that opens
       the Downloads page; nothing is enqueued.
-- [ ] The Downloads page offers "Download All Favorites" and shows its state.
-- [ ] Widget tests cover the icon states and the limit-reached message.
+- [x] The Downloads page offers "Download All Favorites" and shows its state.
+- [x] Widget tests cover the icon states and the limit-reached message.
 
 ## Covers
 
@@ -52,3 +52,10 @@ Let the user start, monitor and remove offline downloads from the library pages.
 ## Blocked by
 
 None - ready to start
+
+## Notes
+
+Verified on device: the playlist rows show idle (`cloud_download_outlined`), progress and the teal
+`check_circle` states, the tap enqueues, the checkmark asks for confirmation before deleting, and
+the storage card shows "Used: 49 MB / Limit: Unlimited". Widget tests cover every state plus the
+limit-reached message.

@@ -30,13 +30,13 @@ Post a system notification when an offline download finishes.
 
 ## Acceptance criteria
 
-- [ ] Completing a download posts a notification naming the item.
-- [ ] Several completions within a short window produce a summary notification instead of one per
+- [x] Completing a download posts a notification naming the item.
+- [x] Several completions within a short window produce a summary notification instead of one per
       item.
-- [ ] A failed download posts a failure notification with the item name.
-- [ ] Downloading still works when notifications are denied/unavailable.
-- [ ] Desugaring is configured so the Android release build compiles.
-- [ ] `NotificationService` formatting logic is unit tested.
+- [x] A failed download posts a failure notification with the item name.
+- [x] Downloading still works when notifications are denied/unavailable.
+- [x] Desugaring is configured so the Android release build compiles.
+- [x] `NotificationService` formatting logic is unit tested.
 
 ## Covers
 
@@ -47,3 +47,9 @@ Post a system notification when an offline download finishes.
 ## Blocked by
 
 None - ready to start
+
+## Notes
+
+Verified on device: completing the "00.info" download posted "Playlist '00.info' downloaded" on the
+`random_mu_downloads` channel. The permission is requested lazily on the first download through
+`permission_handler`, so a denied permission never blocks downloads.

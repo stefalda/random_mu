@@ -49,13 +49,13 @@ Tests:
 
 ## Acceptance criteria
 
-- [ ] FIFO order and the 2-concurrent cap are covered by passing tests.
-- [ ] Retry backoff is 5s, 15s, 45s; a fourth failure marks the item failed with the error message.
-- [ ] A failed song leaves no `.part` or final file behind.
-- [ ] The storage limit is checked before starting an item and between songs.
-- [ ] Queue state survives a restart and in-progress items come back as `queued`.
-- [ ] `flutter analyze` reports no `unawaited_futures` in `download_service.dart`.
-- [ ] `flutter test` passes.
+- [x] FIFO order and the 2-concurrent cap are covered by passing tests.
+- [x] Retry backoff is 5s, 15s, 45s; a fourth failure marks the item failed with the error message.
+- [x] A failed song leaves no `.part` or final file behind.
+- [x] The storage limit is checked before starting an item and between songs.
+- [x] Queue state survives a restart and in-progress items come back as `queued`.
+- [x] `flutter analyze` reports no `unawaited_futures` in `download_service.dart`.
+- [x] `flutter test` passes.
 
 ## Covers
 
@@ -65,3 +65,10 @@ Tests:
 ## Blocked by
 
 03-browse-download-controls.md
+
+## Notes
+
+Verified on device (Poco F1 + real Navidrome): pause from the notification and from the Downloads
+page freezes the byte count, resume skips the songs already on disk, deleting a downloading item
+frees its partial files (126 MB -> 56 MB, then 10 files -> 0) and leaves no `.part`/orphan behind.
+`flutter analyze` is clean and `flutter test` runs 44 tests.

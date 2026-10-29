@@ -35,12 +35,12 @@ unchanged rather than shipping a broken service.
 
 ## Acceptance criteria
 
-- [ ] Queued downloads keep progressing while the app is backgrounded or the screen is off.
-- [ ] The foreground notification shows overall progress and can pause the queue.
-- [ ] The service starts only when work is queued and stops when the queue drains.
-- [ ] No service is started on iOS/web/desktop.
-- [ ] The Android build still compiles and `flutter analyze` is clean.
-- [ ] Manual verification steps are recorded in the Work Item notes.
+- [x] Queued downloads keep progressing while the app is backgrounded or the screen is off.
+- [x] The foreground notification shows overall progress and can pause the queue.
+- [x] The service starts only when work is queued and stops when the queue drains.
+- [x] No service is started on iOS/web/desktop.
+- [x] The Android build still compiles and `flutter analyze` is clean.
+- [x] Manual verification steps are recorded in the Work Item notes.
 
 ## Covers
 
@@ -51,3 +51,24 @@ unchanged rather than shipping a broken service.
 ## Blocked by
 
 04-download-completion-notifications.md, 05-download-engine-hardening.md
+
+## Notes
+
+Implemented natively like soundchecker instead of with `flutter_background_service`, which crashed
+twice on device (`invalid channel for service notification`, then
+`ForegroundServiceStartNotAllowedException` from its watchdog).
+
+`OfflineDownloadService.kt` is a `dataSync` foreground service with its own channel, a Pause action
+and progress text; `MainActivity` (now `AudioServiceActivity`) bridges it over
+`com.babisoft.randommu/downloads`, and `DownloadForegroundService` starts/stops it from the queue
+state (only while the app is resumed, which Android requires for a foreground service).
+
+Verified on device: the notification appears as "Downloading "<item>"" with "N/M downloads
+complete", the Pause action pauses the queue (title switches to "Downloads paused" and the byte
+count stops), and the service stops when the queue drains. No service is created on
+iOS/web/desktop.
+
+Manual verification steps for a device:
+1. Start a download and background the app -> progress keeps advancing.
+2. Expand the notification -> Pause -> byte count stops; resume from the Downloads page.
+3. Let the queue drain -> the foreground notification disappears.

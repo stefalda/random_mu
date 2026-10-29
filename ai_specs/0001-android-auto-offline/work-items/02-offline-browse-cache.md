@@ -32,15 +32,15 @@ network call, so after an app restart or while offline every category resolves t
 
 ## Acceptance criteria
 
-- [ ] A successfully built browse node is written to persistent storage.
-- [ ] With the client failing (offline), `getChildren` returns the cached node for every previously
+- [x] A successfully built browse node is written to persistent storage.
+- [x] With the client failing (offline), `getChildren` returns the cached node for every previously
       built parent ID, including the four top categories and their children.
-- [ ] With no cache and no network, `getChildren` returns an empty list without throwing.
-- [ ] A completed playlist/album/artist/favorites download makes its browse nodes available offline
+- [x] With no cache and no network, `getChildren` returns an empty list without throwing.
+- [x] A completed playlist/album/artist/favorites download makes its browse nodes available offline
       without an intervening online browse.
-- [ ] Removing a downloaded item removes its container node and its category entry from the cache.
-- [ ] "Clear All" removes all cached browse nodes.
-- [ ] Unit tests cover cache round-trip, offline fallback and delete cleanup.
+- [x] Removing a downloaded item removes its container node and its category entry from the cache.
+- [x] "Clear All" removes all cached browse nodes.
+- [x] Unit tests cover cache round-trip, offline fallback and delete cleanup.
 
 ## Covers
 
@@ -51,3 +51,9 @@ network call, so after an app restart or while offline every category resolves t
 ## Blocked by
 
 None - ready to start
+
+## Notes
+
+Verified on device with the real Navidrome server: after downloading the "00.info" playlist the
+browse cache contains `aa_browse_node_playlists` and `aa_browse_node_playlist-<id>` with the 11
+song MediaItems. Offline fallback is covered by unit tests; the in-car view still needs a head unit.
