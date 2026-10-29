@@ -21,11 +21,11 @@ One long-press action sheet for tracks, reused by every list:
 
 ## Acceptance criteria
 
-- [ ] Long press on any track row opens the same sheet with the context-appropriate entries.
-- [ ] `Aggiungi a playlist` works from every list, including creating a playlist on the fly.
-- [ ] `Riproduci dopo` inserts right after the current track and `Accoda` appends at the end, without interrupting playback.
-- [ ] `Testo` opens the lyrics page for the selected track.
-- [ ] Widget tests cover the sheet entries per context.
+- [x] Long press on any track row opens the same sheet with the context-appropriate entries.
+- [x] `Aggiungi a playlist` works from every list, including creating a playlist on the fly.
+- [x] `Riproduci dopo` inserts right after the current track and `Accoda` appends at the end, without interrupting playback.
+- [x] `Testo` opens the lyrics page for the selected track.
+- [x] Widget tests cover the sheet entries per context.
 
 ## Covers
 
@@ -36,3 +36,7 @@ One long-press action sheet for tracks, reused by every list:
 ## Blocked by
 
 4
+
+## Notes
+
+Verified on device from the album detail (and shared by every TrackList): the long-press sheet offers Riproduci ora, Riproduci dopo, Accoda, Aggiungi a playlist and Testo; the queue reuses the same sheet by rebuilding the Song from the queued item. Per-track downloads are not offered because the download feature is container based.

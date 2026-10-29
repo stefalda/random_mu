@@ -20,10 +20,10 @@ parent: ../spec.md
 
 ## Acceptance criteria
 
-- [ ] Playlist detail lists tracks in saved order and plays from the tapped track in the current mode.
-- [ ] Removing a track updates the server (verified with `getPlaylist`) and the list refreshes.
-- [ ] Android Auto browse cache for that playlist is invalidated after the removal.
-- [ ] Rename is reachable from the detail page and from the list.
+- [x] Playlist detail lists tracks in saved order and plays from the tapped track in the current mode.
+- [x] Removing a track updates the server (verified with `getPlaylist`) and the list refreshes.
+- [x] Android Auto browse cache for that playlist is invalidated after the removal.
+- [x] Rename is reachable from the detail page and from the list.
 
 ## Covers
 
@@ -34,3 +34,7 @@ parent: ../spec.md
 ## Blocked by
 
 4
+
+## Notes
+
+Verified on device against Navidrome: removing a track from a scratch playlist left one track on the server and refreshed the page; the scratch playlist was deleted afterwards.

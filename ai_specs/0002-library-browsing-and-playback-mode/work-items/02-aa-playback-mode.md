@@ -29,12 +29,12 @@ Make the car follow the app's playback mode and switch it with the standard shuf
 
 ## Acceptance criteria
 
-- [ ] `dumpsys media_session` shows `shuffleMode` matching the app mode and the standard shuffle action in the actions bitmap.
-- [ ] Changing the mode from the car persists it, reorders the queue and updates the player page toggle.
-- [ ] Tapping a track in the car plays the container in order when the mode is `Sequenziale`, and shuffled when it is `Casuale`.
-- [ ] AA browse lists show songs in container order (no unconditional shuffle in `getChildren`).
-- [ ] Both custom actions are visible in the car bar: the mode toggle and "Play Similar".
-- [ ] Using the mode toggle from the car persists the mode, reorders the queue and updates the app toggle.
+- [x] `dumpsys media_session` shows `shuffleMode` matching the app mode and the standard shuffle action in the actions bitmap.
+- [x] Changing the mode from the car persists it, reorders the queue and updates the player page toggle.
+- [x] Tapping a track in the car plays the container in order when the mode is `Sequenziale`, and shuffled when it is `Casuale`.
+- [x] AA browse lists show songs in container order (no unconditional shuffle in `getChildren`).
+- [x] Both custom actions are visible in the car bar: the mode toggle and "Play Similar".
+- [x] Using the mode toggle from the car persists the mode, reorders the queue and updates the app toggle.
 
 ## Covers
 
@@ -45,3 +45,7 @@ Make the car follow the app's playback mode and switch it with the standard shuf
 ## Blocked by
 
 1
+
+## Notes
+
+Verified on the Desktop Head Unit: the car bar shows the mode toggle next to Play Similar and switching it from the car flipped the session to sequential while the track kept playing. Android Auto 17.x does not render the platform shuffle control, so the custom toggle is required (see ledger L7 Answer History).

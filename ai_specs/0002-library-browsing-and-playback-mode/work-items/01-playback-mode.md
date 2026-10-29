@@ -35,14 +35,14 @@ the single rule that turns a container into a queue.
 
 ## Acceptance criteria
 
-- [ ] `PlaybackMode` is persisted; after a restart the last used mode is active, and a fresh install starts on `Sequenziale`.
-- [ ] Starting an album/playlist/artist/favorites sequentially keeps the container order and starts at the tapped track.
-- [ ] Starting the same container in `Casuale` starts at the tapped track with the rest shuffled.
-- [ ] Toggling the mode while playing reorders the queue without stopping audio and without losing the playback position; two consecutive toggles return to the original order.
-- [ ] Queues that do not come from a container (Play Similar, restored session) treat their queued order as the original order.
-- [ ] The random commands leave the persisted mode untouched.
-- [ ] Unit tests cover persistence, both queue-building modes, and the reorder round-trip.
-- [ ] `flutter analyze` and `flutter test` are clean.
+- [x] `PlaybackMode` is persisted; after a restart the last used mode is active, and a fresh install starts on `Sequenziale`.
+- [x] Starting an album/playlist/artist/favorites sequentially keeps the container order and starts at the tapped track.
+- [x] Starting the same container in `Casuale` starts at the tapped track with the rest shuffled.
+- [x] Toggling the mode while playing reorders the queue without stopping audio and without losing the playback position; two consecutive toggles return to the original order.
+- [x] Queues that do not come from a container (Play Similar, restored session) treat their queued order as the original order.
+- [x] The random commands leave the persisted mode untouched.
+- [x] Unit tests cover persistence, both queue-building modes, and the reorder round-trip.
+- [x] `flutter analyze` and `flutter test` are clean.
 
 ## Covers
 
@@ -53,3 +53,7 @@ the single rule that turns a container into a queue.
 ## Blocked by
 
 None - ready to start
+
+## Notes
+
+Verified on device: a playlist queued in container order, the shuffle toggle reordered the live queue while the current track kept playing (00:52 -> 01:27 across toggles), and toggling back restored the original order. Unit tests cover planQueue and shuffledKeepingCurrent.

@@ -17,10 +17,10 @@ parent: ../spec.md
 
 ## Acceptance criteria
 
-- [ ] `Preferiti` shows three sections; starred albums open the album detail.
-- [ ] `Generi` lists genres and plays a genre's tracks in the current mode.
-- [ ] `Cerca` queries the server and shows Artists/Albums/Tracks sections with artwork.
-- [ ] Every track in these lists supports the track actions.
+- [x] `Preferiti` shows three sections; starred albums open the album detail.
+- [x] `Generi` lists genres and plays a genre's tracks in the current mode.
+- [x] `Cerca` queries the server and shows Artists/Albums/Tracks sections with artwork.
+- [x] Every track in these lists supports the track actions.
 
 ## Covers
 
@@ -31,3 +31,7 @@ parent: ../spec.md
 ## Blocked by
 
 3, 5
+
+## Notes
+
+Verified on device: Preferiti lists starred tracks and albums, and searching "blur" returns the Blur artist plus The Best Of Blur with navigable album results.

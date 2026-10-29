@@ -23,11 +23,11 @@ parent: ../spec.md
 
 ## Acceptance criteria
 
-- [ ] Album detail lists tracks in album order; tapping a track starts playback there in the current mode.
-- [ ] `Riproduci` and `Casuale` in the header set that mode and start the container accordingly.
-- [ ] Artist detail lists albums and can play all artist tracks in album order.
-- [ ] `Accoda` and `Scarica` work from both detail pages.
-- [ ] `TrackList` is the single list widget used by these pages.
+- [x] Album detail lists tracks in album order; tapping a track starts playback there in the current mode.
+- [x] `Riproduci` and `Casuale` in the header set that mode and start the container accordingly.
+- [x] Artist detail lists albums and can play all artist tracks in album order.
+- [x] `Accoda` and `Scarica` work from both detail pages.
+- [x] `TrackList` is the single list widget used by these pages.
 
 ## Covers
 
@@ -38,3 +38,7 @@ parent: ../spec.md
 ## Blocked by
 
 3
+
+## Notes
+
+Verified on device: the Adele artist page shows the albums grid and Riproduci tutto/Casuale, the Skyfall album detail lists its track in album order, and tapping a track plays the container from there.

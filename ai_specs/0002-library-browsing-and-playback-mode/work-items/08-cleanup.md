@@ -19,10 +19,10 @@ parent: ../spec.md
 
 ## Acceptance criteria
 
-- [ ] No reference to `MenuPage` or `searchControllerProvider` remains.
-- [ ] All random commands are reachable only from the `Casuale` entry (and the player).
-- [ ] `flutter analyze` and `flutter test` are clean.
-- [ ] README describes the four destinations, the details and the playback mode.
+- [x] No reference to `MenuPage` or `searchControllerProvider` remains.
+- [x] All random commands are reachable only from the `Casuale` entry (and the player).
+- [x] `flutter analyze` and `flutter test` are clean.
+- [x] README describes the four destinations, the details and the playback mode.
 
 ## Covers
 
@@ -32,3 +32,7 @@ parent: ../spec.md
 ## Blocked by
 
 3, 4, 5, 6, 7
+
+## Notes
+
+MenuPage/MenuButton removed, no searchControllerProvider references remain, README updated. flutter analyze and flutter test are clean.

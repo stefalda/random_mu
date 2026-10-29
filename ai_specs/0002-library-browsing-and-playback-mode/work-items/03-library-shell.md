@@ -26,11 +26,11 @@ Replace the command menu with a navigable library.
 
 ## Acceptance criteria
 
-- [ ] The app opens on `Libreria` with bottom navigation between the four destinations.
-- [ ] `Artisti` and `Album` tabs list the library with artwork, and each filters independently.
-- [ ] Typing in one tab never filters another tab (regression test for the shared controller).
-- [ ] `Casuale` exposes the three random commands and does not change the playback mode.
-- [ ] No yellow/black overflow stripes in any AppBar.
+- [x] The app opens on `Libreria` with bottom navigation between the four destinations.
+- [x] `Artisti` and `Album` tabs list the library with artwork, and each filters independently.
+- [x] Typing in one tab never filters another tab (regression test for the shared controller).
+- [x] `Casuale` exposes the three random commands and does not change the playback mode.
+- [x] No yellow/black overflow stripes in any AppBar.
 
 ## Covers
 
@@ -41,3 +41,7 @@ Replace the command menu with a navigable library.
 ## Blocked by
 
 1
+
+## Notes
+
+Verified on device: the app boots into Libreria with the four destinations, filtering Album with "blur" leaves the Artisti tab unfiltered, and the Casuale sheet lists the three random commands.
