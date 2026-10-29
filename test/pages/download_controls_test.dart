@@ -297,6 +297,38 @@ void main() {
       expect(service.enqueued, ['favorites']);
     });
 
+    testWidgets('can remove a queued or in-progress item', (tester) async {
+      final service = _FakeDownloadService(items: [
+        _item(id: '1', status: DownloadStatus.queued),
+        _item(
+          id: '2',
+          type: DownloadItemType.album,
+          sourceId: 'al-1',
+          title: 'Album',
+          status: DownloadStatus.downloading,
+          progress: 0.4,
+        ),
+      ]);
+
+      await tester.pumpWidget(_wrap(const DownloadsPage(), service));
+      await tester.pump();
+
+      expect(find.byIcon(Icons.delete_outline), findsNWidgets(2));
+
+      // The queued tile spins an indeterminate indicator: pump fixed frames
+      // instead of waiting for the tree to settle.
+      await tester.tap(find.byIcon(Icons.delete_outline).first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Remove download'), findsOneWidget);
+
+      await tester.tap(find.text('Remove'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(service.removed, ['1']);
+    });
+
     testWidgets('shows the limit message when the limit is reached',
         (tester) async {
       final service = _FakeDownloadService(

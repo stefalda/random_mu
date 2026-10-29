@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:random_mu/services/download_models.dart';
+import 'package:random_mu/services/permissions.dart';
 
 /// Shows user-facing notifications about offline downloads.
 ///
@@ -62,16 +63,9 @@ class NotificationService {
 
   /// Asks for notification permission once, when the user starts downloading.
   Future<void> ensurePermission() async {
-    if (!_ready || _permissionRequested) return;
+    if (_permissionRequested) return;
     _permissionRequested = true;
-    try {
-      await _plugin
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.requestNotificationsPermission();
-    } catch (error) {
-      debugPrint('Cannot request notification permission: $error');
-    }
+    await ensureNotificationPermission();
   }
 
   /// Queues a completion notification (batched with its neighbours).

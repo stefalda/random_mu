@@ -26,7 +26,7 @@
             android:resource="@xml/automotive_app_desc" />
         <!--android:name=".MainActivity"-->
         <activity
-            android:name="com.ryanheise.audioservice.AudioServiceActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""
@@ -63,12 +63,12 @@
         </intent-filter>
     </service>
 
-    <!-- Download foreground service (flutter_background_service) -->
+    <!-- Download foreground service: keeps the queue alive while backgrounded -->
     <service
-        android:name="id.flutter.flutter_background_service.BackgroundService"
+        android:name=".OfflineDownloadService"
         android:foregroundServiceType="dataSync"
-        android:exported="true"
-        tools:node="merge" />
+        android:exported="false"
+        android:stopWithTask="false" />
 
     <!-- ADD THIS "RECEIVER" element -->
     <receiver android:name="com.ryanheise.audioservice.MediaButtonReceiver"

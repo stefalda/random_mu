@@ -272,6 +272,30 @@ void main() {
     expect(await service.getLocalPath('s1'), isNull);
   });
 
+  test('a paused queue stays paused after a restart', () async {
+    final service = buildService(songs: {
+      'pl-1': [_song('s1')],
+    });
+    await service.ready;
+
+    service.pauseQueue();
+    await service.enqueuePlaylist('pl-1', 'Playlist');
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+
+    final restarted = buildService(songs: {
+      'pl-1': [_song('s1')],
+    });
+    await restarted.ready;
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+
+    expect(restarted.isPaused, isTrue);
+    expect(restarted.songAttempts, 0);
+    expect(restarted.queue.single.status, DownloadStatus.queued);
+
+    // Cleanup so the temp dir assertions in other tests stay meaningful.
+    await restarted.removeItem(restarted.queue.single.id);
+  });
+
   test('restores the queue after a restart and requeues in-progress items',
       () async {
     final downloading = DownloadItem(
@@ -312,6 +336,45 @@ void main() {
     expect((saved.single as Map)['sourceId'], 'pl-1');
   });
 
+  test('pausing stops the item in flight and resumes from the next song',
+      () async {
+    final service = buildService(
+      songs: {
+        'pl-1': [_song('s1'), _song('s2'), _song('s3')],
+      },
+      byteDelay: const Duration(milliseconds: 30),
+    );
+    await service.ready;
+
+    await service.enqueuePlaylist('pl-1', 'Playlist');
+    final item = service.queue.single;
+
+    // Wait for the first song to land, then pause.
+    for (var i = 0; i < 200; i++) {
+      if (await service.getLocalPath('s1') != null) break;
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+    }
+    service.pauseQueue();
+
+    for (var i = 0; i < 200; i++) {
+      if (service.queue.single.status == DownloadStatus.queued) break;
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+    }
+
+    final paused = service.queue.single;
+    expect(paused.status, DownloadStatus.queued);
+    expect(paused.downloadedSongs, greaterThanOrEqualTo(1));
+    expect(paused.downloadedSongs, lessThan(3));
+
+    final attemptsBeforeResume = service.songAttempts;
+    service.resumeQueue();
+    await _waitForTerminal(service, item.id);
+
+    expect(service.queue.single.status, DownloadStatus.completed);
+    // The songs downloaded before the pause are not fetched twice.
+    expect(service.songAttempts - attemptsBeforeResume, lessThan(3));
+  });
+
   test('pausing the queue stops new items until resumed', () async {
     final service = buildService(songs: {
       'pl-1': [_song('s1')],
@@ -331,6 +394,30 @@ void main() {
     await _waitForTerminal(service, item.id);
 
     expect(service.queue.single.status, DownloadStatus.completed);
+  });
+
+  test('deleting an in-progress item removes what was already downloaded',
+      () async {
+    final service = buildService(
+      songs: {
+        'pl-1': [_song('s1'), _song('s2'), _song('s3')],
+      },
+      byteDelay: const Duration(milliseconds: 30),
+    );
+    await service.ready;
+
+    await service.enqueuePlaylist('pl-1', 'Playlist');
+    for (var i = 0; i < 200; i++) {
+      if (await service.getLocalPath('s1') != null) break;
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+    }
+
+    final item = service.queue.single;
+    await service.removeItem(item.id);
+
+    expect(service.queue, isEmpty);
+    expect(await tempDir.list().toList(), isEmpty);
+    expect(await service.getLocalPath('s1'), isNull);
   });
 
   test('deleting an item removes its files and metadata', () async {

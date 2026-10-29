@@ -230,6 +230,7 @@ class PlayerService extends ChangeNotifier {
       if (ds != null) {
         final localPath = await ds.getLocalPath(song.id);
         if (localPath != null) {
+          debugPrint('Offline playback: ${song.title} -> $localPath');
           sourceUri = Uri.file(localPath);
         } else {
           sourceUri = Uri.parse(mediaItem.extras!['streamUrl']);

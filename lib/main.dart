@@ -16,7 +16,7 @@ import 'package:random_mu/providers/playlists_notifier.dart';
 import 'package:random_mu/providers/playlists_state.dart';
 import 'package:random_mu/providers/subsonic_preferences_provider.dart';
 import 'package:random_mu/services/download_service.dart';
-import 'package:random_mu/services/background_download_service.dart';
+import 'package:random_mu/services/download_foreground_service.dart';
 import 'package:random_mu/services/notification_service.dart';
 import 'package:random_mu/services/player_service.dart';
 import 'package:random_mu/services/preference_service.dart';
@@ -42,7 +42,7 @@ final playerServiceProvider = Provider<PlayerService>((ref) {
   );
   InjectX.add(ds);
   // Keep the process (and therefore the queue) alive while downloads run.
-  InjectX.add(BackgroundDownloadKeeper(ds));
+  InjectX.add(DownloadForegroundService(ds));
   return playerService;
 });
 

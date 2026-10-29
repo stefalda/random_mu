@@ -83,10 +83,11 @@ class DownloadService extends ChangeNotifier {
   /// True when the user paused the queue from the notification.
   bool get isPaused => _paused;
 
-  /// Stops starting new items; the item currently in flight finishes its song.
+  /// Stops the item in flight and keeps the queue paused (persisted).
   void pauseQueue() {
     if (_paused) return;
     _paused = true;
+    unawaited(_savePausedState(true));
     notifyListeners();
   }
 
@@ -94,8 +95,14 @@ class DownloadService extends ChangeNotifier {
   void resumeQueue() {
     if (!_paused) return;
     _paused = false;
+    unawaited(_savePausedState(false));
     notifyListeners();
     unawaited(_processQueue());
+  }
+
+  Future<void> _savePausedState(bool paused) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('download_paused', paused);
   }
 
   /// Queue item for a library item, or null when it was never enqueued.
@@ -292,19 +299,41 @@ class DownloadService extends ChangeNotifier {
         downloadedSongs: 0,
         clearError: true,
       );
+      // Record the songs up front: a download that is paused or deleted before
+      // completion must still know which files belong to it.
+      await _storeItemSongIds(_queue[index], songs);
+      await _saveState();
       notifyListeners();
 
       final dir = await _getStorageDir();
       if (dir == null) throw Exception('Cannot access storage directory');
 
       for (int i = 0; i < songs.length; i++) {
-        await _downloadSongWithRetries(songs[i], dir);
+        // A pause (notification action or Downloads page) stops the item in
+        // flight: it goes back to the queue and resumes from the next song.
+        if (_paused) {
+          _queue[index] = _queue[index].copyWith(
+            status: DownloadStatus.queued,
+            downloadedSongs: i,
+            progress: songs.isEmpty ? 0.0 : i / songs.length,
+          );
+          await _saveState();
+          notifyListeners();
+          return;
+        }
+
+        // Songs already on disk (resume after pause/restart) are not fetched
+        // again.
+        if (await getLocalPath(songs[i].id) == null) {
+          await _downloadSongWithRetries(songs[i], dir);
+        }
 
         await _refreshStorageInfo();
         _queue[index] = _queue[index].copyWith(
           downloadedSongs: i + 1,
           progress: (i + 1) / songs.length,
         );
+        await _saveState();
         notifyListeners();
 
         if (_storageInfo.isLimitReached) {
@@ -650,12 +679,15 @@ class DownloadService extends ChangeNotifier {
       }
     }
 
+    _paused = prefs.getBool('download_paused') ?? false;
+
     final limitStr = prefs.getString('storage_limit');
     if (limitStr != null) {
       _storageInfo = StorageInfo(limitBytes: int.tryParse(limitStr));
     }
 
     await _refreshStorageInfo();
+    await _cleanupPartialFiles();
 
     for (int i = 0; i < _queue.length; i++) {
       if (_queue[i].status == DownloadStatus.downloading) {
@@ -671,6 +703,22 @@ class DownloadService extends ChangeNotifier {
     notifyListeners();
 
     if (autoStart) unawaited(_processQueue());
+  }
+
+  /// A crashing download can leave `<song>.part` files behind: the queue is
+  /// restored before any download restarts, so they are always orphans.
+  Future<void> _cleanupPartialFiles() async {
+    final dir = await _getStorageDir();
+    if (dir == null) return;
+    try {
+      await for (final entity in dir.list()) {
+        if (entity is io.File && entity.path.endsWith('.part')) {
+          await entity.delete();
+        }
+      }
+    } catch (error) {
+      debugPrint('Cannot clean up partial downloads: $error');
+    }
   }
 
   Future<void> _saveStorageLimit(int? limitBytes) async {

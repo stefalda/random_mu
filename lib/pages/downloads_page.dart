@@ -238,39 +238,78 @@ class _DownloadItemTile extends StatelessWidget {
   Widget _buildTrailing(BuildContext context) {
     switch (item.status) {
       case DownloadStatus.queued:
-        return const SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            _deleteButton(context),
+          ],
         );
       case DownloadStatus.downloading:
-        return SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            value: item.progress.clamp(0.0, 1.0),
-          ),
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                value: item.progress.clamp(0.0, 1.0),
+              ),
+            ),
+            _deleteButton(context),
+          ],
         );
       case DownloadStatus.completed:
-        return IconButton(
-          icon: const Icon(Icons.delete_outline),
-          onPressed: () => downloadService.removeItem(item.id),
-        );
+        return _deleteButton(context);
       case DownloadStatus.failed:
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
               icon: const Icon(Icons.refresh),
+              tooltip: 'Retry',
               onPressed: () => downloadService.retryItem(item.id),
             ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () => downloadService.removeItem(item.id),
-            ),
+            _deleteButton(context),
           ],
         );
+    }
+  }
+
+  Widget _deleteButton(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.delete_outline),
+      tooltip: 'Remove download',
+      onPressed: () => _confirmRemove(context),
+    );
+  }
+
+  Future<void> _confirmRemove(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove download'),
+        content: Text('Remove "${item.title}" and its downloaded files?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await downloadService.removeItem(item.id);
     }
   }
 }
