@@ -2,17 +2,15 @@
 
 <img src="./assets/icon_round_purple.png" alt="App Icon" width="200" height="200">
 
-Random Muu is a simple, yet powerful music player app written in Flutter. It
-leverages the Subsonic API to provide a seamless music experience, allowing you
-to quickly play random songs from various categories. The app supports quick
-song selection with options such as:
+Random Muu is a Flutter music player for Subsonic-compatible servers. It browses
+your library the traditional way — artists, albums, favorites, genres, playlists,
+search — and plays it **sequentially or shuffled**, a mode you choose and the app
+remembers. When you do want to leave it to chance, the one-shot random commands
+are one tap away:
 
 - **All Random**
-- **Random by Artist**
-- **Random by Playlist**
-- **Random by Favorites**
-- **Random by Albums**
 - **Random by Playing**
+- **Random by Favorites**
 
 It also works while driving: **Android Auto** support with a browsable library,
 and an **offline mode** where playlists, albums, artists and favorites can be
@@ -30,8 +28,16 @@ optimized.
 
 ## Features
 
-- **Random Music Selection**: Get a random song from your library, or filter by
-  artist, playlist, or favorites.
+- **Library browsing**: bottom navigation with Libreria (Artists, Albums,
+  Favorites, Genres), Playlist, Downloads and Cerca; album, artist and playlist
+  detail pages with ordered track lists.
+- **Playback mode**: sequential or shuffled, persisted across restarts, switchable
+  from the player and from Android Auto; changing it reorders the live queue
+  without interrupting playback.
+- **Track actions**: long press any track to play it now, play it next, queue it,
+  add it to a playlist, or read its lyrics.
+- **Random Music Selection**: one-shot random commands for when you want to roll
+  the dice.
 - **Subsonic API Integration**: Fully integrates with the Subsonic API
   (Navidrome supported).
 - **Android Auto**: browse Playlists, Artists, Albums and Favorites on the car
@@ -40,6 +46,8 @@ optimized.
   keep listening with no connection.
 - **Local-first playback**: downloaded songs are played from the phone, only the
   missing ones are streamed.
+- **Lyrics**: synced lyrics when the server provides them, with the current line
+  highlighted and followed.
 - **Cross-Platform**: Currently tested on Web and Android.
 
 ## Web
@@ -101,13 +109,22 @@ flutter build apk --debug                           # Android build
 
 ## Features and Usage
 
-- **All Random**: Play a random song from your entire music library (limited to
-  50 songs).
-- **Random by Artist**: Choose a random song from a specific artist (limited to
-  50 songs).
-- **Random by Playlist**: Select a random song from your playlists.
-- **Random by Favorites**: Play a random song from your favorite tracks.
-- **Random by Playing**: Play a random song from the current playng song
+- **Libreria**: browse Artists (alphabetical), Albums, Favorites (tracks, albums,
+  artists) and Genres; every list has its own instant filter.
+- **Album / Artist / Playlist**: cover, metadata and the track list in the
+  container's own order, with `Riproduci`, `Casuale`, `Accoda`, `Scarica`.
+- **Playback mode**: the shuffle toggle in the player switches between
+  `Sequenziale` and `Casuale`; the choice is remembered and applies to the queue
+  that is already playing.
+- **Track actions** (long press in any list): Riproduci ora, Riproduci dopo,
+  Accoda, Aggiungi a playlist, Testo.
+- **Playlist**: create a playlist from the Playlists page, rename or delete it
+  from the row menu, add tracks while browsing and remove them from the playlist
+  detail.
+- **Cerca**: global search over Artists, Albums and Tracks (`search3`).
+- **Casuale** (shuffle button in the Libreria app bar): the one-shot commands
+  `All Random`, `Random by Playing` and `Random by Favorites`. They never change
+  the persisted playback mode.
 - **Downloads**: download content for offline playback, see below.
 
 ## Android Auto
@@ -128,11 +145,15 @@ Root
 
 Behaviour:
 
-- Tapping a song inside a playlist, album or artist **shuffles the whole
-  container** and starts from the song you tapped (the app is a "random" player).
-  Favorites keep the server order.
-- The overflow menu exposes **Play Similar** ("Random by Playing"): it replaces
-  the queue with similar songs and starts from the current one.
+- Tapping a song inside a playlist, album or artist starts its container from the
+  song you tapped **according to the current playback mode**: in `Sequenziale` the
+  container plays in order, in `Casuale` it is shuffled. The browse lists always
+  show the container order.
+- The playback mode is published as the session `shuffleMode` and can be switched
+  from the car with the mode action next to "Play Similar".
+- The media bar exposes the **mode toggle** (sequential / shuffled) and
+  **Play Similar** ("Random by Playing"), which replaces the queue with similar
+  songs and starts from the current one.
 - Now playing shows title, artist, album, artwork and progress; play/pause,
   skip and seek use the `MediaSession` managed by `audio_service`.
 - Browsing works **offline** for content that was downloaded: metadata and
