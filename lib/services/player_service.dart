@@ -263,9 +263,12 @@ class PlayerService extends ChangeNotifier {
       // Play
       unawaited(play());
     } else {
+      // A restored session must stay *paused and ready*: stopping the player
+      // resets the platform state to idle, which hides the now playing metadata
+      // on the lock screen, in the notification and in Android Auto.
       unawaited(play());
-      await Future.delayed(Duration(milliseconds: 500));
-      await audioPlayer.stop();
+      await Future.delayed(const Duration(milliseconds: 700));
+      await audioPlayer.pause();
     }
     // Store in preferences the current audio sources...
     final PreferenceService ps = inject<PreferenceService>();

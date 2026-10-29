@@ -1,5 +1,6 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:random_mu/pages/artwork_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/main.dart';
@@ -16,15 +17,13 @@ class MusicPlayerScreen extends ConsumerWidget {
     if (playerStateAsyncValue.error != null) {
       debugPrint("Error: $playerStateAsyncValue");
     }
-    return StreamBuilder<MediaItem?>(
-      stream: audioPlayer.currentIndexStream.map((index) {
-        if (index != null && index < audioPlayer.sequence.length) {
-          return audioPlayer.sequence[index].tag as MediaItem;
-        }
-        return null;
-      }),
+    // `sequenceStateStream` keeps the current source even while paused, so a
+    // restored (paused) session still shows its track instead of an empty page.
+    return StreamBuilder<SequenceState?>(
+      stream: audioPlayer.sequenceStateStream,
       builder: (context, snapshot) {
-        final mediaItem = snapshot.data;
+        final source = snapshot.data?.currentSource;
+        final mediaItem = source?.tag as MediaItem?;
 
         if (mediaItem == null) {
           return Center(child: Text('No song is currently playing'));
