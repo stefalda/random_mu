@@ -101,11 +101,17 @@ Recommended Answer: Azione shuffle standard di sistema (`ACTION_SET_SHUFFLE_MODE
 
 Answer: Azione standard shuffle.
 
-Decision: Android Auto espone il cambio modalità tramite l'azione shuffle standard; lo stato `shuffleMode` della sessione riflette sempre la modalità corrente.
+Decision: La sessione pubblica sempre `shuffleMode` (stato standard) e il cambio modalità è esposto in auto da un'azione custom dedicata il cui icona/etichetta descrive lo stato successivo, perché Android Auto 17.x non renderizza il controllo shuffle di piattaforma.
 
 Constraints:
-- Nessuna seconda azione custom nella barra dei controlli per la modalità.
-- Se l'interfaccia auto invia `setShuffleMode`, l'app deve onorarlo come un cambio di modalità (L2) e riordinare la coda (L6).
+- `shuffleMode` resta pubblicato e `setShuffleMode` resta onorato come cambio di modalità (L2) con riordino della coda (L6).
+- L'azione custom della modalità è dichiarata prima di "Play Similar", così resta nella barra visibile.
+
+Answer History:
+- Initial answer: solo azione shuffle standard, nessuna azione custom.
+- Revised answer: dopo la verifica sul Desktop Head Unit, Android Auto non mostra il controllo shuffle di piattaforma nella barra del now-playing; si aggiunge quindi un'azione custom di fallback.
+
+Reason: senza il fallback D2 (cambiare la modalità dall'interfaccia auto) non sarebbe soddisfatta su questa versione di Android Auto.
 
 ### L8
 

@@ -116,6 +116,7 @@ class AudioPlayerHandler extends BaseAudioHandler
   PlaybackState stateToPlaybackState(PlayerState state) {
     final isPlaying = state.playing;
     final processingState = state.processingState;
+    final shuffled = _playerService?.mode.isShuffle ?? false;
     return PlaybackState(
       playing: isPlaying,
       controls: [
@@ -123,7 +124,16 @@ class AudioPlayerHandler extends BaseAudioHandler
         MediaControl.play,
         MediaControl.pause,
         MediaControl.skipToNext,
-        // Exposed to Android Auto as an overflow menu entry.
+        // The standard shuffle state is published below, but this Android Auto
+        // version does not render the platform shuffle control, so the mode is
+        // also exposed as a toggle whose label describes the next state.
+        MediaControl.custom(
+          androidIcon: shuffled
+              ? 'drawable/ic_playback_sequential'
+              : 'drawable/ic_playback_shuffle',
+          label: shuffled ? 'Riproduzione sequenziale' : 'Riproduzione casuale',
+          name: 'togglePlaybackMode',
+        ),
         MediaControl.custom(
           androidIcon: 'drawable/ic_play_similar',
           label: 'Play Similar',
@@ -136,8 +146,8 @@ class AudioPlayerHandler extends BaseAudioHandler
         MediaAction.seekBackward,
         MediaAction.setShuffleMode,
       },
-      // Android Auto's standard shuffle control reflects and changes this.
-      shuffleMode: (_playerService?.mode.isShuffle ?? false)
+      // Android Auto's standard shuffle state; kept in sync with the app mode.
+      shuffleMode: shuffled
           ? AudioServiceShuffleMode.all
           : AudioServiceShuffleMode.none,
       processingState: switch (processingState) {
@@ -477,6 +487,8 @@ class AudioPlayerHandler extends BaseAudioHandler
       [Map<String, dynamic>? extras]) async {
     if (name == 'playSimilar') {
       await _playerService?.randomByPlayingSong();
+    } else if (name == 'togglePlaybackMode') {
+      await _playerService?.toggleMode();
     }
   }
 

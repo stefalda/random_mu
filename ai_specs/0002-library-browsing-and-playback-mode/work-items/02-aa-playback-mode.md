@@ -14,7 +14,10 @@ Make the car follow the app's playback mode and switch it with the standard shuf
   the car is the same decision as a change in the app (persisted, reordered, reflected in the UI).
 - Android Auto browse/playback follow the mode: tapping a track in the car starts its container
   according to the mode instead of always shuffling; the browse song lists keep the container order.
-- No custom action is added for the mode; "Play Similar" keeps working as is.
+- Publish the standard `shuffleMode`, but note that Android Auto 17.x does not render the platform
+  shuffle control: the mode is therefore also exposed as a custom action (`togglePlaybackMode`)
+  declared before "Play Similar", with icon/label describing the next state. "Play Similar" keeps
+  working as is.
 
 ## Required context
 
@@ -30,7 +33,8 @@ Make the car follow the app's playback mode and switch it with the standard shuf
 - [ ] Changing the mode from the car persists it, reorders the queue and updates the player page toggle.
 - [ ] Tapping a track in the car plays the container in order when the mode is `Sequenziale`, and shuffled when it is `Casuale`.
 - [ ] AA browse lists show songs in container order (no unconditional shuffle in `getChildren`).
-- [ ] The "Play Similar" custom action still appears and works.
+- [ ] Both custom actions are visible in the car bar: the mode toggle and "Play Similar".
+- [ ] Using the mode toggle from the car persists the mode, reorders the queue and updates the app toggle.
 
 ## Covers
 

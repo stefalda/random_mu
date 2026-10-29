@@ -66,7 +66,7 @@ A traditional library browsing experience, with sequential or randomized playbac
 
 9. The Android Auto browse and playback behaviour follows the current mode instead of always shuffling containers. Tapping a track in the car starts its container according to requirements 3 and 7. [L2]
    - This supersedes Spec `0001-android-auto-offline` requirements 2, 3 and 4, which mandated shuffling the playlist, artist and album containers unconditionally.
-10. The media session publishes the current mode as `shuffleMode` (`all` for `Casuale`, `none` for `Sequenziale`) and declares the standard `setShuffleMode` system action; AA uses the standard shuffle control, with no dedicated custom action for the mode. [L7]
+10. The media session publishes the current mode as `shuffleMode` (`all` for `Casuale`, `none` for `Sequenziale`) and declares the standard `setShuffleMode` system action. Because Android Auto 17.x does not render the platform shuffle control in its media bar, the mode is also exposed as a custom action whose icon and label describe the next state; it is declared before "Play Similar" so it stays visible in the bar. [L7]
 11. A `setShuffleMode` call coming from the car is treated exactly like a mode change in the app: it updates the persisted mode, the app UI and the queue ordering. [L2][L6][L7]
 12. The existing "Play Similar" custom action keeps working unchanged.
 
