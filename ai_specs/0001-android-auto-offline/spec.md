@@ -174,3 +174,5 @@ No existing Test Seams found in the project. The above adds new Test Seams at th
 - New `pubspec.yaml` dependencies required: `path_provider` (for offline storage), plus a background-work plugin (`flutter_background_service` recommended for long-running download daemon, or `workmanager` for periodic tasks).
 - The `app/build.gradle` has `androidx.car.app:app-automotive` commented out. This may need to be uncommented or added for Android Auto to recognize the app on API 30+ devices. Verify during implementation.
 - `AudioService.init()` and `JustAudioBackground.init()` both manage Android notification channels. When migrating to `AudioService.init()`, ensure the notification channel is configured via `AudioServiceConfig` to avoid duplicate channel registration errors.
+
+- Requirements 2, 3 and 4 (Android Auto shuffles the playlist, artist and album containers unconditionally) are superseded by Spec `0002-library-browsing-and-playback-mode`, where container playback follows the user's playback mode.
