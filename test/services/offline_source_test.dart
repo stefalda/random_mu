@@ -9,6 +9,32 @@ MediaItem _item({String? streamUrl}) => MediaItem(
     );
 
 void main() {
+  group('resolveArtUri', () {
+    test('prefers the cached artwork', () {
+      final uri = resolveArtUri(
+        remoteUrl: 'https://server/rest/getCoverArt.view?id=mf-1',
+        localPath: '/data/user/0/app/app_flutter/offline_music/covers/x.img',
+      );
+
+      expect(uri!.scheme, 'file');
+      expect(uri.toFilePath(),
+          '/data/user/0/app/app_flutter/offline_music/covers/x.img');
+    });
+
+    test('falls back to the remote cover', () {
+      final uri = resolveArtUri(
+        remoteUrl: 'https://server/rest/getCoverArt.view?id=mf-1',
+      );
+
+      expect(uri.toString(), 'https://server/rest/getCoverArt.view?id=mf-1');
+    });
+
+    test('is null when there is no artwork at all', () {
+      expect(resolveArtUri(), isNull);
+      expect(resolveArtUri(remoteUrl: ''), isNull);
+    });
+  });
+
   group('resolveSongUri', () {
     test('uses the downloaded file when it exists', () {
       final uri = resolveSongUri(

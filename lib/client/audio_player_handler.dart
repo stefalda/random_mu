@@ -22,10 +22,18 @@ class AudioPlayerHandler extends BaseAudioHandler
   PlayerService? _playerService;
   StreamSubscription<PlayerState>? _playerStateSubscription;
   StreamSubscription<Duration>? _positionSubscription;
+  StreamSubscription<Duration>? _bufferedSubscription;
   StreamSubscription<SequenceState?>? _sequenceSubscription;
 
   /// Cached browse metadata for offline AA browsing.
   final Map<String, List<MediaItem>> _browseCache = {};
+
+  /// When each in-memory browse node was built.
+  final Map<String, DateTime> _browseCacheAt = {};
+
+  /// In-memory nodes older than this are rebuilt, so a playlist added on the
+  /// server shows up in the car without restarting the app.
+  static const Duration browseCacheTtl = Duration(minutes: 5);
 
   /// Every item returned by [getChildren], indexable by id.
   final Map<String, MediaItem> _itemCache = {};
@@ -53,6 +61,7 @@ class AudioPlayerHandler extends BaseAudioHandler
   void _cancelListeners() {
     _playerStateSubscription?.cancel();
     _positionSubscription?.cancel();
+    _bufferedSubscription?.cancel();
     _sequenceSubscription?.cancel();
   }
 
@@ -69,6 +78,13 @@ class AudioPlayerHandler extends BaseAudioHandler
         ps.audioPlayer.positionStream.listen((position) {
       playbackState.add(playbackState.value.copyWith(
         updatePosition: position,
+      ));
+    });
+
+    _bufferedSubscription =
+        ps.audioPlayer.bufferedPositionStream.listen((buffered) {
+      playbackState.add(playbackState.value.copyWith(
+        bufferedPosition: buffered,
       ));
     });
 
@@ -101,11 +117,13 @@ class AudioPlayerHandler extends BaseAudioHandler
         MediaAction.seekForward,
         MediaAction.seekBackward,
       },
-      processingState: processingState == ProcessingState.completed
-          ? AudioProcessingState.completed
-          : isPlaying
-              ? AudioProcessingState.ready
-              : AudioProcessingState.idle,
+      processingState: switch (processingState) {
+        ProcessingState.idle => AudioProcessingState.idle,
+        ProcessingState.loading => AudioProcessingState.loading,
+        ProcessingState.buffering => AudioProcessingState.buffering,
+        ProcessingState.completed => AudioProcessingState.completed,
+        ProcessingState.ready => AudioProcessingState.ready,
+      },
       repeatMode: AudioServiceRepeatMode.none,
       shuffleMode: AudioServiceShuffleMode.none,
     );
@@ -115,7 +133,12 @@ class AudioPlayerHandler extends BaseAudioHandler
   Future<List<MediaItem>> getChildren(String parentMediaId,
       [Map<String, dynamic>? options]) async {
     final inMemory = _browseCache[parentMediaId];
-    if (inMemory != null) return inMemory;
+    final builtAt = _browseCacheAt[parentMediaId];
+    if (inMemory != null &&
+        builtAt != null &&
+        DateTime.now().difference(builtAt) < browseCacheTtl) {
+      return inMemory;
+    }
 
     List<MediaItem> children = const [];
     var loadedFromNetwork = false;
@@ -142,6 +165,7 @@ class AudioPlayerHandler extends BaseAudioHandler
     }
 
     _browseCache[parentMediaId] = children;
+    _browseCacheAt[parentMediaId] = DateTime.now();
     _registerChildren(parentMediaId, children);
     return children;
   }
@@ -427,6 +451,7 @@ class AudioPlayerHandler extends BaseAudioHandler
   /// Clears the browse cache (e.g., when refreshing).
   void clearBrowseCache() {
     _browseCache.clear();
+    _browseCacheAt.clear();
     _itemCache.clear();
     _itemParent.clear();
   }

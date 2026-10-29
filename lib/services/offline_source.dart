@@ -18,3 +18,13 @@ Uri resolveSongUri({
   }
   return Uri.parse(streamUrl);
 }
+
+/// Artwork URI for a song or container.
+///
+/// Downloaded artwork wins, so covers keep working with no connection; the
+/// remote cover URL is only a fallback.
+Uri? resolveArtUri({String? remoteUrl, String? localPath}) {
+  if (localPath != null && localPath.isNotEmpty) return Uri.file(localPath);
+  if (remoteUrl != null && remoteUrl.isNotEmpty) return Uri.parse(remoteUrl);
+  return null;
+}

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/pages/artwork_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
@@ -33,17 +34,12 @@ class QueueList extends ConsumerWidget {
                     // Album artwork
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4),
-                      child: metadata.artUri != null
-                          ? Image.network(
-                              metadata.artUri.toString(),
-                              width: 56,
-                              height: 56,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const _DefaultArtwork();
-                              },
-                            )
-                          : const _DefaultArtwork(),
+                      child: ArtworkImage(
+                        uri: metadata.artUri,
+                        width: 56,
+                        height: 56,
+                        fallback: const _DefaultArtwork(),
+                      ),
                     ),
                     // Play indicator overlay
                     if (isCurrentItem)

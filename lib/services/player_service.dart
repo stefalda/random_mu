@@ -224,13 +224,21 @@ class PlayerService extends ChangeNotifier {
     }
 
     final audioSources = await Future.wait(songs.map((song) async {
-      final mediaItem = createMediaItem(song, client);
+      var mediaItem = createMediaItem(song, client);
 
       // Downloaded songs play from disk, everything else streams.
       final localPath = ds == null ? null : await ds.getLocalPath(song.id);
       if (localPath != null) {
         debugPrint('Offline playback: ${song.title} -> $localPath');
       }
+
+      // Same for the artwork, so the now-playing screen works offline too.
+      final localCover = ds?.localCoverPath(song.coverArt);
+      final artUri = resolveArtUri(
+        remoteUrl: mediaItem.artUri?.toString(),
+        localPath: localCover,
+      );
+      if (artUri != null) mediaItem = mediaItem.copyWith(artUri: artUri);
 
       return AudioSource.uri(
         resolveSongUri(mediaItem: mediaItem, localPath: localPath),

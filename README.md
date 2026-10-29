@@ -135,8 +135,12 @@ Behaviour:
   the queue with similar songs and starts from the current one.
 - Now playing shows title, artist, album, artwork and progress; play/pause,
   skip and seek use the `MediaSession` managed by `audio_service`.
-- Browsing works **offline** for content that was downloaded: metadata is cached
-  (see below) and playback falls back to the local files.
+- Browsing works **offline** for content that was downloaded: metadata and
+  artwork are cached (see below) and playback falls back to the local files.
+- Playback state reports loading/buffering and the buffered position, so the car
+  shows the right spinner and progress bar.
+- The in-memory browse tree expires after 5 minutes: a playlist added on the
+  server shows up in the car without restarting the app.
 
 ## Offline Downloads
 
@@ -201,6 +205,20 @@ started and stopped by `DownloadForegroundService`
   process alive, not to run HTTP work in a second isolate.
 - On iOS/web/desktop no service is created; downloads follow the app lifecycle.
 
+### Artwork
+
+- Cover art is downloaded together with the songs, **once per cover id** (covers
+  are shared between songs, albums and playlists), into
+  `offline_music/covers/<base64(coverId)>.img`.
+- `resolveArtUri()` (`lib/services/offline_source.dart`) prefers the cached file
+  and falls back to the server URL, so the phone player, the queue list, the
+  notification and the Android Auto now-playing screen all show covers while
+  offline. `ArtworkImage` (`lib/pages/artwork_image.dart`) picks the right loader
+  (`Image.file` vs `Image.network`).
+- Deleting a download garbage-collects the artwork no remaining item references;
+  "Clear All" removes the whole `covers` folder. Cached covers count towards the
+  storage usage.
+
 ### Notifications
 
 - One notification per completed item ("Playlist 'Chill' downloaded"), collapsed
@@ -217,14 +235,15 @@ started and stopped by `DownloadForegroundService`
 1. if a downloaded file exists for the song → play it from disk (`file://`),
 2. otherwise → stream it from the server as usual.
 
+The same happens for the artwork (`resolveArtUri`), so the now-playing screen and
+the car keep showing covers with no connection.
+
 The choice is transparent and identical on the phone and on Android Auto, so a
 partially downloaded library simply plays the songs it has, without prompts. The
-lookup uses an in-memory index of the offline folder (`songId → file`), rebuilt
-whenever storage is scanned, so a large queue does not hit SharedPreferences for
-every song and a missing metadata record cannot hide an existing file.
-
-Note: artwork of downloaded songs is still fetched from the server, so covers are
-not available while offline.
+lookup uses in-memory indexes of the offline folder (`songId → file`,
+`coverId → file`), rebuilt whenever storage is scanned, so a large queue does not
+hit SharedPreferences for every song and a missing metadata record cannot hide an
+existing file.
 
 ## Architecture Notes
 
@@ -234,16 +253,27 @@ not available while offline.
 | Playback + queue | `lib/services/player_service.dart` |
 | Android Auto browse tree + media session | `lib/client/audio_player_handler.dart` |
 | Offline browse metadata cache | `lib/services/browse_cache.dart` |
+| Local file/artwork resolution | `lib/services/offline_source.dart` |
 | Download queue, retries, storage limit | `lib/services/download_service.dart` |
 | Download foreground service bridge | `lib/services/download_foreground_service.dart` |
 | Download notifications | `lib/services/notification_service.dart` |
 | Runtime permissions | `lib/services/permissions.dart` |
 | Downloads UI | `lib/pages/downloads_page.dart`, `lib/pages/download_button.dart` |
+| Artwork widget (file vs network) | `lib/pages/artwork_image.dart` |
 
 The offline browse cache is primed when an item finishes downloading: the
-container node (e.g. `playlist-<id>`) and its entry inside the category node are
-stored, so the Android Auto tree can be built with no network. Deleting a
-download removes those nodes again.
+container node (e.g. `playlist-<id>`, with the cached artwork of its first song)
+and its entry inside the category node are stored, so the Android Auto tree can
+be built with no network. Deleting a download removes those nodes again.
+
+Android Auto needs no custom native code: `audio_service` provides the
+`MediaBrowserService` (`AudioService` in the manifest, declared with
+`foregroundServiceType="mediaPlayback"` and the `android.media.browse.MediaBrowserService`
+intent filter), `res/xml/automotive_app_desc.xml` declares `<uses name="media"/>`,
+`MainActivity` extends `AudioServiceActivity`, and the tree itself is Dart code in
+`audio_player_handler.dart`. The commented-out `androidx.car.app:app-automotive`
+dependency is only needed by apps that ship their own Android Automotive OS
+templates UI, which a media app does not.
 
 ## Development Notes
 

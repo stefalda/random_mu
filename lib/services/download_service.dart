@@ -14,6 +14,7 @@ import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/services/browse_cache.dart';
 import 'package:random_mu/services/download_models.dart';
 import 'package:random_mu/services/notification_service.dart';
+import 'package:random_mu/services/offline_source.dart';
 
 /// Raised when the item being downloaded is deleted mid-flight.
 class _DownloadCancelled implements Exception {
@@ -58,12 +59,18 @@ class DownloadService extends ChangeNotifier {
   /// directory is scanned, so playback does not hit SharedPreferences per song
   /// and stale metadata cannot hide an existing file.
   final Map<String, String> _localFiles = {};
+
+  /// coverId -> path of the cached artwork file.
+  final Map<String, String> _coverFiles = {};
   final Completer<void> _ready = Completer<void>();
   bool _processing = false;
   bool _limitBlocked = false;
   bool _paused = false;
 
   static const int maxConcurrent = 2;
+
+  /// Sub-folder of the offline storage that holds cached artwork.
+  static const String coversDirName = 'covers';
 
   static const List<Duration> defaultRetryDelays = [
     Duration(seconds: 5),
@@ -186,6 +193,7 @@ class DownloadService extends ChangeNotifier {
     final item = _queue[index];
     await _deleteItemFiles(item);
     await _removeCachedBrowseNodes(item);
+    await _garbageCollectCovers();
     _queue.removeAt(index);
     // Freeing space can unblock the queue.
     _limitBlocked = false;
@@ -217,6 +225,10 @@ class DownloadService extends ChangeNotifier {
     }
     _queue.clear();
     await _clearMetadataCache();
+    final coversDir = await _getCoversDir(create: false);
+    if (coversDir != null && await coversDir.exists()) {
+      await coversDir.delete(recursive: true);
+    }
     await browseCache.clear();
     _invalidateBrowserCache();
     _limitBlocked = false;
@@ -479,6 +491,7 @@ class DownloadService extends ChangeNotifier {
       }
       await partFile.rename(finalFile.path);
       await _cacheSongMetadata(song, filePath);
+      await _cacheCover(song.coverArt);
     } catch (_) {
       // Never leave a partial file behind.
       if (await partFile.exists()) {
@@ -504,9 +517,20 @@ class DownloadService extends ChangeNotifier {
 
     final categoryId = _browseCategoryId(item);
     if (categoryId != null) {
+      // Use the first song's artwork as the container artwork.
+      final coverId = songs.isEmpty ? null : songs.first.coverArt;
       await browseCache.upsertInCategory(
         categoryId,
-        MediaItem(id: nodeId, title: item.title, playable: false),
+        MediaItem(
+          id: nodeId,
+          title: item.title,
+          artUri: resolveArtUri(
+            remoteUrl:
+                coverId != null ? client.getCoverArtUrl(coverId) : null,
+            localPath: localCoverPath(coverId),
+          ),
+          playable: false,
+        ),
       );
     }
 
@@ -559,9 +583,12 @@ class DownloadService extends ChangeNotifier {
       album: song.album ?? '',
       duration:
           song.duration != null ? Duration(seconds: song.duration!) : null,
-      artUri: song.coverArt != null
-          ? Uri.parse(client.getCoverArtUrl(song.coverArt))
-          : null,
+      artUri: resolveArtUri(
+        remoteUrl: song.coverArt != null
+            ? client.getCoverArtUrl(song.coverArt)
+            : null,
+        localPath: localCoverPath(song.coverArt),
+      ),
       extras: song.coverArt != null ? {'coverArt': song.coverArt!} : null,
       playable: true,
     );
@@ -573,6 +600,125 @@ class DownloadService extends ChangeNotifier {
 
   Future<void> _notifyFailure(DownloadItem item) async {
     await notifications?.downloadFailed(item);
+  }
+
+  // --- Artwork ---
+
+  /// Cached artwork for a Subsonic cover id, or null when not available.
+  String? localCoverPath(String? coverId) {
+    if (coverId == null || coverId.isEmpty) return null;
+    return _coverFiles[coverId];
+  }
+
+  /// Downloads the artwork for [coverId] once and keeps it locally.
+  ///
+  /// Covers are shared between songs and containers, so this is keyed by cover
+  /// id and only fetched when a file is not on disk yet.
+  Future<void> _cacheCover(String? coverId) async {
+    if (coverId == null || coverId.isEmpty) return;
+    if (_coverFiles.containsKey(coverId)) return;
+
+    final dir = await _getCoversDir();
+    if (dir == null) return;
+
+    try {
+      final bytes = await fetchCoverBytes(coverId);
+      if (bytes == null || bytes.isEmpty) return;
+      final file = io.File('${dir.path}/${_coverFileName(coverId)}');
+      await file.writeAsBytes(bytes, flush: true);
+      _coverFiles[coverId] = file.path;
+    } catch (error) {
+      // Artwork is nice to have: never fail a download because of it.
+      debugPrint('Cannot cache artwork $coverId: $error');
+    }
+  }
+
+  /// Artwork bytes. Test seam overrides this to avoid the network.
+  @protected
+  Future<Uint8List?> fetchCoverBytes(String coverId) async {
+    final response = await httpClient.get(
+      Uri.parse(client.getCoverArtUrl(coverId)),
+    );
+    if (response.statusCode != 200) return null;
+    return response.bodyBytes;
+  }
+
+  Future<io.Directory?> _getCoversDir({bool create = true}) async {
+    final root = await _getStorageDir();
+    if (root == null) return null;
+    final dir = io.Directory('${root.path}/$coversDirName');
+    try {
+      if (!await dir.exists()) {
+        if (!create) return null;
+        await dir.create(recursive: true);
+      }
+    } catch (error) {
+      debugPrint('Cannot create the artwork directory: $error');
+      return null;
+    }
+    return dir;
+  }
+
+  /// Base64 (url-safe) keeps any cover id reversible and filesystem safe.
+  String _coverFileName(String coverId) =>
+      '${base64Url.encode(utf8.encode(coverId))}.img';
+
+  /// Last path segment. `Directory.uri` appends a trailing separator, so
+  /// `pathSegments.last` is not usable for directories.
+  static String _baseName(String path) {
+    final parts = path.split(io.Platform.pathSeparator);
+    return parts.isEmpty ? '' : parts.last;
+  }
+
+  String? _coverIdFromFile(io.File file) {
+    final name = _baseName(file.path);
+    final dot = name.lastIndexOf('.');
+    final encoded = dot > 0 ? name.substring(0, dot) : name;
+    try {
+      return utf8.decode(base64Url.decode(encoded));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Deletes artwork that no remaining download references.
+  Future<void> _garbageCollectCovers() async {
+    final dir = await _getCoversDir(create: false);
+    if (dir == null) return;
+
+    final referenced = <String>{};
+    final prefs = await SharedPreferences.getInstance();
+    for (final key in prefs.getKeys().where((k) => k.startsWith('song_'))) {
+      final data = prefs.getString(key);
+      if (data == null) continue;
+      try {
+        final cover =
+            (jsonDecode(data) as Map<String, dynamic>)['coverArt'] as String?;
+        if (cover != null && cover.isNotEmpty) referenced.add(cover);
+      } catch (_) {
+        // Ignore malformed records.
+      }
+    }
+
+    try {
+      await for (final entity in dir.list()) {
+        if (entity is! io.File) continue;
+        final coverId = _coverIdFromFile(entity);
+        if (coverId == null || !referenced.contains(coverId)) {
+          await entity.delete();
+        }
+      }
+    } catch (error) {
+      debugPrint('Cannot clean up artwork: $error');
+    }
+
+    // Do not leave an empty artwork folder behind.
+    try {
+      if (await dir.list().isEmpty) await dir.delete();
+    } catch (_) {
+      // Ignore: the folder is recreated on the next download.
+    }
+    await _refreshStorageInfo();
   }
 
   // --- Storage ---
@@ -598,15 +744,28 @@ class DownloadService extends ChangeNotifier {
     if (dir == null) return;
     int totalBytes = 0;
     _localFiles.clear();
+    _coverFiles.clear();
+
     await for (final entity in dir.list()) {
+      if (entity is io.Directory) {
+        if (_baseName(entity.path) != coversDirName) continue;
+        await for (final cover in entity.list()) {
+          if (cover is! io.File) continue;
+          totalBytes += await cover.length();
+          final coverId = _coverIdFromFile(cover);
+          if (coverId != null) _coverFiles[coverId] = cover.path;
+        }
+        continue;
+      }
       if (entity is! io.File) continue;
       totalBytes += await entity.length();
       if (entity.path.endsWith('.part')) continue;
-      final name = entity.uri.pathSegments.last;
+      final name = _baseName(entity.path);
       final dot = name.lastIndexOf('.');
       final songId = dot > 0 ? name.substring(0, dot) : name;
       _localFiles[songId] = entity.path;
     }
+
     _storageInfo = _storageInfo.copyWith(usedBytes: totalBytes);
   }
 

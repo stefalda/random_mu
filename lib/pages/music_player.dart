@@ -1,5 +1,6 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
+import 'package:random_mu/pages/artwork_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/main.dart';
 import 'package:random_mu/player_controls.dart';
@@ -51,10 +52,10 @@ class MusicPlayerScreen extends ConsumerWidget {
                       : SizedBox(
                           height: 20,
                         ),
-                  // Display album cover
+                  // Display album cover (downloaded artwork when available)
                   if (mediaItem.artUri != null)
-                    Image.network(
-                      mediaItem.artUri.toString(),
+                    ArtworkImage(
+                      uri: mediaItem.artUri,
                       width: isHorizontal
                           ? constraints.maxHeight * 0.8
                           : constraints.maxWidth * 0.7,

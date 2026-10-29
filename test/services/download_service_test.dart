@@ -14,6 +14,7 @@ class _TestDownloadService extends DownloadService {
   final Map<String, List<Song>> songsBySource;
   final Map<String, int> failuresRemaining;
   final Duration byteDelay;
+  final Set<String> coverRequests = {};
 
   final List<String> startedItems = [];
   int songAttempts = 0;
@@ -39,6 +40,12 @@ class _TestDownloadService extends DownloadService {
   }
 
   @override
+  Future<Uint8List?> fetchCoverBytes(String coverId) async {
+    coverRequests.add(coverId);
+    return Uint8List.fromList(List<int>.filled(64, 9));
+  }
+
+  @override
   Future<Uint8List> fetchSongBytes(Song song) async {
     songAttempts++;
     _concurrent++;
@@ -61,13 +68,14 @@ class _TestDownloadService extends DownloadService {
   }
 }
 
-Song _song(String id, {int size = 10}) => Song(
+Song _song(String id, {int size = 10, String? coverArt}) => Song(
       id: id,
       isDir: false,
       title: 'Song $id',
       suffix: 'mp3',
       size: size,
       duration: 100,
+      coverArt: coverArt,
     );
 
 SubsonicClient _client() => SubsonicClient(
@@ -148,6 +156,62 @@ void main() {
     expect(await io.File('${tempDir.path}/s1.mp3').exists(), isTrue);
     expect(await service.getLocalPath('s1'), '${tempDir.path}/s1.mp3');
     expect(service.storageInfo.usedBytes, 20);
+  });
+
+  test('caches the artwork once per cover and exposes its path', () async {
+    final service = buildService(songs: {
+      'pl-1': [
+        _song('s1', coverArt: 'al1'),
+        _song('s2', coverArt: 'al1'),
+        _song('s3', coverArt: 'al2'),
+      ],
+    });
+    await service.ready;
+
+    await service.enqueuePlaylist('pl-1', 'Playlist');
+    await _waitForTerminal(service, service.queue.single.id);
+
+    // Shared covers are fetched once, not once per song.
+    expect(service.coverRequests, {'al1', 'al2'});
+
+    final cover = service.localCoverPath('al1');
+    expect(cover, isNotNull);
+    expect(await io.File(cover!).exists(), isTrue);
+    expect(service.localCoverPath('missing'), isNull);
+  });
+
+  test('deleting an item removes artwork nothing else references', () async {
+    final service = buildService(songs: {
+      'pl-1': [_song('s1', coverArt: 'al1')],
+    });
+    await service.ready;
+
+    await service.enqueuePlaylist('pl-1', 'Playlist');
+    final item = service.queue.single;
+    await _waitForTerminal(service, item.id);
+    expect(service.localCoverPath('al1'), isNotNull);
+
+    await service.removeItem(item.id);
+
+    expect(service.localCoverPath('al1'), isNull);
+    final coversDir = io.Directory('${tempDir.path}/covers');
+    expect(await coversDir.exists(), isFalse);
+    expect(await tempDir.list().toList(), isEmpty);
+  });
+
+  test('clearAll removes the cached artwork', () async {
+    final service = buildService(songs: {
+      'pl-1': [_song('s1', coverArt: 'al1')],
+    });
+    await service.ready;
+
+    await service.enqueuePlaylist('pl-1', 'Playlist');
+    await _waitForTerminal(service, service.queue.single.id);
+
+    await service.clearAll();
+
+    expect(service.localCoverPath('al1'), isNull);
+    expect(await tempDir.list().toList(), isEmpty);
   });
 
   test('resolves a downloaded song even if its metadata record is gone',
