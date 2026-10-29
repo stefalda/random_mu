@@ -61,7 +61,15 @@ None - ready to start
 Implementation complete and covered by the browse-cache tests; playback goes through
 `PlayerService.playSongsStartingAt` -> `_enqueueSongs`, so the offline file fallback applies.
 
-Remaining manual check: tapping items inside the car UI needs a head unit or the Android Auto
-Desktop Head Unit, which is not available on the test machine. Verified on device (Poco F1,
-LineageOS): the same queue/playback path works from the phone and resolves local files
-(`Offline playback: <title> -> /data/user/0/.../offline_music/...`).
+Verified in the car UI with the Android Auto Desktop Head Unit (DHU over USB/AOA on the Poco F1):
+the browse tree exposes Playlists/Artists/Albums/Favorites with artwork, opening a playlist lists its
+songs, tapping a song starts playback at that song with a shuffled queue (checked in the AA Queue
+view), and the now-playing screen shows artwork, title, artist, progress and transport controls.
+
+Gap found while driving the car UI: `customAction('playSimilar')` was handled but no custom control
+was ever declared, so the action never reached Android Auto. `stateToPlaybackState` now declares
+`MediaControl.custom(name: 'playSimilar')` and
+`android/app/src/main/res/drawable/ic_play_similar.xml` provides the shuffle icon. With that, AA
+shows the shuffle button in the now-playing bar and tapping it replaces the queue with similar songs
+starting from the current one. The vector drawable must not use a theme `android:tint`, otherwise AA
+falls back to a placeholder icon.

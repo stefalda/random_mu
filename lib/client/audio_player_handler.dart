@@ -111,6 +111,12 @@ class AudioPlayerHandler extends BaseAudioHandler
         MediaControl.play,
         MediaControl.pause,
         MediaControl.skipToNext,
+        // Exposed to Android Auto as an overflow menu entry.
+        MediaControl.custom(
+          androidIcon: 'drawable/ic_play_similar',
+          label: 'Play Similar',
+          name: 'playSimilar',
+        ),
       ],
       systemActions: const {
         MediaAction.seek,
