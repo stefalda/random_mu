@@ -373,3 +373,17 @@ Recommended Answer: Yes. Cache metadata for all downloaded content so it appears
 Answer: ok
 
 Decision: Metadata cache must support fully offline AA browsing for downloaded content.
+
+---
+
+### L27
+
+Status: current
+
+Question: Where should the "Download All Favorites" action live, given the phone app has no Favorites browse page?
+
+Recommended Answer: On the Downloads page — Favorites exists only as a "Random by Favorites" menu action, so adding a new Favorites browse page just for this button is unnecessary surface area.
+
+Answer: ok
+
+Decision: The "Download All Favorites" action lives on the Downloads page, not on a dedicated Favorites browse page.

@@ -77,7 +77,7 @@ Phone app users can:
     - A "Used: X.X GB / Limit: Y.Y GB" card at the top. Tapping it opens a dialog to change the limit.
     - An overall "Clear All" option to remove all downloaded content (must show a confirmation dialog before deleting).
 16. On the existing browse pages (Playlists, Artists, Albums), each item row must show a **download icon** (cloud-download). Tapping it adds the item to the download queue. The icon changes to a progress indicator while downloading, then a checkmark when complete. [L8]
-17. On the Favorites browse, a single **"Download All Favorites"** button must be available.
+17. A single **"Download All Favorites"** action must be available on the Downloads page. The phone app has no Favorites browse page (Favorites is a menu action only), so the Downloads page hosts the action. [L27]
 18. When a download is already complete, the icon must show a checkmark. Tapping the checkmark must offer to delete the download (confirm dialog). [L13]
 
 ### Offline Download — Queue & Storage
