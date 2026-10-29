@@ -249,9 +249,10 @@ class PlayerService extends ChangeNotifier {
     // Set up a playlist with metadata.
     //final AudioSource playlist = ConcatenatingAudioSource(
     //    children: audioSources, useLazyPreparation: true);
-    if (audioPlayer.playing) {
-      await audioPlayer.stop();
-    }
+    // Do NOT stop() here: stopping publishes ProcessingState.idle, which Android
+    // maps to PlaybackState.STATE_NONE, and Android Auto then drops out of its
+    // now playing screen back to the browse list. Replacing the sources already
+    // stops the previous audio, so the session only goes through loading/ready.
     //await audioPlayer.setAudioSources(audioSources, initialPosition: restartAt);
     //await audioPlayer.setAudioSource(playlist, initialPosition: restartAt);
     await audioPlayer.setAudioSources(

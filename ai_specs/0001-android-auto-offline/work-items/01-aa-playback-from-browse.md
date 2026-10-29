@@ -75,3 +75,11 @@ that, AA shows the button in the now-playing bar and tapping it replaces the que
 songs starting from the current one. Two details worth keeping: the vector drawable must not use a
 theme `android:tint`, otherwise AA falls back to a placeholder icon, and AA caches the bitmap by
 resource id, so restarting the app is not enough to pick up a new glyph.
+
+Pressing the button used to drop Android Auto out of the now-playing screen and back to the browse
+list (the car showed "Getting your selection..." and then the app root). Cause: `_enqueueSongs`
+stopped the player before replacing the sources, `stop()` publishes `ProcessingState.idle`, which
+Android maps to `PlaybackState.STATE_NONE`, and AA reacts to a session without playback state by
+leaving now-playing. With the `stop()` removed the session only goes
+`PLAYING -> CONNECTING -> PLAYING` (recorded with `MediaSessionService` logcat) and AA stays on the
+now-playing screen while the queue is swapped.
