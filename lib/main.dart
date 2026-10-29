@@ -18,6 +18,7 @@ import 'package:random_mu/providers/playlists_notifier.dart';
 import 'package:random_mu/providers/playlists_state.dart';
 import 'package:random_mu/providers/subsonic_preferences_provider.dart';
 import 'package:random_mu/services/download_service.dart';
+import 'package:random_mu/services/background_download_service.dart';
 import 'package:random_mu/services/notification_service.dart';
 import 'package:random_mu/services/player_service.dart';
 import 'package:random_mu/services/preference_service.dart';
@@ -42,6 +43,8 @@ final playerServiceProvider = Provider<PlayerService>((ref) {
     notifications: _notificationService,
   );
   InjectX.add(ds);
+  // Keep the process (and therefore the queue) alive while downloads run.
+  InjectX.add(BackgroundDownloadKeeper(ds));
   return playerService;
 });
 
@@ -103,7 +106,10 @@ void main() async {
     config: AudioServiceConfig(
       androidNotificationChannelId: 'com.ryanheise.bg_demo.channel.audio',
       androidNotificationChannelName: 'Audio playback',
-      androidNotificationOngoing: true,
+      // audio_service asserts that an ongoing notification requires the service
+      // to leave the foreground when paused. Keeping the foreground service
+      // alive while paused is more useful for resuming from the car/notification.
+      androidNotificationOngoing: false,
       androidStopForegroundOnPause: false,
     ),
   );

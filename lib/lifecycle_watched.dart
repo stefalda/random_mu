@@ -49,6 +49,9 @@ class _LifecycleWatcherState extends State<LifecycleWatcher>
   }
 
   Future<void> _resumePlaying() async {
+    // The PlayerService is registered lazily by its provider once the user is
+    // connected; before that there is no session to restore.
+    if (!InjectX.contains<PlayerService>()) return;
     final playerService = inject<PlayerService>();
     await playerService.restoreSongs();
   }
