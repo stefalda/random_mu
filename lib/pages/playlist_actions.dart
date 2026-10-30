@@ -99,7 +99,7 @@ Future<Playlist?> createPlaylist(
     return playlist;
   } catch (error) {
     messenger.showSnackBar(
-      SnackBar(content: Text(l10n.playlistCreateFailed(describeError(context, error)))),
+      SnackBar(content: Text(l10n.playlistCreateFailed(describeErrorFor(l10n, error)))),
     );
     return null;
   }
@@ -123,7 +123,7 @@ Future<void> renamePlaylist(
     );
   } catch (error) {
     messenger.showSnackBar(
-      SnackBar(content: Text(l10n.playlistRenameFailed(describeError(context, error)))),
+      SnackBar(content: Text(l10n.playlistRenameFailed(describeErrorFor(l10n, error)))),
     );
   }
 }
@@ -164,7 +164,7 @@ Future<void> deletePlaylist(
     );
   } catch (error) {
     messenger.showSnackBar(
-      SnackBar(content: Text(l10n.playlistDeleteFailed(describeError(context, error)))),
+      SnackBar(content: Text(l10n.playlistDeleteFailed(describeErrorFor(l10n, error)))),
     );
   }
 }
@@ -218,7 +218,7 @@ Future<void> showAddToPlaylistSheet(
     );
   } catch (error) {
     messenger.showSnackBar(
-      SnackBar(content: Text(l10n.playlistAddFailed(describeError(context, error)))),
+      SnackBar(content: Text(l10n.playlistAddFailed(describeErrorFor(l10n, error)))),
     );
   }
 }

@@ -72,7 +72,7 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-              l10n.favoritesUpdateFailed(describeError(context, error))),
+              l10n.favoritesUpdateFailed(describeErrorFor(l10n, error))),
         ),
       );
     }
@@ -97,7 +97,7 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
       } catch (error) {
         messenger.showSnackBar(
           SnackBar(
-          content: Text(l10n.albumLoadFailed(describeError(context, error))),
+          content: Text(l10n.albumLoadFailed(describeErrorFor(l10n, error))),
         ),
         );
         return;

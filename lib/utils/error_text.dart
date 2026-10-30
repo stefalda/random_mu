@@ -10,8 +10,12 @@ import 'package:random_mu/l10n/l10n.dart';
 /// Socket and timeout failures are the common case on a phone (no network, a
 /// server that stopped answering), and Subsonic API messages are meaningful on
 /// their own, so they are kept as the detail.
-String describeError(BuildContext context, Object? error) {
-  final l10n = context.l10n;
+String describeError(BuildContext context, Object? error) =>
+    describeErrorFor(context.l10n, error);
+
+/// Same as [describeError] but takes the translations directly, for code that
+/// runs after an `await` and must not touch the [BuildContext].
+String describeErrorFor(AppLocalizations l10n, Object? error) {
   if (error == null) return l10n.errorUnexpected;
 
   if (error is TimeoutException) return l10n.errorTimeout;

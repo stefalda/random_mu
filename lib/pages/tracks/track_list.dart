@@ -74,8 +74,8 @@ class _TrackListState extends ConsumerState<TrackList> {
         SnackBar(
           content: Text(
             target
-                ? l10n.favoriteAddFailed(describeError(context, error))
-                : l10n.favoriteRemoveFailed(describeError(context, error)),
+                ? l10n.favoriteAddFailed(describeErrorFor(l10n, error))
+                : l10n.favoriteRemoveFailed(describeErrorFor(l10n, error)),
           ),
         ),
       );

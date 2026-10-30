@@ -53,7 +53,7 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
       } catch (error) {
         messenger.showSnackBar(
           SnackBar(
-          content: Text(l10n.playlistLoadFailed(describeError(context, error))),
+          content: Text(l10n.playlistLoadFailed(describeErrorFor(l10n, error))),
         ),
         );
         return;
@@ -109,7 +109,7 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
     } catch (error) {
       messenger.showSnackBar(
         SnackBar(
-          content: Text(l10n.trackRemoveFailed(describeError(context, error))),
+          content: Text(l10n.trackRemoveFailed(describeErrorFor(l10n, error))),
         ),
       );
     }
