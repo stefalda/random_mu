@@ -345,8 +345,22 @@ gh release create v.0.0.24 \
    --title "v.0.0.24" --notes-file CHANGELOG.md
 ```
 
-`gh` is already authenticated on this machine (`gh auth status`). Pushing a tag
-with `git push` still triggers the workflow, so use one path or the other.
+`gh` is already authenticated on this machine (`gh auth status`). Both CI
+workflows (Android and web) are now **manual-only**, so creating a tag or a
+release never builds a second, unverified artifact.
+
+The web version is published the same way, by pushing the build to `gh-pages`
+(GitHub's own Pages deployment runs, our workflow does not):
+
+```bash
+flutter build web --release --base-href="/random_mu/"
+git worktree add /tmp/ghp origin/gh-pages
+cd /tmp/ghp && git rm -rq . && cp -R <repo>/build/web/. . \
+  && git add -A && git commit -m "Deploy web build" && git push origin gh-pages
+```
+
+Verify the deployment by comparing the served bundle with the local one:
+`curl -s https://stefalda.github.io/random_mu/main.dart.js | shasum -a 256`.
 
 The release build needs `android/app/key.properties` (git-ignored) and the
 keystore it points to; both already exist locally.
