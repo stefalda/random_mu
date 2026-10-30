@@ -1,11 +1,9 @@
 name: Web build CI
 
+# The published site is built and pushed to gh-pages from the developer machine
+# (see "Releasing" in README.md), so the deployed web matches the code that was
+# tested in a browser. Kept for manual runs only.
 on:
-  push:
-    tags:
-      - "*"
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
