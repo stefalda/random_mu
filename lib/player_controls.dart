@@ -14,8 +14,8 @@ class PlayerControls extends ConsumerWidget {
     final AudioPlayer audioPlayer = playerService.audioPlayer;
     bool isHorizontal =
         MediaQuery.of(context).orientation == Orientation.landscape;
-    final iconSize = isHorizontal ? 60.0 : 50.0;
-    return Column(children: [
+    final iconSize = isHorizontal ? 42.0 : 50.0;
+    return Column(mainAxisSize: MainAxisSize.min, children: [
       // Progress bar and time displays
       StreamBuilder<Duration?>(
         stream: audioPlayer.positionStream,
@@ -23,6 +23,12 @@ class PlayerControls extends ConsumerWidget {
           final position = snapshot.data ?? Duration.zero;
           final totalDuration = audioPlayer.duration ?? Duration.zero;
           final remaining = totalDuration - position;
+          // The duration is unknown until the source is prepared (and stays
+          // unknown for a live stream): keep the slider valid and read-only.
+          final knownDuration = totalDuration.inSeconds > 0;
+          final sliderMax =
+              knownDuration ? totalDuration.inSeconds.toDouble() : 1.0;
+          final sliderValue = position.inSeconds.toDouble().clamp(0.0, sliderMax);
 
           return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -30,11 +36,16 @@ class PlayerControls extends ConsumerWidget {
                 children: [
                   // Progress bar
                   Slider(
-                    value: position.inSeconds.toDouble(),
-                    max: totalDuration.inSeconds.toDouble(),
-                    onChanged: (value) {
-                      audioPlayer.seek(Duration(seconds: value.toInt()));
-                    },
+                    padding: isHorizontal
+                        ? const EdgeInsets.symmetric(vertical: 4)
+                        : null,
+                    value: sliderValue,
+                    max: sliderMax,
+                    onChanged: knownDuration
+                        ? (value) {
+                            audioPlayer.seek(Duration(seconds: value.toInt()));
+                          }
+                        : null,
                   ),
 
                   // Time labels

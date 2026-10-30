@@ -8,6 +8,10 @@ import 'package:random_mu/client/audio_player_handler.dart';
 import 'package:random_mu/main.dart';
 import 'package:random_mu/player_controls.dart';
 
+/// True on short, wide screens (phone in landscape).
+bool isLandscape(BuildContext context) =>
+    MediaQuery.orientationOf(context) == Orientation.landscape;
+
 class MusicPlayerScreen extends ConsumerWidget {
   const MusicPlayerScreen({super.key});
 
@@ -36,12 +40,11 @@ class MusicPlayerScreen extends ConsumerWidget {
         }
         playerService.updatePlayingInfo(mediaItem);
         return Padding(
-          padding: EdgeInsets.all(20),
+          padding: EdgeInsets.all(isLandscape(context) ? 8 : 20),
           child: LayoutBuilder(
             builder: (context, constraints) {
               // Determine orientation
-              bool isHorizontal =
-                  MediaQuery.of(context).orientation == Orientation.landscape;
+              bool isHorizontal = isLandscape(context);
 
               return Flex(
                 direction: isHorizontal ? Axis.horizontal : Axis.vertical,
@@ -70,12 +73,15 @@ class MusicPlayerScreen extends ConsumerWidget {
                       fit: BoxFit.cover,
                     ),
                   SizedBox(
-                    width: isHorizontal ? 20 : 0,
+                    width: isHorizontal ? 12 : 0,
                     height: isHorizontal ? 0 : 20,
                   ),
-                  // Other elements as a sub-column/row
+                  // Other elements as a sub-column/row.
+                  // Landscape screens are short: the column scrolls so the
+                  // controls can never overflow the safe area.
                   Expanded(
-                    child: Column(
+                    child: SingleChildScrollView(
+                      child: Column(
                       crossAxisAlignment: isHorizontal
                           ? CrossAxisAlignment.center
                           : CrossAxisAlignment.center,
@@ -89,22 +95,29 @@ class MusicPlayerScreen extends ConsumerWidget {
                           child: Text(
                             mediaItem.title,
                             style: TextStyle(
-                                fontSize: 24, fontWeight: FontWeight.bold),
+                              fontSize: isHorizontal ? 20 : 24,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                         SizedBox(height: 10),
                         // Display artist name
                         Text(
                           mediaItem.artist ?? context.l10n.unknownArtist,
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
+                          style: TextStyle(
+                              fontSize: isHorizontal ? 15 : 18,
+                              color: Colors.grey),
                         ),
                         Text(
                           mediaItem.album ?? context.l10n.unknownAlbum,
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
+                          style: TextStyle(
+                              fontSize: isHorizontal ? 15 : 18,
+                              color: Colors.grey),
                         ),
-                        SizedBox(height: 20),
+                        SizedBox(height: isHorizontal ? 8 : 20),
                         PlayerControls(),
                       ],
+                      ),
                     ),
                   ),
                 ],
