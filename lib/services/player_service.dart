@@ -186,6 +186,9 @@ class PlayerService extends ChangeNotifier {
   Future<List<Song>> fetchContainerSongs(
       {String? categoryId, String? containerId}) async {
     if (categoryId == 'favorites') return fetchFavoriteSongs();
+    if (categoryId == 'songs') {
+      return client.getSongsPage(offset: 0, size: 500);
+    }
     if (containerId == null) return [];
     switch (categoryId) {
       case 'playlists':

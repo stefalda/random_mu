@@ -18,6 +18,10 @@ const String playlistsCategoryId = 'playlists';
 const String artistsCategoryId = 'artists';
 const String albumsCategoryId = 'albums';
 const String favoritesCategoryId = 'favorites';
+const String songsCategoryId = 'songs';
+
+/// How many songs the car lists in the Songs node (the car UI cannot paginate).
+const int aaSongsLimit = 500;
 
 class AudioPlayerHandler extends BaseAudioHandler
     with QueueHandler, SeekHandler {
@@ -42,6 +46,9 @@ class AudioPlayerHandler extends BaseAudioHandler
 
   /// The browse node that produced each item (used to rebuild a container).
   final Map<String, String> _itemParent = {};
+
+  /// Song lists behind the current search results, keyed by `search-<query>`.
+  final Map<String, List<Song>> _searchContainers = {};
 
   /// Global reference so providers can wire the PlayerService after init.
   static AudioPlayerHandler? instance;
@@ -178,6 +185,16 @@ class AudioPlayerHandler extends BaseAudioHandler
     List<MediaItem> children = const [];
     var loadedFromNetwork = false;
 
+    if (parentMediaId == rootId) {
+      // Static node: rebuilt every time so a new category is not hidden by the
+      // persisted copy of the tree.
+      final root = _buildRootCategories();
+      _browseCache[parentMediaId] = root;
+      _browseCacheAt[parentMediaId] = DateTime.now();
+      _registerChildren(parentMediaId, root);
+      return root;
+    }
+
     final ps = _playerService;
     if (parentMediaId == rootId) {
       // Static node, no client needed.
@@ -218,6 +235,8 @@ class AudioPlayerHandler extends BaseAudioHandler
         return _buildAlbums(ps);
       case favoritesCategoryId:
         return _buildFavorites(ps);
+      case songsCategoryId:
+        return _buildAllSongs(ps);
       default:
         if (parentMediaId.startsWith('playlist-')) {
           final playlistId = parentMediaId.substring('playlist-'.length);
@@ -246,6 +265,7 @@ class AudioPlayerHandler extends BaseAudioHandler
   static String? categoryForParent(String? parentId) {
     if (parentId == null) return null;
     if (parentId == favoritesCategoryId) return favoritesCategoryId;
+    if (parentId == songsCategoryId) return songsCategoryId;
     if (parentId.startsWith('playlist-')) return playlistsCategoryId;
     if (parentId.startsWith('album-')) return albumsCategoryId;
     if (parentId.startsWith('artist-')) return artistsCategoryId;
@@ -280,6 +300,10 @@ class AudioPlayerHandler extends BaseAudioHandler
       MediaItem(
           id: favoritesCategoryId,
           title: appL10n.tabFavorites,
+          playable: false),
+      MediaItem(
+          id: songsCategoryId,
+          title: appL10n.tabSongs,
           playable: false),
     ];
   }
@@ -335,6 +359,20 @@ class AudioPlayerHandler extends BaseAudioHandler
           playable: false,
         );
       }).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// The library's songs, in the server order (artist, album, track).
+  ///
+  /// Capped because the car UI renders a browse node in one go; searching is the
+  /// way to reach a specific track.
+  Future<List<MediaItem>> _buildAllSongs(PlayerService ps) async {
+    try {
+      final songs =
+          await ps.client.getSongsPage(offset: 0, size: aaSongsLimit);
+      return songs.map((s) => _songToMediaItem(s, ps.client)).toList();
     } catch (_) {
       return [];
     }
@@ -418,6 +456,35 @@ class AudioPlayerHandler extends BaseAudioHandler
   }
 
   @override
+  Future<List<MediaItem>> search(String query,
+      [Map<String, dynamic>? extras]) async {
+    final ps = _playerService;
+    if (ps == null || query.trim().isEmpty) return const [];
+    try {
+      final result = await ps.client.search(
+        query: query.trim(),
+        songCount: 50,
+        artistCount: 0,
+        albumCount: 0,
+      );
+      final items = result.songs
+          .map((song) => _songToMediaItem(song, ps.client))
+          .toList();
+      // Tapping a result plays it and queues the rest of the results.
+      final containerId = 'search-${query.trim()}';
+      _searchContainers[containerId] = result.songs;
+      for (final item in items) {
+        _itemCache[item.id] = item;
+        _itemParent[item.id] = containerId;
+      }
+      return items;
+    } catch (error) {
+      debugPrint('Android Auto: search failed: $error');
+      return const [];
+    }
+  }
+
+  @override
   Future<void> play() => _playerService?.play() ?? Future<void>.value();
 
   @override
@@ -437,6 +504,15 @@ class AudioPlayerHandler extends BaseAudioHandler
     this.mediaItem.add(mediaItem);
 
     final parentId = _itemParent[mediaItem.id];
+
+    // Search results: play the whole result set from the tapped track.
+    final searchSongs =
+        parentId != null ? _searchContainers[parentId] : null;
+    if (searchSongs != null && searchSongs.isNotEmpty) {
+      await ps.playContainer(searchSongs, startAtSongId: mediaItem.id);
+      return;
+    }
+
     try {
       final songs = await ps.fetchContainerSongs(
         categoryId: categoryForParent(parentId),
