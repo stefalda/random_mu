@@ -19,6 +19,8 @@ class TrackList extends ConsumerWidget {
     required this.onPlay,
     this.showAlbum = false,
     this.shrinkWrap = false,
+    this.controller,
+    this.footer,
     this.trailingBuilder,
   });
 
@@ -33,6 +35,12 @@ class TrackList extends ConsumerWidget {
   /// Wraps the list to its content, for use inside another scroll view.
   final bool shrinkWrap;
 
+  /// Scroll controller, used by paginated lists to detect the end of the list.
+  final ScrollController? controller;
+
+  /// Extra row rendered after the last track (e.g. a loading footer).
+  final Widget? footer;
+
   /// Optional extra widget at the end of the row (e.g. a remove button).
   final Widget Function(BuildContext context, Song song, int index)?
       trailingBuilder;
@@ -44,9 +52,11 @@ class TrackList extends ConsumerWidget {
     return ListView.separated(
       shrinkWrap: shrinkWrap,
       physics: shrinkWrap ? const NeverScrollableScrollPhysics() : null,
-      itemCount: songs.length,
+      controller: controller,
+      itemCount: songs.length + (footer == null ? 0 : 1),
       separatorBuilder: (context, index) => const Divider(height: 1),
       itemBuilder: (context, index) {
+        if (index >= songs.length) return footer;
         final song = songs[index];
         final subtitle = showAlbum
             ? [song.artist, song.album].whereType<String>().join(' · ')

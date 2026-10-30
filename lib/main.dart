@@ -7,8 +7,6 @@ import 'package:just_audio/just_audio.dart';
 import 'package:random_mu/client/audio_player_handler.dart';
 import 'package:random_mu/lifecycle_watched.dart';
 import 'package:random_mu/pages/home_page.dart';
-import 'package:random_mu/providers/albums_notifier.dart';
-import 'package:random_mu/providers/albums_state.dart';
 import 'package:random_mu/providers/artists_notifier.dart';
 import 'package:random_mu/providers/artists_state.dart';
 import 'package:random_mu/providers/loading_notifier.dart';
@@ -59,10 +57,6 @@ final artistsProvider =
 });
 
 // Albums
-final albumsProvider = AsyncNotifierProvider<AlbumsNotifier, AlbumsState>(() {
-  return AlbumsNotifier();
-});
-
 // Playlists
 final playlistsProvider =
     AsyncNotifierProvider<PlaylistsNotifier, PlaylistsState>(() {

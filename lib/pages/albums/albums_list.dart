@@ -1,142 +1,170 @@
-// Create the ConsumerWidget
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:random_mu/main.dart';
+import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/pages/albums/album_detail_page.dart';
 import 'package:random_mu/pages/download_button.dart';
 import 'package:random_mu/pages/list_filter_field.dart';
+import 'package:random_mu/providers/paged_albums_notifier.dart';
 import 'package:random_mu/services/download_models.dart';
 
-class AlbumsList extends ConsumerWidget {
+/// Albums of the library, loaded page by page while scrolling.
+class AlbumsList extends ConsumerStatefulWidget {
   const AlbumsList({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final albumsAsync = ref.watch(albumsProvider);
+  ConsumerState<AlbumsList> createState() => _AlbumsListState();
+}
+
+class _AlbumsListState extends ConsumerState<AlbumsList> {
+  final ScrollController _controller = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_onScroll);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_controller.hasClients) return;
+    if (_controller.position.extentAfter > 600) return;
+    ref.read(pagedAlbumsProvider.notifier).loadMore();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final albumsAsync = ref.watch(pagedAlbumsProvider);
 
     return Column(
       children: [
         ListFilterField(
           hint: 'Cerca album…',
           onChanged: (value) =>
-              ref.read(albumsProvider.notifier).updateSearchQuery(value),
+              ref.read(pagedAlbumsProvider.notifier).setFilter(value),
         ),
         Expanded(
           child: albumsAsync.when(
-            loading: () => const Center(
-              child: CircularProgressIndicator(),
-            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, stackTrace) => Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.error_outline,
-                    color: Colors.red,
-                    size: 60,
-                  ),
+                  const Icon(Icons.error_outline, color: Colors.red, size: 60),
                   const SizedBox(height: 16),
                   Text(
-                    'Error loading albums: ${error.toString()}',
+                    'Errore nel caricamento degli album: $error',
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => ref.invalidate(albumsProvider),
-                    child: const Text('Retry'),
+                    onPressed: () => ref.invalidate(pagedAlbumsProvider),
+                    child: const Text('Riprova'),
                   ),
                 ],
               ),
             ),
             data: (state) {
-              final filteredAlbums = state.filteredAlbums;
+              final query = state.filter.trim().toLowerCase();
+              final albums = query.isEmpty
+                  ? state.items
+                  : state.items
+                      .where((album) =>
+                          album.name.toLowerCase().contains(query) ||
+                          (album.artist?.toLowerCase().contains(query) ??
+                              false))
+                      .toList();
 
-              if (filteredAlbums.isEmpty) {
+              if (albums.isEmpty) {
                 return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.search_off,
-                        size: 60,
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        state.searchQuery.isEmpty
-                            ? 'No albums available'
-                            : 'No albums found for "${state.searchQuery}"',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ],
+                  child: Text(
+                    query.isEmpty
+                        ? 'Nessun album disponibile'
+                        : 'Nessun album per "$query"',
                   ),
                 );
               }
 
+              // One extra row for the loading footer.
+              final showFooter = state.hasMore || state.loadingMore;
               return ListView.builder(
-                itemCount: filteredAlbums.length,
+                controller: _controller,
+                itemCount: albums.length + (showFooter ? 1 : 0),
                 itemBuilder: (context, index) {
-                  final album = filteredAlbums[index];
-
-                  return Card(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 8.0,
-                    ),
-                    child: ListTile(
-                        leading: ClipRRect(
-                          borderRadius: BorderRadius.circular(5),
-                          child:
-                              /* const CircleAvatar(
-                              radius: 25,
-                              child: Icon(Icons.person),
-                            )
-                            */
-                              Image.network(
-                            album.coverArt!,
-                            width: 50,
-                            height: 50,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const CircleAvatar(
-                                radius: 5,
-                                child: Icon(Icons.library_music),
-                              );
-                            },
-                          ),
-                        ),
-                        title: Text(
-                          album.name,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        subtitle: album.artist != null
-                            ? Text(
-                                album.artist!,
-                                style: Theme.of(context).textTheme.titleSmall,
-                              )
-                            : Container(),
-                        trailing: DownloadButton(
-                          type: DownloadItemType.album,
-                          sourceId: album.id,
-                          title: album.name,
-                        ),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AlbumDetailPage(
-                              albumId: album.id,
-                              albumName: album.name,
-                            ),
-                          ),
-                        ),
-                    ),
-                  );
+                  if (index >= albums.length) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  return _AlbumRow(album: albums[index]);
                 },
               );
             },
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AlbumRow extends StatelessWidget {
+  const _AlbumRow({required this.album});
+
+  final Album album;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: ListTile(
+        leading: ClipRRect(
+          borderRadius: BorderRadius.circular(5),
+          child: album.coverArt == null || album.coverArt!.isEmpty
+              ? const CircleAvatar(child: Icon(Icons.library_music))
+              : Image.network(
+                  album.coverArt!,
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const CircleAvatar(child: Icon(Icons.library_music)),
+                ),
+        ),
+        title: Text(
+          album.name,
+          style: Theme.of(context).textTheme.titleMedium,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: album.artist == null
+            ? null
+            : Text(
+                album.artist!,
+                style: Theme.of(context).textTheme.titleSmall,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+        trailing: DownloadButton(
+          type: DownloadItemType.album,
+          sourceId: album.id,
+          title: album.name,
+        ),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AlbumDetailPage(
+              albumId: album.id,
+              albumName: album.name,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

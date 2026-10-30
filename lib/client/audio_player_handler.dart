@@ -307,7 +307,8 @@ class AudioPlayerHandler extends BaseAudioHandler
 
   Future<List<MediaItem>> _buildAlbums(PlayerService ps) async {
     try {
-      final albums = await ps.client.getAllAlbumsList(
+      // The car cannot paginate, so the whole list is loaded here.
+      final albums = await ps.client.getAllAlbums(
         type: AlbumListType.alphabeticalByName,
       );
       return albums.map((a) {

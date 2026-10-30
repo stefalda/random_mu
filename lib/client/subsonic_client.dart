@@ -161,67 +161,25 @@ class SubsonicClient {
     }).toList();
   }
 
-  // Stream-based progressive loader
-  Stream<Album> _getAllAlbums({
-    AlbumListType type = AlbumListType.newest,
-    String? genre,
-    String? fromYear,
-    String? toYear,
-    String? musicFolderId,
-    int batchSize = 500, // Maximum size per request
-  }) async* {
-    int offset = 0;
-    bool hasMore = true;
-
-    while (hasMore) {
-      final batch = await getAlbumList(
-        type: type,
-        size: batchSize,
-        offset: offset,
-        genre: genre,
-        fromYear: fromYear,
-        toYear: toYear,
-        musicFolderId: musicFolderId,
-      );
-
-      // Yield each album individually
-      for (final album in batch) {
-        yield album;
-      }
-
-      // Check if we should continue
-      if (batch.length < batchSize) {
-        hasMore = false;
-      } else {
-        offset += batchSize;
-      }
-    }
-  }
-
-// List-based loader that collects all albums
-  Future<List<Album>> getAllAlbumsList({
-    AlbumListType type = AlbumListType.newest,
-    String? genre,
-    String? fromYear,
-    String? toYear,
-    String? musicFolderId,
-    void Function(int count)? onProgress,
+  /// Every album of a list type, alphabetically.
+  ///
+  /// Only the Android Auto browse tree needs the complete list (the car UI does
+  /// not paginate); the app's own lists use [getAlbumList] page by page.
+  Future<List<Album>> getAllAlbums({
+    AlbumListType type = AlbumListType.alphabeticalByName,
+    int pageSize = 500,
+    int maxPages = 40,
   }) async {
     final albums = <Album>[];
-    int count = 0;
-
-    await for (final album in _getAllAlbums(
-      type: type,
-      genre: genre,
-      fromYear: fromYear,
-      toYear: toYear,
-      musicFolderId: musicFolderId,
-    )) {
-      albums.add(album);
-      count++;
-      onProgress?.call(count);
+    for (var page = 0; page < maxPages; page++) {
+      final batch = await getAlbumList(
+        type: type,
+        size: pageSize,
+        offset: page * pageSize,
+      );
+      albums.addAll(batch);
+      if (batch.length < pageSize) break;
     }
-
     return albums;
   }
 
@@ -514,33 +472,21 @@ class SubsonicClient {
     return SearchResult.fromJson(response, parentName: 'searchResult3');
   }
 
-  /// Every song of the library, sorted by title.
+  /// One page of the library's songs, in the server's order.
   ///
-  /// The Subsonic API has no "all songs" endpoint; Navidrome (and other servers)
-  /// answer `search3` with an empty query with the whole library, paged by
-  /// `songOffset`/`songCount`, so the list is walked page by page.
-  Future<List<Song>> getAllSongs({int pageSize = 2000, int maxPages = 40}) async {
-    final songs = <Song>[];
-    for (var page = 0; page < maxPages; page++) {
-      final result = await search(
-        query: '',
-        songCount: pageSize,
-        songOffset: page * pageSize,
-        artistCount: 0,
-        albumCount: 0,
-      );
-      songs.addAll(result.songs);
-      if (result.songs.length < pageSize) break;
-    }
-    // Titles come from the tags and often carry leading/trailing blanks; sort on
-    // the trimmed value so those do not jump to the top of the list.
-    songs.sort(
-      (a, b) => a.title.trim().toLowerCase().compareTo(
-            b.title.trim().toLowerCase(),
-          ),
+  /// `search3` with an empty query returns the whole library on Navidrome; the
+  /// order is stable (artist, album, track), so pages can be appended while
+  /// scrolling. Sorting by title would have to happen on the whole set, which
+  /// defeats pagination.
+  Future<List<Song>> getSongsPage({required int offset, int size = 200}) async {
+    final result = await search(
+      query: '',
+      songCount: size,
+      songOffset: offset,
+      artistCount: 0,
+      albumCount: 0,
     );
-    debugPrint('getAllSongs: ${songs.length} brani');
-    return songs;
+    return result.songs;
   }
 
   Future<List<Song>> getSongsByGenre(

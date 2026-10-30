@@ -194,3 +194,19 @@ Decision: Il toggle nel titolo è l'unico controllo della modalità; i dettagli 
 Constraints:
 - Il comando "All Random" resta separato, con icona dedicata (dado), per non confonderlo con il toggle.
 - Il tab Brani usa `search3` con query vuota paginata (Navidrome restituisce l'intera libreria), ordinato per titolo.
+
+### L13
+
+Status: current
+
+Question: Le liste grandi devono essere caricate in anticipo o a pagine durante lo scorrimento?
+
+Answer: A pagine, in base allo scorrimento: niente fetch completo all'apertura.
+
+Decision: Album e Brani si caricano a pagine (60 album, 200 brani) man mano che si scorre, con guardia anti-duplicati e footer di caricamento; le liste piccole (Playlist, Preferiti, Generi) restano una chiamata sola.
+
+Constraints:
+- L'ordine dei Brani è quello del server (artista/album/brano) perché è stabile tra le pagine; un ordine alfabetico globale richiederebbe di caricare tutto.
+- L'indice Artisti resta una chiamata unica: l'API Subsonic non pagina `getArtists`.
+- Il browse tree di Android Auto carica ancora le liste complete: l'auto non pagina i figli di un nodo.
+

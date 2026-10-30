@@ -98,12 +98,6 @@ class PlayerService extends ChangeNotifier {
     return artists;
   }
 
-  Future<List<Album>> getAlbums() async {
-    final albums =
-        await client.getAllAlbumsList(type: AlbumListType.alphabeticalByName);
-    return albums;
-  }
-
   Future<List<Playlist>> getPlaylists() async {
     final playlists = await client.getPlaylists();
     for (var playlist in playlists) {
