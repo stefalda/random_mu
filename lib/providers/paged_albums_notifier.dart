@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/client/subsonic_models.dart';
@@ -50,14 +52,70 @@ List<T> appendUnique<T>(List<T> current, List<T> next, Object Function(T) key) {
 class PagedAlbumsNotifier extends AsyncNotifier<PagedList<Album>> {
   static const int pageSize = 60;
 
+  Timer? _debounce;
+
   @override
   Future<PagedList<Album>> build() async {
-    final albums = await ref.read(playerServiceProvider).client.getAlbumList(
-          type: AlbumListType.alphabeticalByName,
-          size: pageSize,
-          offset: 0,
-        );
+    ref.onDispose(() => _debounce?.cancel());
+    final albums = await _fetchPage(query: '', offset: 0);
     return PagedList(items: albums, hasMore: albums.length == pageSize);
+  }
+
+  /// Without a query the server sorts by name; with one, `search3` does the
+  /// matching so the result is not limited to the pages already loaded.
+  Future<List<Album>> _fetchPage({
+    required String query,
+    required int offset,
+  }) {
+    final client = ref.read(playerServiceProvider).client;
+    if (query.isEmpty) {
+      return client.getAlbumList(
+        type: AlbumListType.alphabeticalByName,
+        size: pageSize,
+        offset: offset,
+      );
+    }
+    return client
+        .search(
+          query: query,
+          albumCount: pageSize,
+          albumOffset: offset,
+          artistCount: 0,
+          songCount: 0,
+        )
+        .then((result) => result.albums);
+  }
+
+  void setFilter(String value) {
+    final query = value.trim();
+    final current = state.value;
+    if (current != null && current.filter == query) return;
+
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), () async {
+      final previous = state.value ?? const PagedList<Album>();
+      state = AsyncValue.data(
+        previous.copyWith(
+          items: const [],
+          hasMore: true,
+          loadingMore: true,
+          filter: query,
+        ),
+      );
+      try {
+        final page = await _fetchPage(query: query, offset: 0);
+        state = AsyncValue.data(
+          PagedList(
+            items: appendUnique(const <Album>[], page, (album) => album.id),
+            hasMore: page.length == pageSize,
+            filter: query,
+          ),
+        );
+      } catch (error) {
+        state = AsyncValue.data(PagedList(filter: query, hasMore: false));
+        debugPrint('PagedAlbums: search failed: $error');
+      }
+    });
   }
 
   Future<void> loadMore() async {
@@ -66,11 +124,10 @@ class PagedAlbumsNotifier extends AsyncNotifier<PagedList<Album>> {
 
     state = AsyncValue.data(current.copyWith(loadingMore: true));
     try {
-      final page = await ref.read(playerServiceProvider).client.getAlbumList(
-            type: AlbumListType.alphabeticalByName,
-            size: pageSize,
-            offset: current.items.length,
-          );
+      final page = await _fetchPage(
+        query: current.filter,
+        offset: current.items.length,
+      );
       state = AsyncValue.data(
         current.copyWith(
           items: appendUnique(current.items, page, (album) => album.id),
@@ -79,16 +136,13 @@ class PagedAlbumsNotifier extends AsyncNotifier<PagedList<Album>> {
         ),
       );
     } catch (error) {
-      state = AsyncValue.data(current.copyWith(loadingMore: false, hasMore: false));
+      state =
+          AsyncValue.data(current.copyWith(loadingMore: false, hasMore: false));
       debugPrint('PagedAlbums: cannot load more: $error');
     }
   }
 
-  void setFilter(String value) {
-    final current = state.value;
-    if (current == null) return;
-    state = AsyncValue.data(current.copyWith(filter: value));
-  }
+  void clearFilter() => setFilter('');
 }
 
 final pagedAlbumsProvider =

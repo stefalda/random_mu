@@ -85,28 +85,34 @@ class _SongsTabState extends ConsumerState<SongsTab> {
               ),
             ),
             data: (state) {
-              final query = state.filter.trim().toLowerCase();
-              final songs = query.isEmpty
-                  ? state.items
-                  : state.items
-                      .where((song) =>
-                          song.title.toLowerCase().contains(query) ||
-                          (song.artist?.toLowerCase().contains(query) ??
-                              false) ||
-                          (song.album?.toLowerCase().contains(query) ?? false))
-                      .toList();
+              final songs = state.items;
 
-              if (songs.isEmpty) {
-                return Center(
-                  child: Text(
-                    query.isEmpty
-                        ? 'Nessun brano nella libreria'
-                        : 'Nessun brano per "$query"',
+              // A query is in flight: the previous results were cleared.
+              if (songs.isEmpty && state.loadingMore) {
+                return const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('Cerco brani…'),
+                    ],
                   ),
                 );
               }
 
-              final showFooter = state.hasMore || state.loadingMore;
+              if (songs.isEmpty) {
+                return Center(
+                  child: Text(
+                    state.filter.isEmpty
+                        ? 'Nessun brano nella libreria'
+                        : 'Nessun brano per "${state.filter}"',
+                  ),
+                );
+              }
+
+              // The spinner is only shown while a page is actually loading.
+              final footer = state.loadingMore;
               return NotificationListener<ScrollNotification>(
                 onNotification: (notification) {
                   if (notification.metrics.extentAfter < 600) {
@@ -118,7 +124,7 @@ class _SongsTabState extends ConsumerState<SongsTab> {
                   songs: songs,
                   showAlbum: true,
                   controller: _controller,
-                  footer: showFooter
+                  footer: footer
                       ? const Padding(
                           padding: EdgeInsets.symmetric(vertical: 24),
                           child: Center(child: CircularProgressIndicator()),

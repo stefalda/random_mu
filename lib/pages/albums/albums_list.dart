@@ -70,28 +70,33 @@ class _AlbumsListState extends ConsumerState<AlbumsList> {
               ),
             ),
             data: (state) {
-              final query = state.filter.trim().toLowerCase();
-              final albums = query.isEmpty
-                  ? state.items
-                  : state.items
-                      .where((album) =>
-                          album.name.toLowerCase().contains(query) ||
-                          (album.artist?.toLowerCase().contains(query) ??
-                              false))
-                      .toList();
+              final albums = state.items;
 
-              if (albums.isEmpty) {
-                return Center(
-                  child: Text(
-                    query.isEmpty
-                        ? 'Nessun album disponibile'
-                        : 'Nessun album per "$query"',
+              if (albums.isEmpty && state.loadingMore) {
+                return const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('Cerco album…'),
+                    ],
                   ),
                 );
               }
 
-              // One extra row for the loading footer.
-              final showFooter = state.hasMore || state.loadingMore;
+              if (albums.isEmpty) {
+                return Center(
+                  child: Text(
+                    state.filter.isEmpty
+                        ? 'Nessun album disponibile'
+                        : 'Nessun album per "${state.filter}"',
+                  ),
+                );
+              }
+
+              // One extra row for the loading footer, only while loading.
+              final showFooter = state.loadingMore;
               return ListView.builder(
                 controller: _controller,
                 itemCount: albums.length + (showFooter ? 1 : 0),
