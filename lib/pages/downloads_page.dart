@@ -13,7 +13,11 @@ class DownloadsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final downloadService = ref.watch(downloadServiceProvider);
 
-    return Scaffold(
+    // The page is built once (it lives in an IndexedStack) while the service is
+    // still restoring its queue from disk, so it must listen for updates.
+    return ListenableBuilder(
+      listenable: downloadService,
+      builder: (context, _) => Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.downloadsTitle),
         actions: [
@@ -60,6 +64,7 @@ class DownloadsPage extends ConsumerWidget {
                   ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -228,8 +233,7 @@ class _DownloadItemTile extends StatelessWidget {
         return Text(context.l10n.downloadingProgress(
             '$pct', item.downloadedSongs, item.totalSongs));
       case DownloadStatus.completed:
-        return Text(context.l10n.downloadingProgress(
-          '100',
+        return Text(context.l10n.downloadedSummary(
           item.downloadedSongs,
           item.totalSongs,
         ));

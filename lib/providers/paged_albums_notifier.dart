@@ -12,12 +12,16 @@ class PagedList<T> {
     this.items = const [],
     this.hasMore = true,
     this.loadingMore = false,
+    this.offline = false,
     this.filter = '',
   });
 
   final List<T> items;
   final bool hasMore;
   final bool loadingMore;
+
+  /// True when the list comes from the downloads because the server is down.
+  final bool offline;
 
   /// Local filter applied to the items loaded so far.
   final String filter;
@@ -26,12 +30,14 @@ class PagedList<T> {
     List<T>? items,
     bool? hasMore,
     bool? loadingMore,
+    bool? offline,
     String? filter,
   }) {
     return PagedList<T>(
       items: items ?? this.items,
       hasMore: hasMore ?? this.hasMore,
       loadingMore: loadingMore ?? this.loadingMore,
+      offline: offline ?? this.offline,
       filter: filter ?? this.filter,
     );
   }

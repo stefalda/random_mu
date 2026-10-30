@@ -3,6 +3,7 @@ import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/main.dart';
 import 'package:random_mu/pages/list_filter_field.dart';
+import 'package:random_mu/pages/offline/offline_view.dart';
 import 'package:random_mu/pages/player_page.dart';
 import 'package:random_mu/pages/tracks/track_list.dart';
 import 'package:random_mu/providers/paged_songs_notifier.dart';
@@ -114,7 +115,7 @@ class _SongsTabState extends ConsumerState<SongsTab> {
 
               // The spinner is only shown while a page is actually loading.
               final footer = state.loadingMore;
-              return NotificationListener<ScrollNotification>(
+              final list = NotificationListener<ScrollNotification>(
                 onNotification: (notification) {
                   if (notification.metrics.extentAfter < 600) {
                     ref.read(pagedSongsProvider.notifier).loadMore();
@@ -149,6 +150,16 @@ class _SongsTabState extends ConsumerState<SongsTab> {
                     }
                   },
                 ),
+              );
+              if (!state.offline) return list;
+              return Column(
+                children: [
+                  OfflineBanner(
+                    message: context.l10n.offlineShowingDownloads,
+                    onRetry: () => ref.invalidate(pagedSongsProvider),
+                  ),
+                  Expanded(child: list),
+                ],
               );
             },
           ),

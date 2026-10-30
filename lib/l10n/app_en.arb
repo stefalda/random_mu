@@ -484,5 +484,19 @@
       }
     }
   },
-  "allFieldsRequired": "All fields are required"
+  "allFieldsRequired": "All fields are required",
+  "offlineShowingDownloads": "Server unreachable: showing what is downloaded",
+  "offlineEmpty": "Server unreachable and nothing is downloaded",
+  "offlineBanner": "Offline",
+  "downloadedSummary": "Downloaded ({done}/{total})",
+  "@downloadedSummary": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  }
 }

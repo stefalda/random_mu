@@ -5,6 +5,7 @@ import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/pages/albums/album_detail_page.dart';
 import 'package:random_mu/pages/download_button.dart';
 import 'package:random_mu/pages/list_filter_field.dart';
+import 'package:random_mu/pages/offline/offline_view.dart';
 import 'package:random_mu/providers/paged_albums_notifier.dart';
 import 'package:random_mu/services/download_models.dart';
 
@@ -52,23 +53,9 @@ class _AlbumsListState extends ConsumerState<AlbumsList> {
         Expanded(
           child: albumsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, stackTrace) => Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 60),
-                  const SizedBox(height: 16),
-                  Text(
-                    context.l10n.albumsLoadFailed('$error'),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => ref.invalidate(pagedAlbumsProvider),
-                    child: Text(context.l10n.retry),
-                  ),
-                ],
-              ),
+            // No server: show the downloaded albums instead of an error.
+            error: (error, stackTrace) => OfflineContainersList(
+              onRetry: () => ref.invalidate(pagedAlbumsProvider),
             ),
             data: (state) {
               final albums = state.items;

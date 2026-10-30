@@ -742,6 +742,7 @@ class DownloadService extends ChangeNotifier {
   Future<void> _refreshStorageInfo() async {
     final dir = await _getStorageDir();
     if (dir == null) return;
+    debugPrint('DownloadService: scanning ${dir.path}');
     int totalBytes = 0;
     _localFiles.clear();
     _coverFiles.clear();
@@ -765,6 +766,8 @@ class DownloadService extends ChangeNotifier {
       final songId = dot > 0 ? name.substring(0, dot) : name;
       _localFiles[songId] = entity.path;
     }
+    debugPrint('DownloadService: ${_localFiles.length} files, '
+        '${_coverFiles.length} covers, $totalBytes bytes');
 
     _storageInfo = _storageInfo.copyWith(usedBytes: totalBytes);
   }
@@ -895,6 +898,8 @@ class DownloadService extends ChangeNotifier {
       _storageInfo = StorageInfo(limitBytes: int.tryParse(limitStr));
     }
 
+    debugPrint('DownloadService: restored ${_queue.length} queue items, '
+        'paused=$_paused');
     await _refreshStorageInfo();
     await _cleanupPartialFiles();
 

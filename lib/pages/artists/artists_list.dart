@@ -6,6 +6,7 @@ import 'package:random_mu/main.dart';
 import 'package:random_mu/pages/artists/artist_detail_page.dart';
 import 'package:random_mu/pages/download_button.dart';
 import 'package:random_mu/pages/list_filter_field.dart';
+import 'package:random_mu/pages/offline/offline_view.dart';
 import 'package:random_mu/services/download_models.dart';
 
 class ArtistList extends ConsumerWidget {
@@ -27,27 +28,9 @@ class ArtistList extends ConsumerWidget {
             loading: () => const Center(
               child: CircularProgressIndicator(),
             ),
-            error: (error, stackTrace) => Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    color: Colors.red,
-                    size: 60,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    context.l10n.artistsLoadFailed('$error'),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => ref.invalidate(artistsProvider),
-                    child: Text(context.l10n.retry),
-                  ),
-                ],
-              ),
+            // No server: show the downloaded artists instead of an error.
+            error: (error, stackTrace) => OfflineContainersList(
+              onRetry: () => ref.invalidate(artistsProvider),
             ),
             data: (state) {
               final filteredArtists = state.filteredArtists;

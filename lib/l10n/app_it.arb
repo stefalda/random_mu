@@ -378,5 +378,9 @@
   "playlistsLoadFailed": "Impossibile caricare le playlist: {error}",
   "emptyPlaylists": "Nessuna playlist disponibile",
   "playlistsEmptyFor": "Nessuna playlist per \"{query}\"",
-  "allFieldsRequired": "Tutti i campi sono obbligatori"
+  "allFieldsRequired": "Tutti i campi sono obbligatori",
+  "offlineShowingDownloads": "Server non raggiungibile: mostro i contenuti scaricati",
+  "offlineEmpty": "Server non raggiungibile e nessun contenuto scaricato",
+  "offlineBanner": "Offline",
+  "downloadedSummary": "Scaricato ({done}/{total})"
 }

@@ -602,4 +602,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get allFieldsRequired => 'All fields are required';
+
+  @override
+  String get offlineShowingDownloads =>
+      'Server unreachable: showing what is downloaded';
+
+  @override
+  String get offlineEmpty => 'Server unreachable and nothing is downloaded';
+
+  @override
+  String get offlineBanner => 'Offline';
+
+  @override
+  String downloadedSummary(int done, int total) {
+    return 'Downloaded ($done/$total)';
+  }
 }

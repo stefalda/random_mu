@@ -27,6 +27,10 @@ class SubsonicClient {
   /// `POST` (the API requires it, and OpenSubsonic advertises `formPost`), with
   /// the parameters in a form body so repeated keys such as `songIdToAdd` and
   /// `songIndexToRemove` survive.
+  /// Requests must fail fast: with no network (or a dead server) the app has to
+  /// degrade to the offline library instead of spinning.
+  Duration timeout = const Duration(seconds: 15);
+
   Future<Map<String, dynamic>> _makeRequest(String endpoint,
       [Map<String, dynamic>? params, bool post = false]) async {
     final allParams = <String, dynamic>{
@@ -42,23 +46,27 @@ class SubsonicClient {
 
     final http.Response response;
     if (post) {
-      response = await http.post(
-        uri,
-        headers: const {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: _encodeForm(allParams),
-      );
+      response = await http
+          .post(
+            uri,
+            headers: const {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: _encodeForm(allParams),
+          )
+          .timeout(timeout);
     } else {
-      response = await http.get(uri.replace(
-        queryParameters: {
-          for (final entry in allParams.entries)
-            if (entry.value is Iterable)
-              entry.key: (entry.value as Iterable).first.toString()
-            else
-              entry.key: entry.value.toString(),
-        },
-      ));
+      response = await http
+          .get(uri.replace(
+            queryParameters: {
+              for (final entry in allParams.entries)
+                if (entry.value is Iterable)
+                  entry.key: (entry.value as Iterable).first.toString()
+                else
+                  entry.key: entry.value.toString(),
+            },
+          ))
+          .timeout(timeout);
     }
 
     if (response.statusCode != 200) {

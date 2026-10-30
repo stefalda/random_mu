@@ -1075,6 +1075,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All fields are required'**
   String get allFieldsRequired;
+
+  /// No description provided for @offlineShowingDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Server unreachable: showing what is downloaded'**
+  String get offlineShowingDownloads;
+
+  /// No description provided for @offlineEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Server unreachable and nothing is downloaded'**
+  String get offlineEmpty;
+
+  /// No description provided for @offlineBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get offlineBanner;
+
+  /// No description provided for @downloadedSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded ({done}/{total})'**
+  String downloadedSummary(int done, int total);
 }
 
 class _AppLocalizationsDelegate

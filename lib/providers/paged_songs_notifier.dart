@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/main.dart';
 import 'package:random_mu/providers/paged_albums_notifier.dart';
+import 'package:random_mu/services/offline_library.dart';
 
 /// The library's songs, one page per scroll.
 ///
@@ -20,8 +21,15 @@ class PagedSongsNotifier extends AsyncNotifier<PagedList<Song>> {
   @override
   Future<PagedList<Song>> build() async {
     ref.onDispose(() => _debounce?.cancel());
-    final songs = await _fetchPage(query: '', offset: 0);
-    return PagedList(items: songs, hasMore: songs.length == pageSize);
+    try {
+      final songs = await _fetchPage(query: '', offset: 0);
+      return PagedList(items: songs, hasMore: songs.length == pageSize);
+    } catch (error) {
+      // No server: degrade to what is downloaded instead of failing.
+      debugPrint('PagedSongs: offline fallback ($error)');
+      final library = await ref.read(offlineLibraryProvider.future);
+      return PagedList(items: library.songs, hasMore: false, offline: true);
+    }
   }
 
   Future<List<Song>> _fetchPage({

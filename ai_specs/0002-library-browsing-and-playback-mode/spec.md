@@ -125,6 +125,8 @@ Manual device checks (Poco F1, Navidrome):
 - Restart app: mode restored.
 - Android Auto (Desktop Head Unit): gesture shuffle control present, reflects app mode, and changing it from the car reorders the queue and updates the app; browse containers follow the mode.
 
+28. When the server is unreachable, the library degrades to what is downloaded: Songs lists the downloaded songs, Albums and Artists list the downloaded containers, playback uses local files, and a banner with Retry explains the state. Requests time out after 15 s so the fallback is reached quickly. [L13]
+
 ## Out of Scope
 
 - Multi-select of tracks for bulk operations. [L5]
