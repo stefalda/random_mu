@@ -483,6 +483,28 @@ class PlayerService extends ChangeNotifier {
     return playlist;
   }
 
+  // --- Favorites ----------------------------------------------------------
+
+  /// Stars or unstars a song or an album on the server.
+  ///
+  /// The favorites are part of the Android Auto browse tree (`Favorites` node)
+  /// and of the app's favorites tab, so the cached node is dropped here.
+  Future<void> setStarred({
+    String? songId,
+    String? albumId,
+    bool starred = true,
+  }) async {
+    assert(songId != null || albumId != null,
+        'setStarred needs a song or an album');
+    if (starred) {
+      await client.star(songId: songId, albumId: albumId);
+    } else {
+      await client.unstar(songId: songId, albumId: albumId);
+    }
+    await const BrowseCache().removeNode(favoritesCategoryId);
+    AudioPlayerHandler.instance?.clearBrowseCache();
+  }
+
   /// Removes the tracks at [indexes] (positions in the playlist order) from
   /// [playlistId]. The Subsonic API removes by index, not by song id.
   Future<void> removeSongsFromPlaylist(

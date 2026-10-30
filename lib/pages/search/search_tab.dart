@@ -8,56 +8,34 @@ import 'package:random_mu/pages/artwork_image.dart';
 import 'package:random_mu/pages/header.dart';
 import 'package:random_mu/pages/player_page.dart';
 import 'package:random_mu/pages/tracks/track_list.dart';
+import 'package:random_mu/providers/starred_provider.dart';
 
 /// Starred tracks, albums and artists.
-class FavoritesTab extends ConsumerStatefulWidget {
+class FavoritesTab extends ConsumerWidget {
   const FavoritesTab({super.key});
 
   @override
-  ConsumerState<FavoritesTab> createState() => _FavoritesTabState();
-}
-
-class _FavoritesTabState extends ConsumerState<FavoritesTab> {
-  late Future<SearchResult> _starred = _load();
-
-  Future<SearchResult> _load() =>
-      ref.read(playerServiceProvider).client.getStarred();
-
-  void _reload() => setState(() {
-    _starred = _load();
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final client = ref.read(playerServiceProvider).client;
 
     // No Scaffold/AppBar here: this tab lives inside the library, which already
     // provides the app bar and the tab bar.
-    return FutureBuilder<SearchResult>(
-        future: _starred,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Text('Impossibile caricare i preferiti: '
-                    '${snapshot.error}'),
-              ),
-            );
-          }
-          final starred = snapshot.data ??
-              SearchResult(artists: const [], albums: const [], songs: const []);
-          if (starred.songs.isEmpty &&
-              starred.albums.isEmpty &&
-              starred.artists.isEmpty) {
-            return const Center(child: Text('Nessun preferito'));
-          }
-
-          return RefreshIndicator(
-            onRefresh: () async => _reload(),
+    return ref.watch(starredProvider).when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Text('Impossibile caricare i preferiti: $error'),
+            ),
+          ),
+          data: (starred) {
+            if (starred.songs.isEmpty &&
+                starred.albums.isEmpty &&
+                starred.artists.isEmpty) {
+              return const Center(child: Text('Nessun preferito'));
+            }
+            return RefreshIndicator(
+            onRefresh: () async => ref.invalidate(starredProvider),
             child: ListView(
             children: [
               if (starred.songs.isNotEmpty) ...[
@@ -66,7 +44,8 @@ class _FavoritesTabState extends ConsumerState<FavoritesTab> {
                   songs: starred.songs,
                   showAlbum: true,
                   shrinkWrap: true,
-                  onPlay: (index) => _play(starred.songs, index),
+                  onPlay: (index) =>
+                      _play(context, ref, starred.songs, index),
                 ),
               ],
               if (starred.albums.isNotEmpty) ...[
@@ -123,11 +102,11 @@ class _FavoritesTabState extends ConsumerState<FavoritesTab> {
             ],
             ),
           );
-        },
-      );
+          },
+        );
   }
 
-  void _play(List<Song> songs, int index) {
+  void _play(BuildContext context, WidgetRef ref, List<Song> songs, int index) {
     final playerService = ref.read(playerServiceProvider);
     ref.read(loadingProvider.notifier).setLoading(true);
     Navigator.push(

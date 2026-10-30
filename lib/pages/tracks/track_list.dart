@@ -5,6 +5,7 @@ import 'package:random_mu/main.dart';
 import 'package:random_mu/pages/artwork_image.dart';
 import 'package:random_mu/pages/lyrics_page.dart';
 import 'package:random_mu/pages/playlist_actions.dart';
+import 'package:random_mu/providers/starred_provider.dart';
 
 /// Track list shared by every browsing surface (album, artist, playlist,
 /// favorites, genre, search results).
@@ -12,7 +13,7 @@ import 'package:random_mu/pages/playlist_actions.dart';
 /// Tapping a row starts the container at that track in the current playback
 /// mode; long pressing opens the track actions. Behaviour lives here once so no
 /// screen can drift.
-class TrackList extends ConsumerWidget {
+class TrackList extends ConsumerStatefulWidget {
   const TrackList({
     super.key,
     required this.songs,
@@ -46,22 +47,56 @@ class TrackList extends ConsumerWidget {
       trailingBuilder;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TrackList> createState() => _TrackListState();
+}
+
+class _TrackListState extends ConsumerState<TrackList> {
+  /// Optimistic star state per song id, so the icon flips before the server
+  /// answers and reverts if the call fails.
+  final Map<String, bool> _starred = {};
+
+  bool _isStarred(Song song) => _starred[song.id] ?? (song.starred != null);
+
+  Future<void> _toggleStar(Song song) async {
+    final playerService = ref.read(playerServiceProvider);
+    final messenger = ScaffoldMessenger.of(context);
+    final target = !_isStarred(song);
+    setState(() => _starred[song.id] = target);
+    try {
+      await playerService.setStarred(songId: song.id, starred: target);
+      ref.invalidate(starredProvider);
+    } catch (error) {
+      if (mounted) setState(() => _starred[song.id] = !target);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            target
+                ? 'Impossibile aggiungere ai preferiti: $error'
+                : 'Impossibile rimuovere dai preferiti: $error',
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final songs = widget.songs;
     final client = ref.read(playerServiceProvider).client;
 
     return ListView.separated(
-      shrinkWrap: shrinkWrap,
-      physics: shrinkWrap ? const NeverScrollableScrollPhysics() : null,
-      controller: controller,
-      itemCount: songs.length + (footer == null ? 0 : 1),
+      shrinkWrap: widget.shrinkWrap,
+      physics: widget.shrinkWrap ? const NeverScrollableScrollPhysics() : null,
+      controller: widget.controller,
+      itemCount: songs.length + (widget.footer == null ? 0 : 1),
       separatorBuilder: (context, index) => const Divider(height: 1),
       itemBuilder: (context, index) {
-        if (index >= songs.length) return footer;
+        if (index >= songs.length) return widget.footer;
         final song = songs[index];
-        final subtitle = showAlbum
+        final subtitle = widget.showAlbum
             ? [song.artist, song.album].whereType<String>().join(' · ')
             : (song.artist ?? '');
-        final extra = trailingBuilder?.call(context, song, index);
+        final extra = widget.trailingBuilder?.call(context, song, index);
 
         return ListTile(
           leading: SizedBox(
@@ -92,14 +127,28 @@ class TrackList extends ConsumerWidget {
             children: [
               if (extra != null) extra,
               Text(_formatDuration(song.duration)),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                tooltip: _isStarred(song)
+                    ? 'Rimuovi dai preferiti'
+                    : 'Aggiungi ai preferiti',
+                icon: Icon(
+                  _isStarred(song) ? Icons.favorite : Icons.favorite_border,
+                  size: 20,
+                  color: _isStarred(song)
+                      ? Theme.of(context).colorScheme.primary
+                      : null,
+                ),
+                onPressed: () => _toggleStar(song),
+              ),
             ],
           ),
-          onTap: () => onPlay(index),
+          onTap: () => widget.onPlay(index),
           onLongPress: () => showTrackActions(
             context,
             ref,
             song: song,
-            onPlayNow: () => onPlay(index),
+            onPlayNow: () => widget.onPlay(index),
           ),
         );
       },

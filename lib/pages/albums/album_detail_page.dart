@@ -8,6 +8,7 @@ import 'package:random_mu/pages/header.dart';
 import 'package:random_mu/pages/player_page.dart';
 import 'package:random_mu/pages/tracks/track_list.dart';
 import 'package:random_mu/services/download_models.dart';
+import 'package:random_mu/providers/starred_provider.dart';
 import 'package:random_mu/services/playback_mode.dart';
 import 'package:random_mu/widgets/playback_mode_button.dart';
 
@@ -26,6 +27,9 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
   late Future<Album> _album;
   List<Song>? _cachedSongs;
 
+  /// Optimistic star state for the album.
+  bool? _starred;
+
   @override
   void initState() {
     super.initState();
@@ -34,7 +38,35 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
     // page has finished loading.
     _album.then((album) {
       _cachedSongs = album.songs;
+      if (mounted) setState(() => _starred ??= album.starred != null);
     }).catchError((_) {});
+  }
+
+  bool get _albumStarred => _starred ?? false;
+
+  Future<void> _toggleStarred() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final target = !_albumStarred;
+    setState(() => _starred = target);
+    try {
+      await ref
+          .read(playerServiceProvider)
+          .setStarred(albumId: widget.albumId, starred: target);
+      ref.invalidate(starredProvider);
+      messenger.showSnackBar(
+        SnackBar(
+          duration: const Duration(milliseconds: 1200),
+          content: Text(
+            target ? 'Album aggiunto ai preferiti' : 'Album rimosso dai preferiti',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (mounted) setState(() => _starred = !target);
+      messenger.showSnackBar(
+        SnackBar(content: Text('Impossibile aggiornare i preferiti: $error')),
+      );
+    }
   }
 
   /// Plays the album starting at [startIndex], in the current mode or in the
@@ -102,7 +134,19 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
     return Scaffold(
       appBar: AppBar(
         title: Header(title: widget.albumName ?? 'Album'),
-        actions: const [PlaybackModeButton(), SizedBox(width: 8)],
+        actions: [
+          IconButton(
+            tooltip: _albumStarred
+                ? 'Rimuovi dai preferiti'
+                : 'Aggiungi ai preferiti',
+            icon: Icon(
+              _albumStarred ? Icons.favorite : Icons.favorite_border,
+            ),
+            onPressed: _toggleStarred,
+          ),
+          const PlaybackModeButton(),
+          const SizedBox(width: 8),
+        ],
       ),
       body: FutureBuilder<Album>(
         future: _album,

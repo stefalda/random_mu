@@ -262,6 +262,50 @@ class SubsonicClient {
     );
   }
 
+  /// Marks a song, album or artist as starred.
+  ///
+  /// Navidrome rejects a bare `songId` ("Required id parameter is missing"): the
+  /// generic `id` parameter is what it reads, so it is always sent.
+  Future<void> star({
+    String? id,
+    String? songId,
+    String? albumId,
+    String? artistId,
+  }) =>
+      _setStarred('star.view', id, songId, albumId, artistId);
+
+  /// Removes the starred flag from a song, album or artist.
+  Future<void> unstar({
+    String? id,
+    String? songId,
+    String? albumId,
+    String? artistId,
+  }) =>
+      _setStarred('unstar.view', id, songId, albumId, artistId);
+
+  Future<void> _setStarred(
+    String endpoint,
+    String? id,
+    String? songId,
+    String? albumId,
+    String? artistId,
+  ) async {
+    final target = id ?? songId ?? albumId ?? artistId;
+    if (target == null) {
+      throw ArgumentError('star/unstar need an id');
+    }
+    await _makeRequest(
+      endpoint,
+      {
+        'id': target,
+        if (songId != null) 'songId': songId,
+        if (albumId != null) 'albumId': albumId,
+        if (artistId != null) 'artistId': artistId,
+      },
+      true,
+    );
+  }
+
   Future<void> deletePlaylist(String playlistId) async {
     await _makeRequest('deletePlaylist.view', {'id': playlistId}, true);
   }

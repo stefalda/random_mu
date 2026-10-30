@@ -187,6 +187,7 @@ class Song {
   final int? duration;
   final int? bitRate;
   final String? path;
+  final DateTime? starred;
 
   Song({
     required this.id,
@@ -205,6 +206,7 @@ class Song {
     this.duration,
     this.bitRate,
     this.path,
+    this.starred,
   });
 
   factory Song.fromJson(Map<String, dynamic> json) {
@@ -225,6 +227,8 @@ class Song {
       duration: json['duration'],
       bitRate: json['bitRate'],
       path: json['path'],
+      starred:
+          json['starred'] != null ? DateTime.tryParse(json['starred']) : null,
     );
   }
 

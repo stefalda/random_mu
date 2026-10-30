@@ -89,6 +89,7 @@ A traditional library browsing experience, with sequential or randomized playbac
 24. "Aggiungi a playlist" from any track list uses the existing playlist picker, including the "create a playlist with this song" path. [L10]
 25. Removing a track from a playlist uses `updatePlaylist` with `songIndexToRemove` computed from the position in the playlist order currently displayed; the list refreshes after the removal and the Android Auto caches for that playlist are invalidated. [L11]
 26. Playlist track reordering is not supported and must not be offered as an affordance. [L11]
+27. Any track can be starred or unstarred from its row, and an album from its detail header; the change is written to the server, the favorites tab reloads and the Android Auto favorites node is invalidated. Navidrome requires the generic `id` parameter for `star`/`unstar` (a bare `songId` fails). [L10]
 
 ## Technical Decisions
 
