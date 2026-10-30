@@ -94,7 +94,7 @@ class Artist {
   factory Artist.fromJson(Map<String, dynamic> json) {
     return Artist(
       id: json['id'],
-      name: json['name'],
+      name: cleanTag(json['name']),
       artistImageUrl: json['artistImageUrl'],
       starred: json['starred'] != null ? DateTime.parse(json['starred']) : null,
       userRating: json['userRating'],
@@ -137,8 +137,8 @@ class Album {
   factory Album.fromJson(Map<String, dynamic> json) {
     return Album(
       id: json['id'],
-      name: json['name'],
-      artist: json['artist'],
+      name: cleanTag(json['name']),
+      artist: cleanTagOrNull(json['artist']),
       artistId: json['artistId'],
       coverArt: json['coverArt'],
       songCount: json['songCount'],
@@ -154,6 +154,20 @@ class Album {
           [],
     );
   }
+}
+
+/// Trims a tag value and collapses the blank padding that tags often carry.
+///
+/// The library has titles/artists saved as `" Closing Time"`; trimming in one
+/// place keeps every surface (lists, details, queue, Android Auto) consistent.
+String cleanTag(Object? value) {
+  if (value == null) return '';
+  return value.toString().trim();
+}
+
+String? cleanTagOrNull(Object? value) {
+  final cleaned = cleanTag(value);
+  return cleaned.isEmpty ? null : cleaned;
 }
 
 class Song {
@@ -198,9 +212,9 @@ class Song {
       id: json['id'],
       parent: json['parent'],
       isDir: json['isDir'],
-      title: json['title'],
-      album: json['album'],
-      artist: json['artist'],
+      title: cleanTag(json['title']),
+      album: cleanTagOrNull(json['album']),
+      artist: cleanTagOrNull(json['artist']),
       track: json['track'],
       year: json['year'],
       genre: json['genre'],
@@ -301,7 +315,7 @@ class Playlist {
   factory Playlist.fromJson(Map<String, dynamic> json) {
     return Playlist(
       id: json['id'],
-      name: json['name'],
+      name: cleanTag(json['name']),
       comment: json['comment'],
       owner: json['owner'],
       public: json['public'],
@@ -379,7 +393,7 @@ class Genre {
   factory Genre.fromJson(Map<String, dynamic> json) {
     return Genre(
       // The genre name comes as the value/content of the element in the API
-      name: json['value'] ?? json['_'], // Some servers might use different keys
+      name: cleanTag(json['value'] ?? json['_']), // Servers use different keys
       songCount: json['songCount'] ?? 0,
       albumCount: json['albumCount'] ?? 0,
     );

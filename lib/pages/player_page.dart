@@ -27,21 +27,30 @@ class PlayerPage extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
           onPressed: () async {
             final playerService = ref.read(playerServiceProvider);
+            final messenger = ScaffoldMessenger.of(context);
             ref.read(loadingProvider.notifier).setLoading(true);
             try {
               await playerService.randomByPlayingSong();
+              messenger.showSnackBar(
+                const SnackBar(
+                  duration: Duration(milliseconds: 1200),
+                  content: Text('Coda sostituita con brani simili'),
+                ),
+              );
             } catch (e) {
-              // Handle the error appropriately (e.g., show a snackbar)
               debugPrint('Error in randomByPlayingSong: $e');
+              messenger.showSnackBar(
+                SnackBar(content: Text('Impossibile trovare brani simili: $e')),
+              );
             } finally {
               ref.read(loadingProvider.notifier).setLoading(false);
-              debugPrint('Loading set to false');
             }
           },
-          tooltip: 'Randomize',
+          // Same glyph as the "Play Similar" action in Android Auto.
+          tooltip: 'Brani simili (Play Similar)',
           child: const Icon(
-            Icons.refresh,
-            size: 40,
+            Icons.auto_awesome,
+            size: 32,
           )),
       body: SafeArea(child: Center(child: MusicPlayerScreen())),
     );
