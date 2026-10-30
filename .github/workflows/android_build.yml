@@ -1,11 +1,10 @@
 name: Android build CI
 
+# Releases are built and published from the developer machine (see "Releasing"
+# in README.md): `gh release create` publishes the APK that was verified on a
+# device. This workflow is kept for manual runs only, so creating a tag or a
+# release does not build a second, unverified APK.
 on:
-  push:
-    tags:
-      - "*"
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:

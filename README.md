@@ -319,10 +319,11 @@ templates UI, which a media app does not.
 
 ## Releasing
 
-The GitHub Actions workflow (`.github/workflows/android_build.yml`) builds and
-attaches the APK when a **tag is pushed**, but the release can also be produced on
-this machine, which is the recommended path (the CI pins an older Flutter, and a
-local build is what gets verified on device):
+Releases are built and published **from this machine**: the GitHub Actions
+workflow (`.github/workflows/android_build.yml`) is now manual-only
+(`workflow_dispatch`), because the APK that gets published is the one verified on
+a device and the CI pins an older Flutter. Creating a tag or a release no longer
+triggers a second build:
 
 ```bash
 # 1. bump the version in pubspec.yaml (e.g. version: 0.0.24+3)
