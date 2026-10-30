@@ -40,14 +40,24 @@ optimized.
   the dice.
 - **Subsonic API Integration**: Fully integrates with the Subsonic API
   (Navidrome supported).
-- **Android Auto**: browse Playlists, Artists, Albums and Favorites on the car
-  screen, with now-playing metadata, artwork and a "Play Similar" action.
+- **Playlists on the server**: create, rename and delete playlists, add tracks
+  while browsing and remove them from the playlist detail — all written through
+  to Navidrome.
+- **Favorites**: star/unstar any track (every list) and any album from its detail
+  page; the change is written to the server.
+- **Android Auto**: browse Playlists, Artists, Albums, Favorites, Songs and
+  Downloads on the car screen, with now-playing metadata, artwork, a mode toggle,
+  "Play Similar" and search (also offline, over the downloads).
 - **Offline downloads**: download playlists, albums, artists or all favorites and
   keep listening with no connection.
 - **Local-first playback**: downloaded songs are played from the phone, only the
   missing ones are streamed.
 - **Lyrics**: synced lyrics when the server provides them, with the current line
   highlighted and followed.
+- **Works offline**: when the server is unreachable the library degrades to what
+  is downloaded, with a banner and a retry, and playback uses the local files.
+- **English and Italian**: all UI text is localized, following the device
+  language.
 - **Cross-Platform**: Currently tested on Web and Android.
 
 ## Web
@@ -140,8 +150,12 @@ Root
 ├── Playlists  → songs of the playlist
 ├── Artists    → all songs by the artist
 ├── Albums     → tracks of the album
-└── Favorites  → starred songs + songs of starred albums
+├── Favorites  → starred songs + songs of starred albums
+├── Songs      → the library's songs (first 500, server order)
+└── Downloads  → the downloaded songs, playable offline
 ```
+
+With six categories Android Auto groups the last ones under **More**.
 
 Behaviour:
 
@@ -157,7 +171,14 @@ Behaviour:
 - Now playing shows title, artist, album, artwork and progress; play/pause,
   skip and seek use the `MediaSession` managed by `audio_service`.
 - Browsing works **offline** for content that was downloaded: metadata and
-  artwork are cached (see below) and playback falls back to the local files.
+  artwork are cached (see below), the **Downloads** node always works without a
+  connection, and playback falls back to the local files.
+- The **search** affordance (magnifier) is enabled by declaring
+  `android.media.browse.SEARCH_SUPPORTED` in the browser root extras
+  (`AudioServiceConfig.androidBrowsableRootExtras`); when the server is
+  unreachable the search runs over the downloads instead.
+- The queue is reachable from the chip in the top-right of the now playing screen
+  (labelled **"Metti in coda"** in Italian Android Auto).
 - Playback state reports loading/buffering and the buffered position, so the car
   shows the right spinner and progress bar.
 - The in-memory browse tree expires after 5 minutes: a playlist added on the
@@ -295,6 +316,41 @@ intent filter), `res/xml/automotive_app_desc.xml` declares `<uses name="media"/>
 `audio_player_handler.dart`. The commented-out `androidx.car.app:app-automotive`
 dependency is only needed by apps that ship their own Android Automotive OS
 templates UI, which a media app does not.
+
+## Releasing
+
+The GitHub Actions workflow (`.github/workflows/android_build.yml`) builds and
+attaches the APK when a **tag is pushed**, but the release can also be produced on
+this machine, which is the recommended path (the CI pins an older Flutter, and a
+local build is what gets verified on device):
+
+```bash
+# 1. bump the version in pubspec.yaml (e.g. version: 0.0.24+3)
+flutter analyze && flutter test
+flutter build apk --release
+
+# 2. name the artifact like the existing releases
+cp build/app/outputs/flutter-apk/app-release.apk \
+   build/app/outputs/flutter-apk/RandomMuu-v.0.0.24-android.apk
+
+# 3. publish: gh creates the tag through the API, so the workflow does NOT run
+gh release create v.0.0.24 \
+   build/app/outputs/flutter-apk/RandomMuu-v.0.0.24-android.apk \
+   --title "v.0.0.24" --notes-file CHANGELOG.md
+```
+
+`gh` is already authenticated on this machine (`gh auth status`). Pushing a tag
+with `git push` still triggers the workflow, so use one path or the other.
+
+The release build needs `android/app/key.properties` (git-ignored) and the
+keystore it points to; both already exist locally.
+
+Two release-only pitfalls that are easy to reintroduce:
+
+- resources referenced only by name from Dart (the Android Auto action icons) are
+  removed by the shrinker unless listed in `android/app/src/main/res/raw/keep.xml`;
+- the media notification needs a **monochrome** small icon: `mipmap/ic_launcher`
+  is an adaptive icon and Android 14+ rejects it, crashing the media service.
 
 ## Development Notes
 
