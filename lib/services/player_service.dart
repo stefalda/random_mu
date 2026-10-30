@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
@@ -368,32 +367,43 @@ class PlayerService extends ChangeNotifier {
     await _enqueueSongs(randomSongs);
   }
 
+  /// Replaces what comes after the current track with similar songs.
+  ///
+  /// The current source is left untouched: rebuilding the whole queue would
+  /// reload the playing stream (a silence of a second or two while it refetches
+  /// and seeks). Here the tail is dropped and the similar songs are appended, so
+  /// playback continues without a gap.
   Future randomByPlayingSong() async {
     final playingSongIndex = audioPlayer.currentIndex;
     if (playingSongIndex == null) return;
-    final AudioSource playingSong = audioPlayer.audioSources[playingSongIndex];
-    //audioPlayer.audioSource!.sequence.elementAt(playingSongIndex);
-    final String currentSongId = (playingSong as ProgressiveAudioSource).tag.id;
-    final similarSongs = await client.getSimilarSongs(currentSongId);
+
+    final playingSource = audioPlayer.audioSources[playingSongIndex];
+    if (playingSource is! UriAudioSource) return;
+    final currentItem = playingSource.tag as MediaItem?;
+    if (currentItem == null) return;
+
+    final similarSongs = await client.getSimilarSongs(currentItem.id);
     if (similarSongs.isEmpty) return;
-    // Check if the source soung is included
-    late Song currentSong;
-    int idx = similarSongs.indexWhere((song) => song.id == currentSongId);
-    if (idx >= 0) {
-      debugPrint("Current playing song index in new List = $idx");
-      currentSong = similarSongs[idx];
-      similarSongs.removeAt(idx);
-    } else {
-      final json = jsonDecode(playingSong.tag.extras['songJson']);
-      currentSong = Song.fromJson(json);
+    similarSongs.removeWhere((song) => song.id == currentItem.id);
+
+    final sources = await _buildAudioSources(similarSongs);
+
+    // Drop the pending tail, then queue the similar songs behind the current one.
+    final tailStart = playingSongIndex + 1;
+    final tailEnd = audioPlayer.audioSources.length;
+    if (tailEnd > tailStart) {
+      await audioPlayer.removeAudioSourceRange(tailStart, tailEnd);
     }
-    // Move in first
-    similarSongs.insert(0, currentSong);
-    Duration? position;
-    if (audioPlayer.playing) {
-      position = await audioPlayer.positionStream.first;
-    }
-    await _enqueueSongs(similarSongs, restartAt: position);
+    await audioPlayer.addAudioSources(sources);
+
+    // Keep the container order in step, so the mode toggle stays consistent.
+    final currentSongId = currentItem.id;
+    final index = _containerSongs.indexWhere((song) => song.id == currentSongId);
+    final head = index >= 0
+        ? _containerSongs.sublist(0, index + 1)
+        : <Song>[];
+    _containerSongs = [...head, ...similarSongs];
+    notifyListeners();
   }
 
   /// Appends [songs] at the end of the queue without touching playback.
