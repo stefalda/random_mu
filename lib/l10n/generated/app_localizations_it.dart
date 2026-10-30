@@ -650,4 +650,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String randomFailed(String error) {
     return 'Impossibile avviare la riproduzione casuale: $error';
   }
+
+  @override
+  String get downloadsWebUnavailable =>
+      'I download offline sono disponibili solo nell\'app Android.';
 }

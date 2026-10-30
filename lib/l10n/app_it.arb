@@ -390,5 +390,6 @@
   "errorWithDetail": "Errore: {detail}",
   "removeFromQueue": "Rimuovi dalla coda",
   "removedFromQueue": "Rimosso dalla coda",
-  "randomFailed": "Impossibile avviare la riproduzione casuale: {error}"
+  "randomFailed": "Impossibile avviare la riproduzione casuale: {error}",
+  "downloadsWebUnavailable": "I download offline sono disponibili solo nell'app Android."
 }

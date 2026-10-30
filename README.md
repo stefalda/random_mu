@@ -69,6 +69,11 @@ This is the usable web version:
 while the android apks can be downloaded from the
 [Releases](https://github.com/stefalda/random_mu/releases) section.
 
+On the web everything works except the Android-only parts: **offline downloads**
+(the Downloads tab explains it) and **Android Auto**. Playback uses the browser's
+audio stack and publishes the Media Session, so the browser's own media controls
+work too. The server must allow CORS for the app's origin (Navidrome does).
+
 ## Setup and Installation
 
 ### Prerequisites

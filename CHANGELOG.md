@@ -60,6 +60,10 @@ and favorites are editable, and it keeps working without a connection.
   swapped (`STATE_NONE` from `stop()`).
 - The player crashed (`Slider` assertion) when the stream duration was unknown.
 - Landscape layout: navigation rail, compact headers, no overflow in the player.
+- Web: the download buttons and the Downloads page no longer pretend to work
+  (they are Android-only), the stray `Platform._operatingSystem` error is gone,
+  and the library, details, search and playback (with the browser Media Session)
+  work as on Android.
 - Release builds only: the Android Auto action icons were stripped by the
   resource shrinker (`res/raw/keep.xml`), and the media notification used an
   adaptive icon, which Android 14+ rejects, crashing the media service

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,6 +24,9 @@ class DownloadButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Offline downloads write files through path_provider: not available on web.
+    if (kIsWeb) return const SizedBox.shrink();
+
     final downloadService = ref.watch(downloadServiceProvider);
 
     return ListenableBuilder(

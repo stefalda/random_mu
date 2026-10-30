@@ -647,4 +647,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String randomFailed(String error) {
     return 'Cannot start random playback: $error';
   }
+
+  @override
+  String get downloadsWebUnavailable =>
+      'Offline downloads are available in the Android app only.';
 }

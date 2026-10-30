@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:random_mu/utils/error_text.dart';
 import 'package:random_mu/l10n/l10n.dart';
@@ -12,6 +13,19 @@ class DownloadsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (kIsWeb) {
+      return Scaffold(
+        appBar: AppBar(title: Text(context.l10n.downloadsTitle)),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Text(context.l10n.downloadsWebUnavailable,
+                textAlign: TextAlign.center),
+          ),
+        ),
+      );
+    }
+
     final downloadService = ref.watch(downloadServiceProvider);
 
     // The page is built once (it lives in an IndexedStack) while the service is

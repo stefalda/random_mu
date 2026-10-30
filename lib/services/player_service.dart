@@ -85,11 +85,7 @@ class PlayerService extends ChangeNotifier {
   }
 
   Future<List<Genre>> getGenres() async {
-    final genres = await client.getGenres();
-    for (var genre in genres) {
-      debugPrint(genre.name);
-    }
-    return genres;
+    return client.getGenres();
   }
 
   Future<List<Artist>> getArtists() async {
@@ -101,11 +97,7 @@ class PlayerService extends ChangeNotifier {
   }
 
   Future<List<Playlist>> getPlaylists() async {
-    final playlists = await client.getPlaylists();
-    for (var playlist in playlists) {
-      debugPrint(playlist.name);
-    }
-    return playlists;
+    return client.getPlaylists();
   }
 
   Future randomAll({String? genre, count = defaultCount}) async {

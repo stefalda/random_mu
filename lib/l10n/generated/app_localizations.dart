@@ -1147,6 +1147,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cannot start random playback: {error}'**
   String randomFailed(String error);
+
+  /// No description provided for @downloadsWebUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline downloads are available in the Android app only.'**
+  String get downloadsWebUnavailable;
 }
 
 class _AppLocalizationsDelegate
