@@ -7,6 +7,8 @@ import 'package:random_mu/client/subsonic_client.dart';
 import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/l10n/l10n_static.dart';
 import 'package:random_mu/services/browse_cache.dart';
+import 'package:random_mu/services/offline_library.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:random_mu/services/playback_mode.dart';
 import 'package:random_mu/services/player_service.dart';
 
@@ -19,6 +21,7 @@ const String artistsCategoryId = 'artists';
 const String albumsCategoryId = 'albums';
 const String favoritesCategoryId = 'favorites';
 const String songsCategoryId = 'songs';
+const String downloadsCategoryId = 'downloads';
 
 /// How many songs the car lists in the Songs node (the car UI cannot paginate).
 const int aaSongsLimit = 500;
@@ -237,6 +240,8 @@ class AudioPlayerHandler extends BaseAudioHandler
         return _buildFavorites(ps);
       case songsCategoryId:
         return _buildAllSongs(ps);
+      case downloadsCategoryId:
+        return _buildDownloads(ps);
       default:
         if (parentMediaId.startsWith('playlist-')) {
           final playlistId = parentMediaId.substring('playlist-'.length);
@@ -266,6 +271,7 @@ class AudioPlayerHandler extends BaseAudioHandler
     if (parentId == null) return null;
     if (parentId == favoritesCategoryId) return favoritesCategoryId;
     if (parentId == songsCategoryId) return songsCategoryId;
+    if (parentId == downloadsCategoryId) return downloadsCategoryId;
     if (parentId.startsWith('playlist-')) return playlistsCategoryId;
     if (parentId.startsWith('album-')) return albumsCategoryId;
     if (parentId.startsWith('artist-')) return artistsCategoryId;
@@ -304,6 +310,10 @@ class AudioPlayerHandler extends BaseAudioHandler
       MediaItem(
           id: songsCategoryId,
           title: appL10n.tabSongs,
+          playable: false),
+      MediaItem(
+          id: downloadsCategoryId,
+          title: appL10n.downloadsTitle,
           playable: false),
     ];
   }
@@ -360,6 +370,20 @@ class AudioPlayerHandler extends BaseAudioHandler
         );
       }).toList();
     } catch (_) {
+      return [];
+    }
+  }
+
+  /// The downloaded songs, so the car still has something to play offline.
+  Future<List<MediaItem>> _buildDownloads(PlayerService ps) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final library = await OfflineLibrary.load(prefs);
+      return library.songs
+          .map((song) => _songToMediaItem(song, ps.client))
+          .toList();
+    } catch (error) {
+      debugPrint('Android Auto: cannot read the downloads: $error');
       return [];
     }
   }
@@ -460,26 +484,53 @@ class AudioPlayerHandler extends BaseAudioHandler
       [Map<String, dynamic>? extras]) async {
     final ps = _playerService;
     if (ps == null || query.trim().isEmpty) return const [];
+    final term = query.trim();
+    var songs = const <Song>[];
     try {
       final result = await ps.client.search(
-        query: query.trim(),
+        query: term,
         songCount: 50,
         artistCount: 0,
         albumCount: 0,
       );
-      final items = result.songs
-          .map((song) => _songToMediaItem(song, ps.client))
-          .toList();
-      // Tapping a result plays it and queues the rest of the results.
-      final containerId = 'search-${query.trim()}';
-      _searchContainers[containerId] = result.songs;
-      for (final item in items) {
-        _itemCache[item.id] = item;
-        _itemParent[item.id] = containerId;
-      }
-      return items;
+      songs = result.songs;
     } catch (error) {
-      debugPrint('Android Auto: search failed: $error');
+      debugPrint('Android Auto: search failed, trying the downloads: $error');
+    }
+
+    if (songs.isEmpty) {
+      // Offline (or nothing on the server): search what is downloaded, so the
+      // car search keeps working without a connection.
+      songs = await _searchDownloads(term);
+    }
+    if (songs.isEmpty) return const [];
+
+    final items = songs.map((song) => _songToMediaItem(song, ps.client)).toList();
+    // Tapping a result plays it and queues the rest of the results.
+    final containerId = 'search-$term';
+    _searchContainers[containerId] = songs;
+    for (final item in items) {
+      _itemCache[item.id] = item;
+      _itemParent[item.id] = containerId;
+    }
+    return items;
+  }
+
+  Future<List<Song>> _searchDownloads(String term) async {
+    final needle = term.toLowerCase();
+    if (needle.isEmpty) return const [];
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final library = await OfflineLibrary.load(prefs);
+      return library.songs
+          .where((song) =>
+              song.title.toLowerCase().contains(needle) ||
+              (song.artist?.toLowerCase().contains(needle) ?? false) ||
+              (song.album?.toLowerCase().contains(needle) ?? false))
+          .take(50)
+          .toList();
+    } catch (error) {
+      debugPrint('Android Auto: cannot search the downloads: $error');
       return const [];
     }
   }

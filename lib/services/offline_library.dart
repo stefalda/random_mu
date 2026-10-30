@@ -29,6 +29,54 @@ class OfflineLibrary {
 
   bool get isEmpty => songs.isEmpty && containers.isEmpty;
 
+  /// Builds the catalogue from the persisted download metadata.
+  static Future<OfflineLibrary> load(SharedPreferences prefs) async {
+    final rawQueue = prefs.getString('download_queue');
+    if (rawQueue == null) return const OfflineLibrary();
+
+    final List<DownloadItem> items;
+    try {
+      items = (jsonDecode(rawQueue) as List<dynamic>)
+          .map((entry) => DownloadItem.fromJson(entry as Map<String, dynamic>))
+          .where((item) => item.status == DownloadStatus.completed)
+          .toList();
+    } catch (error) {
+      debugPrint('OfflineLibrary: cannot read the download queue: $error');
+      return const OfflineLibrary();
+    }
+
+    final songsById = <String, Song>{};
+    final containers = <OfflineContainer>[];
+
+    for (final item in items) {
+      final rawIds = prefs.getString('download_metadata_${item.id}');
+      if (rawIds == null) continue;
+
+      final containerSongs = <Song>[];
+      try {
+        for (final songId
+            in (jsonDecode(rawIds) as List<dynamic>).cast<String>()) {
+          final cached = _songFrom(prefs, songId);
+          if (cached == null) continue;
+          songsById[songId] = cached;
+          containerSongs.add(cached);
+        }
+      } catch (error) {
+        debugPrint(
+            'OfflineLibrary: cannot read the songs of ${item.title}: $error');
+      }
+
+      if (containerSongs.isNotEmpty) {
+        containers.add(OfflineContainer(item: item, songs: containerSongs));
+      }
+    }
+
+    final songs = songsById.values.toList()
+      ..sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+
+    return OfflineLibrary(songs: songs, containers: containers);
+  }
+
   bool get isNotEmpty => !isEmpty;
 
   /// Songs of one album, matched by album name (id is not persisted).
@@ -46,54 +94,11 @@ class OfflineContainer {
 /// Reads the downloads index from preferences.
 ///
 /// Deliberately not a network call: this is the last resort when the server is
-/// unreachable.
+/// unreachable, and it is what the Android Auto Downloads node lists.
 final offlineLibraryProvider = FutureProvider<OfflineLibrary>((ref) async {
   final service = ref.watch(downloadServiceProvider);
   await service.ready;
-
-  final prefs = ref.read(sharedPreferencesProvider);
-  final rawQueue = prefs.getString('download_queue');
-  if (rawQueue == null) return const OfflineLibrary();
-
-  final List<DownloadItem> items;
-  try {
-    items = (jsonDecode(rawQueue) as List<dynamic>)
-        .map((entry) => DownloadItem.fromJson(entry as Map<String, dynamic>))
-        .where((item) => item.status == DownloadStatus.completed)
-        .toList();
-  } catch (error) {
-    debugPrint('OfflineLibrary: cannot read the download queue: $error');
-    return const OfflineLibrary();
-  }
-
-  final songsById = <String, Song>{};
-  final containers = <OfflineContainer>[];
-
-  for (final item in items) {
-    final rawIds = prefs.getString('download_metadata_${item.id}');
-    if (rawIds == null) continue;
-
-    final containerSongs = <Song>[];
-    try {
-      for (final songId in (jsonDecode(rawIds) as List<dynamic>).cast<String>()) {
-        final cached = _songFrom(prefs, songId);
-        if (cached == null) continue;
-        songsById[songId] = cached;
-        containerSongs.add(cached);
-      }
-    } catch (error) {
-      debugPrint('OfflineLibrary: cannot read the songs of ${item.title}: $error');
-    }
-
-    if (containerSongs.isNotEmpty) {
-      containers.add(OfflineContainer(item: item, songs: containerSongs));
-    }
-  }
-
-  final songs = songsById.values.toList()
-    ..sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
-
-  return OfflineLibrary(songs: songs, containers: containers);
+  return OfflineLibrary.load(ref.read(sharedPreferencesProvider));
 });
 
 Song? _songFrom(SharedPreferences prefs, String songId) {

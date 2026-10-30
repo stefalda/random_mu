@@ -11,9 +11,11 @@ import 'package:random_mu/client/subsonic_client.dart';
 import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/services/browse_cache.dart';
 import 'package:random_mu/services/download_service.dart';
+import 'package:random_mu/services/offline_library.dart';
 import 'package:random_mu/services/offline_source.dart';
 import 'package:random_mu/services/playback_mode.dart';
 import 'package:random_mu/services/preference_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const defaultCount = 50;
 
@@ -188,6 +190,12 @@ class PlayerService extends ChangeNotifier {
     if (categoryId == 'favorites') return fetchFavoriteSongs();
     if (categoryId == 'songs') {
       return client.getSongsPage(offset: 0, size: 500);
+    }
+    if (categoryId == 'downloads') {
+      // Local only: no network needed.
+      final prefs = await SharedPreferences.getInstance();
+      final library = await OfflineLibrary.load(prefs);
+      return library.songs;
     }
     if (containerId == null) return [];
     switch (categoryId) {

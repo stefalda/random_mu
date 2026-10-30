@@ -126,7 +126,7 @@ void main() {
       expect(
         root.map((i) => i.id),
         [playlistsCategoryId, artistsCategoryId, albumsCategoryId,
-          favoritesCategoryId, songsCategoryId],
+          favoritesCategoryId, songsCategoryId, downloadsCategoryId],
       );
     });
 
