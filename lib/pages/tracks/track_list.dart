@@ -173,7 +173,8 @@ Future<void> showTrackActions(
   WidgetRef ref, {
   required Song song,
   required VoidCallback onPlayNow,
-  List<Song> Function()? containerProvider,
+  /// Adds a "remove from queue" action (only meaningful in the queue list).
+  VoidCallback? onRemoveFromQueue,
 }) async {
   final playerService = ref.read(playerServiceProvider);
   final messenger = ScaffoldMessenger.of(context);
@@ -225,6 +226,12 @@ Future<void> showTrackActions(
             title: Text(l10n.lyrics),
             onTap: () => Navigator.of(context).pop('lyrics'),
           ),
+          if (onRemoveFromQueue != null)
+            ListTile(
+              leading: const Icon(Icons.remove_circle_outline),
+              title: Text(l10n.removeFromQueue),
+              onTap: () => Navigator.of(context).pop('remove'),
+            ),
         ],
       ),
     ),
@@ -253,6 +260,8 @@ Future<void> showTrackActions(
         songIds: [song.id],
         songTitle: song.title,
       );
+    case 'remove':
+      onRemoveFromQueue?.call();
     case 'lyrics':
       if (!context.mounted) return;
       await Navigator.push(

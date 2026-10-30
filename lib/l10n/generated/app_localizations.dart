@@ -1129,6 +1129,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error: {detail}'**
   String errorWithDetail(String detail);
+
+  /// No description provided for @removeFromQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from queue'**
+  String get removeFromQueue;
+
+  /// No description provided for @removedFromQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed from the queue'**
+  String get removedFromQueue;
 }
 
 class _AppLocalizationsDelegate

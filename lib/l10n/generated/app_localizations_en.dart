@@ -636,4 +636,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String errorWithDetail(String detail) {
     return 'Error: $detail';
   }
+
+  @override
+  String get removeFromQueue => 'Remove from queue';
+
+  @override
+  String get removedFromQueue => 'Removed from the queue';
 }

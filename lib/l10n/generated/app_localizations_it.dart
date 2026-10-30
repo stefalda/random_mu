@@ -639,4 +639,10 @@ class AppLocalizationsIt extends AppLocalizations {
   String errorWithDetail(String detail) {
     return 'Errore: $detail';
   }
+
+  @override
+  String get removeFromQueue => 'Rimuovi dalla coda';
+
+  @override
+  String get removedFromQueue => 'Rimosso dalla coda';
 }

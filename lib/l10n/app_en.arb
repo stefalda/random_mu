@@ -517,5 +517,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "removeFromQueue": "Remove from queue",
+  "removedFromQueue": "Removed from the queue"
 }

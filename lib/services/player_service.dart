@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
@@ -388,21 +389,44 @@ class PlayerService extends ChangeNotifier {
 
     final sources = await _buildAudioSources(similarSongs);
 
-    // Drop the pending tail, then queue the similar songs behind the current one.
+    // Swap the pending tail for the similar songs (no reload of the current
+    // source), then drop what was already played: the queue ends up being the
+    // current track plus the similar ones, not the old history.
     final tailStart = playingSongIndex + 1;
     final tailEnd = audioPlayer.audioSources.length;
     if (tailEnd > tailStart) {
       await audioPlayer.removeAudioSourceRange(tailStart, tailEnd);
     }
     await audioPlayer.addAudioSources(sources);
+    if (playingSongIndex > 0) {
+      await audioPlayer.removeAudioSourceRange(0, playingSongIndex);
+    }
+    debugPrint('PlaySimilar: was index $playingSongIndex, '
+        '${similarSongs.length} simili, coda ${audioPlayer.audioSources.length}, '
+        'ora index ${audioPlayer.currentIndex}');
 
     // Keep the container order in step, so the mode toggle stays consistent.
-    final currentSongId = currentItem.id;
-    final index = _containerSongs.indexWhere((song) => song.id == currentSongId);
-    final head = index >= 0
-        ? _containerSongs.sublist(0, index + 1)
-        : <Song>[];
-    _containerSongs = [...head, ...similarSongs];
+    final json = currentItem.extras?['songJson'];
+    final currentSong = json is String
+        ? Song.fromJson(jsonDecode(json) as Map<String, dynamic>)
+        : null;
+    _containerSongs = [
+      if (currentSong != null) currentSong,
+      ...similarSongs,
+    ];
+    notifyListeners();
+  }
+
+  /// Removes the queue entry at [index] (used from the queue list).
+  Future<void> removeFromQueue(int index) async {
+    if (index < 0 || index >= audioPlayer.audioSources.length) return;
+    final source = audioPlayer.audioSources[index];
+    final tag = source is UriAudioSource ? source.tag as MediaItem? : null;
+    await audioPlayer.removeAudioSourceAt(index);
+    if (tag != null) {
+      _containerSongs =
+          _containerSongs.where((song) => song.id != tag.id).toList();
+    }
     notifyListeners();
   }
 

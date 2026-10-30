@@ -387,5 +387,7 @@
   "errorTimeout": "Il server non risponde",
   "errorServer": "Errore del server ({status})",
   "errorUnexpected": "Errore imprevisto",
-  "errorWithDetail": "Errore: {detail}"
+  "errorWithDetail": "Errore: {detail}",
+  "removeFromQueue": "Rimuovi dalla coda",
+  "removedFromQueue": "Rimosso dalla coda"
 }

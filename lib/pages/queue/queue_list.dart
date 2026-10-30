@@ -91,7 +91,10 @@ class QueueList extends ConsumerWidget {
                   context,
                   ref,
                   song: song,
-                  onPlayNow: () => audioPlayer.seek(Duration.zero, index: index),
+                  onPlayNow: () =>
+                      audioPlayer.seek(Duration.zero, index: index),
+                  onRemoveFromQueue: () =>
+                      playerService.removeFromQueue(index),
                 );
               },
               trailing: Row(
