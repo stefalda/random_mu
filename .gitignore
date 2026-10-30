@@ -47,3 +47,6 @@ app.*.map.json
 # Ignore the local keystore, it's
 *.jks
 
+
+# Local screenshots (adb / browser tooling)
+/web*.png
