@@ -98,6 +98,16 @@ void main() async {
       // alive while paused is more useful for resuming from the car/notification.
       androidNotificationOngoing: false,
       androidStopForegroundOnPause: false,
+      // Root extras the car reads: without SEARCH_SUPPORTED Android Auto hides
+      // its search affordance even when the handler implements search().
+      androidBrowsableRootExtras: {
+        'android.media.browse.SEARCH_SUPPORTED': true,
+        AndroidContentStyle.supportedKey: true,
+        AndroidContentStyle.playableHintKey:
+            AndroidContentStyle.listItemHintValue,
+        AndroidContentStyle.browsableHintKey:
+            AndroidContentStyle.listItemHintValue,
+      },
     ),
   );
 
