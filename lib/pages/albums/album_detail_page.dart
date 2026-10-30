@@ -44,7 +44,7 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
   /// while the page is still loading.
   Future<void> _play(
     List<Song> songs, {
-    int startIndex = 0,
+    String? startAtSongId,
     bool? shuffle,
   }) async {
     final messenger = ScaffoldMessenger.of(context);
@@ -87,8 +87,9 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
     try {
       await playerService.playContainer(
         tracks,
-        startAtSongId:
-            startIndex < tracks.length ? tracks[startIndex].id : null,
+        // No explicit track (header "Riproduci") lets the mode decide: shuffled
+        // playback starts on a random track instead of the first one.
+        startAtSongId: startAtSongId,
         modeOverride: mode,
       );
     } finally {
@@ -208,7 +209,8 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
                     ? const Center(child: Text('Album senza brani'))
                     : TrackList(
                         songs: songs,
-                        onPlay: (index) => _play(songs, startIndex: index),
+                        onPlay: (index) =>
+                            _play(songs, startAtSongId: songs[index].id),
                       ),
               ),
             ],

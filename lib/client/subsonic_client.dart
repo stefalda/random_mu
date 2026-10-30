@@ -519,7 +519,7 @@ class SubsonicClient {
   /// The Subsonic API has no "all songs" endpoint; Navidrome (and other servers)
   /// answer `search3` with an empty query with the whole library, paged by
   /// `songOffset`/`songCount`, so the list is walked page by page.
-  Future<List<Song>> getAllSongs({int pageSize = 500, int maxPages = 40}) async {
+  Future<List<Song>> getAllSongs({int pageSize = 2000, int maxPages = 40}) async {
     final songs = <Song>[];
     for (var page = 0; page < maxPages; page++) {
       final result = await search(
@@ -532,9 +532,14 @@ class SubsonicClient {
       songs.addAll(result.songs);
       if (result.songs.length < pageSize) break;
     }
+    // Titles come from the tags and often carry leading/trailing blanks; sort on
+    // the trimmed value so those do not jump to the top of the list.
     songs.sort(
-      (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+      (a, b) => a.title.trim().toLowerCase().compareTo(
+            b.title.trim().toLowerCase(),
+          ),
     );
+    debugPrint('getAllSongs: ${songs.length} brani');
     return songs;
   }
 

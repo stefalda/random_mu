@@ -69,7 +69,11 @@ class TrackList extends ConsumerWidget {
               ),
             ),
           ),
-          title: Text(song.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+          title: Text(
+            song.title.trim(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           subtitle: subtitle.isEmpty
               ? null
               : Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),

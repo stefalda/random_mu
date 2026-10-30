@@ -41,7 +41,7 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
   });
 
   Future<void> _play(List<Song> songs,
-      {int startIndex = 0, bool? shuffle}) async {
+      {String? startAtSongId, bool? shuffle}) async {
     final messenger = ScaffoldMessenger.of(context);
     var tracks = songs;
     if (tracks.isEmpty) {
@@ -70,8 +70,7 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
     try {
       await playerService.playContainer(
         tracks,
-        startAtSongId:
-            startIndex < tracks.length ? tracks[startIndex].id : null,
+        startAtSongId: startAtSongId,
         modeOverride: shuffle == null
             ? null
             : (shuffle ? PlaybackMode.casuale : PlaybackMode.sequenziale),
@@ -242,7 +241,8 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
                     : TrackList(
                         songs: songs,
                         showAlbum: true,
-                        onPlay: (index) => _play(songs, startIndex: index),
+                        onPlay: (index) =>
+                            _play(songs, startAtSongId: songs[index].id),
                         trailingBuilder: (context, song, index) => IconButton(
                           tooltip: 'Rimuovi dalla playlist',
                           icon: const Icon(Icons.remove_circle_outline),
