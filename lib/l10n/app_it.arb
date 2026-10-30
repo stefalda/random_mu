@@ -389,5 +389,6 @@
   "errorUnexpected": "Errore imprevisto",
   "errorWithDetail": "Errore: {detail}",
   "removeFromQueue": "Rimuovi dalla coda",
-  "removedFromQueue": "Rimosso dalla coda"
+  "removedFromQueue": "Rimosso dalla coda",
+  "randomFailed": "Impossibile avviare la riproduzione casuale: {error}"
 }

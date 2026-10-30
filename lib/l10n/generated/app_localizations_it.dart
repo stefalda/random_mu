@@ -645,4 +645,9 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get removedFromQueue => 'Rimosso dalla coda';
+
+  @override
+  String randomFailed(String error) {
+    return 'Impossibile avviare la riproduzione casuale: $error';
+  }
 }

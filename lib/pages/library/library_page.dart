@@ -6,6 +6,7 @@ import 'package:random_mu/pages/albums/albums_list.dart';
 import 'package:random_mu/pages/artists/artists_list.dart';
 import 'package:random_mu/pages/header.dart';
 import 'package:random_mu/pages/player_page.dart';
+import 'package:random_mu/utils/error_text.dart';
 import 'package:random_mu/pages/search/search_tab.dart';
 import 'package:random_mu/pages/tracks/songs_tab.dart';
 import 'package:random_mu/widgets/playback_mode_button.dart';
@@ -100,11 +101,18 @@ class LibraryPage extends ConsumerWidget {
     );
     if (choice == null || !context.mounted) return;
 
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+
+    // "Random by Playing" needs something playing to start from.
+    if (choice == 'playing' && playerService.audioPlayer.currentIndex == null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.noSongPlaying)),
+      );
+      return;
+    }
+
     ref.read(loadingProvider.notifier).setLoading(true);
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const PlayerPage()),
-    );
     try {
       switch (choice) {
         case 'all':
@@ -114,6 +122,17 @@ class LibraryPage extends ConsumerWidget {
         case 'favorites':
           await playerService.randomFavorites();
       }
+      if (!context.mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const PlayerPage()),
+      );
+    } catch (error) {
+      // Unreachable server (or an empty library): say so instead of doing
+      // nothing.
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.randomFailed(describeErrorFor(l10n, error)))),
+      );
     } finally {
       ref.read(loadingProvider.notifier).setLoading(false);
     }

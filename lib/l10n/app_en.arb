@@ -519,5 +519,13 @@
     }
   },
   "removeFromQueue": "Remove from queue",
-  "removedFromQueue": "Removed from the queue"
+  "removedFromQueue": "Removed from the queue",
+  "randomFailed": "Cannot start random playback: {error}",
+  "@randomFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

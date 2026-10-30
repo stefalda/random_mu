@@ -1141,6 +1141,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Removed from the queue'**
   String get removedFromQueue;
+
+  /// No description provided for @randomFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot start random playback: {error}'**
+  String randomFailed(String error);
 }
 
 class _AppLocalizationsDelegate

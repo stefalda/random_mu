@@ -642,4 +642,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get removedFromQueue => 'Removed from the queue';
+
+  @override
+  String randomFailed(String error) {
+    return 'Cannot start random playback: $error';
+  }
 }
