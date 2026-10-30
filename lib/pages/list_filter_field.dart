@@ -11,10 +11,12 @@ class ListFilterField extends StatefulWidget {
     required this.hint,
     required this.onChanged,
     this.initialValue = '',
+    this.compact = false,
   });
 
   final String hint;
   final String initialValue;
+  final bool compact;
   final ValueChanged<String> onChanged;
 
   @override
@@ -39,10 +41,14 @@ class _ListFilterFieldState extends State<ListFilterField> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: widget.compact
+          ? const EdgeInsets.fromLTRB(12, 8, 12, 4)
+          : const EdgeInsets.all(16.0),
       child: TextField(
         controller: _controller,
+        style: widget.compact ? const TextStyle(fontSize: 14) : null,
         decoration: InputDecoration(
+          isDense: widget.compact,
           hintText: widget.hint,
           prefixIcon: const Icon(Icons.search),
           suffixIcon: _controller.text.isEmpty
@@ -55,7 +61,7 @@ class _ListFilterFieldState extends State<ListFilterField> {
                   },
                 ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(widget.compact ? 8 : 12),
           ),
         ),
         onChanged: _update,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/utils/error_text.dart';
 import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/client/subsonic_models.dart';
@@ -73,8 +74,8 @@ class _TrackListState extends ConsumerState<TrackList> {
         SnackBar(
           content: Text(
             target
-                ? l10n.favoriteAddFailed('$error')
-                : l10n.favoriteRemoveFailed('$error'),
+                ? l10n.favoriteAddFailed(describeError(context, error))
+                : l10n.favoriteRemoveFailed(describeError(context, error)),
           ),
         ),
       );

@@ -1099,6 +1099,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Downloaded ({done}/{total})'**
   String downloadedSummary(int done, int total);
+
+  /// No description provided for @errorNoConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Server unreachable'**
+  String get errorNoConnection;
+
+  /// No description provided for @errorTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'The server is not responding'**
+  String get errorTimeout;
+
+  /// No description provided for @errorServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Server error ({status})'**
+  String errorServer(String status);
+
+  /// No description provided for @errorUnexpected.
+  ///
+  /// In en, this message translates to:
+  /// **'Unexpected error'**
+  String get errorUnexpected;
+
+  /// No description provided for @errorWithDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {detail}'**
+  String errorWithDetail(String detail);
 }
 
 class _AppLocalizationsDelegate

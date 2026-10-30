@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/utils/error_text.dart';
 import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/client/subsonic_models.dart';
@@ -98,7 +99,7 @@ Future<Playlist?> createPlaylist(
     return playlist;
   } catch (error) {
     messenger.showSnackBar(
-      SnackBar(content: Text(l10n.playlistCreateFailed('$error'))),
+      SnackBar(content: Text(l10n.playlistCreateFailed(describeError(context, error)))),
     );
     return null;
   }
@@ -122,7 +123,7 @@ Future<void> renamePlaylist(
     );
   } catch (error) {
     messenger.showSnackBar(
-      SnackBar(content: Text(l10n.playlistRenameFailed('$error'))),
+      SnackBar(content: Text(l10n.playlistRenameFailed(describeError(context, error)))),
     );
   }
 }
@@ -163,7 +164,7 @@ Future<void> deletePlaylist(
     );
   } catch (error) {
     messenger.showSnackBar(
-      SnackBar(content: Text(l10n.playlistDeleteFailed('$error'))),
+      SnackBar(content: Text(l10n.playlistDeleteFailed(describeError(context, error)))),
     );
   }
 }
@@ -217,7 +218,7 @@ Future<void> showAddToPlaylistSheet(
     );
   } catch (error) {
     messenger.showSnackBar(
-      SnackBar(content: Text(l10n.playlistAddFailed('$error'))),
+      SnackBar(content: Text(l10n.playlistAddFailed(describeError(context, error)))),
     );
   }
 }

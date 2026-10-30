@@ -16,10 +16,14 @@ class LibraryPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isLandscape =
+        MediaQuery.orientationOf(context) == Orientation.landscape;
+
     return DefaultTabController(
       length: 5,
       child: Scaffold(
         appBar: AppBar(
+          toolbarHeight: isLandscape ? 44 : null,
           title: const Header(),
           actions: [
             // The mode control lives here: everything else follows it.
@@ -34,6 +38,8 @@ class LibraryPage extends ConsumerWidget {
           bottom: TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
+            labelPadding:
+                EdgeInsets.symmetric(horizontal: isLandscape ? 12 : 16),
             tabs: [
               Tab(text: context.l10n.tabArtists),
               Tab(text: context.l10n.tabAlbums),

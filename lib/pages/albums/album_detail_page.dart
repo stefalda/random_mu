@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/utils/error_text.dart';
 import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/client/subsonic_models.dart';
@@ -69,7 +70,10 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
     } catch (error) {
       if (mounted) setState(() => _starred = !target);
       messenger.showSnackBar(
-        SnackBar(content: Text(l10n.favoritesUpdateFailed('$error'))),
+        SnackBar(
+          content: Text(
+              l10n.favoritesUpdateFailed(describeError(context, error))),
+        ),
       );
     }
   }
@@ -92,7 +96,9 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
         tracks = _cachedSongs ?? (await _album).songs;
       } catch (error) {
         messenger.showSnackBar(
-          SnackBar(content: Text(l10n.albumLoadFailed('$error'))),
+          SnackBar(
+          content: Text(l10n.albumLoadFailed(describeError(context, error))),
+        ),
         );
         return;
       }
@@ -165,7 +171,8 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
-                child: Text(context.l10n.albumLoadFailed('${snapshot.error}')),
+                child: Text(context.l10n.albumLoadFailed(
+                    describeError(context, snapshot.error))),
               ),
             );
           }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/utils/error_text.dart';
 import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/main.dart';
@@ -49,6 +50,8 @@ class _SongsTabState extends ConsumerState<SongsTab> {
       children: [
         ListFilterField(
           hint: context.l10n.searchSongsHint,
+          compact: MediaQuery.orientationOf(context) ==
+              Orientation.landscape,
           onChanged: (value) =>
               ref.read(pagedSongsProvider.notifier).setFilter(value),
         ),
@@ -74,7 +77,7 @@ class _SongsTabState extends ConsumerState<SongsTab> {
                         size: 48, color: Colors.red),
                     const SizedBox(height: 16),
                     Text(
-                      context.l10n.songsLoadFailed('$error'),
+                      context.l10n.songsLoadFailed(describeError(context, error)),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),

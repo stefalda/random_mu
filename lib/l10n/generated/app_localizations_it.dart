@@ -620,4 +620,23 @@ class AppLocalizationsIt extends AppLocalizations {
   String downloadedSummary(int done, int total) {
     return 'Scaricato ($done/$total)';
   }
+
+  @override
+  String get errorNoConnection => 'Server non raggiungibile';
+
+  @override
+  String get errorTimeout => 'Il server non risponde';
+
+  @override
+  String errorServer(String status) {
+    return 'Errore del server ($status)';
+  }
+
+  @override
+  String get errorUnexpected => 'Errore imprevisto';
+
+  @override
+  String errorWithDetail(String detail) {
+    return 'Errore: $detail';
+  }
 }

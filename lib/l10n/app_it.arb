@@ -382,5 +382,10 @@
   "offlineShowingDownloads": "Server non raggiungibile: mostro i contenuti scaricati",
   "offlineEmpty": "Server non raggiungibile e nessun contenuto scaricato",
   "offlineBanner": "Offline",
-  "downloadedSummary": "Scaricato ({done}/{total})"
+  "downloadedSummary": "Scaricato ({done}/{total})",
+  "errorNoConnection": "Server non raggiungibile",
+  "errorTimeout": "Il server non risponde",
+  "errorServer": "Errore del server ({status})",
+  "errorUnexpected": "Errore imprevisto",
+  "errorWithDetail": "Errore: {detail}"
 }

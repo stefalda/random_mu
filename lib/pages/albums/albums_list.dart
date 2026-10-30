@@ -47,6 +47,8 @@ class _AlbumsListState extends ConsumerState<AlbumsList> {
       children: [
         ListFilterField(
           hint: context.l10n.searchAlbumsHint,
+          compact: MediaQuery.orientationOf(context) ==
+              Orientation.landscape,
           onChanged: (value) =>
               ref.read(pagedAlbumsProvider.notifier).setFilter(value),
         ),

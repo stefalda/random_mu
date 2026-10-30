@@ -498,5 +498,24 @@
         "type": "int"
       }
     }
+  },
+  "errorNoConnection": "Server unreachable",
+  "errorTimeout": "The server is not responding",
+  "errorServer": "Server error ({status})",
+  "@errorServer": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "errorUnexpected": "Unexpected error",
+  "errorWithDetail": "Error: {detail}",
+  "@errorWithDetail": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
   }
 }

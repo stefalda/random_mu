@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/utils/error_text.dart';
 import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/pages/download_button.dart';
@@ -239,8 +240,9 @@ class _DownloadItemTile extends StatelessWidget {
         ));
       case DownloadStatus.failed:
         return Text(
-          context.l10n.downloadFailedWith(
-              item.errorMessage ?? context.l10n.unknownError),
+          context.l10n.downloadFailedWith(describeError(
+              context,
+              item.errorMessage ?? context.l10n.unknownError)),
           style: const TextStyle(color: Colors.red),
         );
     }

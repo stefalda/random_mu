@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/utils/error_text.dart';
 import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/client/subsonic_models.dart';
@@ -26,7 +27,8 @@ class FavoritesTab extends ConsumerWidget {
           error: (error, _) => Center(
             child: Padding(
               padding: const EdgeInsets.all(32),
-              child: Text(context.l10n.favoritesLoadFailed('$error')),
+              child: Text(context.l10n
+                  .favoritesLoadFailed(describeError(context, error))),
             ),
           ),
           data: (starred) {
@@ -145,7 +147,8 @@ class _GenresTabState extends ConsumerState<GenresTab> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
-                child: Text(context.l10n.genresLoadFailed('${snapshot.error}')),
+                child: Text(context.l10n
+                    .genresLoadFailed(describeError(context, snapshot.error))),
               ),
             );
           }
@@ -324,7 +327,8 @@ class _SearchTabState extends ConsumerState<SearchTab> {
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.all(32),
-                      child: Text(context.l10n.searchFailed('${snapshot.error}')),
+                      child: Text(context.l10n
+                          .searchFailed(describeError(context, snapshot.error))),
                     ),
                   );
                 }

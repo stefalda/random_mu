@@ -20,6 +20,8 @@ class ArtistList extends ConsumerWidget {
       children: [
         ListFilterField(
           hint: context.l10n.searchArtistsHint,
+          compact: MediaQuery.orientationOf(context) ==
+              Orientation.landscape,
           onChanged: (value) =>
               ref.read(artistsProvider.notifier).updateSearchQuery(value),
         ),

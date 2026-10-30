@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/utils/error_text.dart';
 import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/client/subsonic_models.dart';
@@ -51,7 +52,9 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
         tracks = await _songs;
       } catch (error) {
         messenger.showSnackBar(
-          SnackBar(content: Text(l10n.playlistLoadFailed('$error'))),
+          SnackBar(
+          content: Text(l10n.playlistLoadFailed(describeError(context, error))),
+        ),
         );
         return;
       }
@@ -105,7 +108,9 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
       _reload();
     } catch (error) {
       messenger.showSnackBar(
-        SnackBar(content: Text(l10n.trackRemoveFailed('$error'))),
+        SnackBar(
+          content: Text(l10n.trackRemoveFailed(describeError(context, error))),
+        ),
       );
     }
   }
@@ -160,7 +165,8 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
               child: Padding(
                 padding: const EdgeInsets.all(32),
                 child: Text(
-                    context.l10n.playlistLoadFailed('${snapshot.error}')),
+                    context.l10n
+                        .playlistLoadFailed(describeError(context, snapshot.error))),
               ),
             );
           }

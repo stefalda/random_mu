@@ -1,5 +1,6 @@
 // Create the ConsumerWidget
 import 'package:flutter/material.dart';
+import 'package:random_mu/utils/error_text.dart';
 import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/main.dart';
@@ -20,6 +21,8 @@ class PlaylistsList extends ConsumerWidget {
       children: [
         ListFilterField(
           hint: context.l10n.searchPlaylistsHint,
+          compact: MediaQuery.orientationOf(context) ==
+              Orientation.landscape,
           onChanged: (value) =>
               ref.read(playlistsProvider.notifier).updateSearchQuery(value),
         ),
@@ -39,7 +42,8 @@ class PlaylistsList extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    context.l10n.playlistsLoadFailed('$error'),
+                    context.l10n.playlistsLoadFailed(
+                      describeError(context, error)),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),

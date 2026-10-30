@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/utils/error_text.dart';
 import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/client/subsonic_models.dart';
@@ -84,7 +85,8 @@ class _ArtistDetailPageState extends ConsumerState<ArtistDetailPage> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
-                child: Text(context.l10n.artistLoadFailed('${snapshot.error}')),
+                child: Text(context.l10n
+                    .artistLoadFailed(describeError(context, snapshot.error))),
               ),
             );
           }
