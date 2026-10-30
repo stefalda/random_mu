@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Resources referenced only by name from Dart (audio_service resolves
+  `drawable/...` strings at runtime), so the resource shrinker cannot see them.
+  Without this file the release build drops the Android Auto action icons and the
+  car falls back to placeholder glyphs.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_play_similar,@drawable/ic_playback_shuffle,@drawable/ic_playback_sequential,@drawable/ic_stat_download" />
