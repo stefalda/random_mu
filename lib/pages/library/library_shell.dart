@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:random_mu/pages/downloads_page.dart';
 import 'package:random_mu/pages/library/library_page.dart';
+import 'package:random_mu/pages/mini_player_bar.dart';
 import 'package:random_mu/pages/playlists/playlists_page.dart';
 import 'package:random_mu/l10n/l10n.dart';
 import 'package:random_mu/pages/search/search_tab.dart';
@@ -70,7 +71,14 @@ class LibraryShell extends ConsumerWidget {
               ],
             ),
             const VerticalDivider(width: 1),
-            Expanded(child: body),
+            Expanded(
+              child: Column(
+                children: [
+                  Expanded(child: body),
+                  const MiniPlayerBar(),
+                ],
+              ),
+            ),
           ],
         ),
       );
@@ -78,31 +86,37 @@ class LibraryShell extends ConsumerWidget {
 
     return Scaffold(
       body: body,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: destination.index,
-        onDestinationSelected: (index) => ref
-            .read(selectedDestinationProvider.notifier)
-            .state = LibraryDestination.values[index],
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.library_music_outlined),
-            selectedIcon: const Icon(Icons.library_music),
-            label: context.l10n.navLibrary,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.queue_music_outlined),
-            selectedIcon: const Icon(Icons.queue_music),
-            label: context.l10n.navPlaylists,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.download_outlined),
-            selectedIcon: const Icon(Icons.download),
-            label: context.l10n.navDownloads,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.search_outlined),
-            selectedIcon: const Icon(Icons.search),
-            label: context.l10n.navSearch,
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const MiniPlayerBar(),
+          NavigationBar(
+            selectedIndex: destination.index,
+            onDestinationSelected: (index) => ref
+                .read(selectedDestinationProvider.notifier)
+                .state = LibraryDestination.values[index],
+            destinations: [
+              NavigationDestination(
+                icon: const Icon(Icons.library_music_outlined),
+                selectedIcon: const Icon(Icons.library_music),
+                label: context.l10n.navLibrary,
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.queue_music_outlined),
+                selectedIcon: const Icon(Icons.queue_music),
+                label: context.l10n.navPlaylists,
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.download_outlined),
+                selectedIcon: const Icon(Icons.download),
+                label: context.l10n.navDownloads,
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.search_outlined),
+                selectedIcon: const Icon(Icons.search),
+                label: context.l10n.navSearch,
+              ),
+            ],
           ),
         ],
       ),
