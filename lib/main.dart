@@ -93,6 +93,10 @@ void main() async {
     config: AudioServiceConfig(
       androidNotificationChannelId: 'com.ryanheise.bg_demo.channel.audio',
       androidNotificationChannelName: 'Audio playback',
+      // Android 14+ rejects an adaptive icon as the notification small icon
+      // ("Invalid notification (no valid small icon)"), which crashed the media
+      // service in release. Use the monochrome vector we already ship.
+      androidNotificationIcon: 'drawable/ic_stat_download',
       // audio_service asserts that an ongoing notification requires the service
       // to leave the foreground when paused. Keeping the foreground service
       // alive while paused is more useful for resuming from the car/notification.
