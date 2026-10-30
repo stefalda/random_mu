@@ -45,6 +45,9 @@ class DownloadService extends ChangeNotifier {
   final List<Duration> retryDelays;
 
   /// Whether restored queue items start downloading on construction.
+  ///
+  /// Off by default: a restored queue waits for an explicit request (the Resume
+  /// button, a retry or a new download) instead of resuming on its own.
   final bool autoStart;
 
   List<DownloadItem> _queue = [];
@@ -65,7 +68,13 @@ class DownloadService extends ChangeNotifier {
   final Completer<void> _ready = Completer<void>();
   bool _processing = false;
   bool _limitBlocked = false;
+
+  /// Set by the user (persisted): the queue must not run until resumed.
   bool _paused = false;
+
+  /// Session flag: a restored queue waits for an explicit action instead of
+  /// resuming on its own at startup.
+  bool _waitingForResume = false;
 
   static const int maxConcurrent = 2;
 
@@ -85,7 +94,7 @@ class DownloadService extends ChangeNotifier {
     http.Client? httpClient,
     this.storageDirOverride,
     this.retryDelays = defaultRetryDelays,
-    this.autoStart = true,
+    this.autoStart = false,
   }) : httpClient = httpClient ?? http.Client() {
     unawaited(_loadState());
   }
@@ -101,21 +110,24 @@ class DownloadService extends ChangeNotifier {
   /// True when queued work is waiting for space to be freed.
   bool get isBlockedByStorageLimit => _limitBlocked;
 
-  /// True when the user paused the queue from the notification.
-  bool get isPaused => _paused;
+  /// True when the queue is not running: paused by the user or restored and
+  /// waiting for an explicit resume.
+  bool get isPaused => _paused || _waitingForResume;
 
   /// Stops the item in flight and keeps the queue paused (persisted).
   void pauseQueue() {
     if (_paused) return;
     _paused = true;
+    _waitingForResume = false;
     unawaited(_savePausedState(true));
     notifyListeners();
   }
 
   /// Resumes queue processing.
   void resumeQueue() {
-    if (!_paused) return;
+    if (!isPaused) return;
     _paused = false;
+    _waitingForResume = false;
     unawaited(_savePausedState(false));
     notifyListeners();
     unawaited(_processQueue());
@@ -178,6 +190,9 @@ class DownloadService extends ChangeNotifier {
       sourceId: sourceId,
     ));
     _limitBlocked = _limitBlocked && !_storageInfo.isLimitReached;
+    // Asking for a download is an explicit request: it releases a queue that
+    // was only waiting for the user after a restart (an explicit pause stays).
+    _waitingForResume = false;
     await _saveState();
     notifyListeners();
     unawaited(notifications?.ensurePermission() ?? Future<void>.value());
@@ -213,6 +228,7 @@ class DownloadService extends ChangeNotifier {
       clearError: true,
     );
     _limitBlocked = false;
+    _waitingForResume = false;
     await _saveState();
     notifyListeners();
     unawaited(_processQueue());
@@ -272,7 +288,7 @@ class DownloadService extends ChangeNotifier {
   }
 
   DownloadItem? _nextQueuedItem() {
-    if (_limitBlocked || _paused) return null;
+    if (_limitBlocked || _paused || _waitingForResume) return null;
     for (final item in _queue) {
       if (item.status == DownloadStatus.queued &&
           !_activeDownloads.contains(item.id)) {
@@ -913,6 +929,13 @@ class DownloadService extends ChangeNotifier {
       }
     }
     await _saveState();
+
+    // Nothing resumes by itself after a restart: a queue with pending work waits
+    // for the user (Resume, a retry, or a new download). Session-only, so the
+    // persisted "paused by the user" flag keeps its meaning.
+    _waitingForResume =
+        _queue.any((item) => item.status == DownloadStatus.queued);
+
     if (!_ready.isCompleted) _ready.complete();
     notifyListeners();
 

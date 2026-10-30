@@ -377,6 +377,34 @@ void main() {
     await restarted.removeItem(restarted.queue.single.id);
   });
 
+  test('a restored queue waits for an explicit resume', () async {
+    // A previous session left a queued item behind.
+    final interrupted = buildService(songs: {});
+    await interrupted.ready;
+    await interrupted.enqueuePlaylist('pl-9', 'Interrupted');
+    interrupted.pauseQueue();
+    await interrupted.ready;
+
+    final restarted = buildService(songs: {
+      'pl-9': [_song('s9')],
+    });
+    await restarted.ready;
+
+    expect(restarted.isPaused, isTrue,
+        reason: 'a restored queue waits for the user');
+    expect(restarted.songAttempts, 0,
+        reason: 'a restored queue must not download on its own');
+
+    restarted.resumeQueue();
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(restarted.songAttempts, greaterThan(0),
+        reason: 'an explicit resume starts the queue');
+
+    for (final item in restarted.queue) {
+      await restarted.removeItem(item.id);
+    }
+  });
+
   test('restores the queue after a restart and requeues in-progress items',
       () async {
     final downloading = DownloadItem(

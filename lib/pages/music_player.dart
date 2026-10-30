@@ -4,6 +4,7 @@ import 'package:random_mu/l10n/l10n.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:random_mu/pages/artwork_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:random_mu/client/audio_player_handler.dart';
 import 'package:random_mu/main.dart';
 import 'package:random_mu/player_controls.dart';
 
@@ -24,7 +25,11 @@ class MusicPlayerScreen extends ConsumerWidget {
       stream: audioPlayer.sequenceStateStream,
       builder: (context, snapshot) {
         final source = snapshot.data?.currentSource;
-        final mediaItem = source?.tag as MediaItem?;
+        // When the session could not be loaded (offline restore) the handler
+        // still holds the metadata, so the page shows the track instead of an
+        // empty state.
+        final mediaItem = (source?.tag as MediaItem?) ??
+            AudioPlayerHandler.instance?.mediaItem.value;
 
         if (mediaItem == null) {
           return Center(child: Text(context.l10n.noSongPlaying));

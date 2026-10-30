@@ -122,13 +122,46 @@ class PlayerService extends ChangeNotifier {
   ///
   Future restoreSongs() async {
     final PreferenceService ps = inject<PreferenceService>();
-    if (!audioPlayer.playing && audioPlayer.sequence.isEmpty) {
-      final List<Song>? songs = await ps.retrieveLatestPlaylist();
-      if (songs != null) {
-        final songIndex = await ps.retrieveCurrentPlayingSongIndex();
-        await _enqueueSongs(songs, songIndex: songIndex, pause: true);
-      }
+    if (audioPlayer.playing || audioPlayer.sequence.isNotEmpty) return;
+
+    final List<Song>? songs = await ps.retrieveLatestPlaylist();
+    if (songs == null || songs.isEmpty) return;
+    final songIndex = await ps.retrieveCurrentPlayingSongIndex();
+
+    try {
+      await _enqueueSongs(songs, songIndex: songIndex, pause: true);
+      _restorePending = false;
+    } catch (error) {
+      // Offline or an unreachable stream: keep what we know (queue and
+      // metadata) without loading the source, so nothing throws on startup.
+      debugPrint('restoreSongs: source unavailable ($error), metadata only');
+      await _publishQueueMetadata(songs, songIndex);
+      _restorePending = true;
     }
+  }
+
+  /// True when the session could not be loaded and playback should retry the
+  /// restore on the next explicit play.
+  bool _restorePending = false;
+
+  /// Publishes the restored queue and its current item without touching the
+  /// player: the app and the car show the session, playback starts when the
+  /// user asks (and the server is reachable again).
+  Future<void> _publishQueueMetadata(List<Song> songs, int songIndex) async {
+    final sources = await _buildAudioSources(songs);
+    final items = <MediaItem>[
+      for (final source in sources)
+        if (source is UriAudioSource && source.tag is MediaItem)
+          source.tag as MediaItem,
+    ];
+    _containerSongs = List<Song>.of(songs);
+
+    final handler = AudioPlayerHandler.instance;
+    if (handler == null) return;
+    handler.queue.add(items);
+    if (items.isEmpty) return;
+    final index = songIndex >= 0 && songIndex < items.length ? songIndex : 0;
+    handler.mediaItem.add(items[index]);
   }
 
   /// Return all the favorited songs and songs in favorited albums
@@ -549,7 +582,11 @@ class PlayerService extends ChangeNotifier {
   }
 
   Future play() async {
-    //await audioPlayerHandler.play();
+    // A restore that failed offline is retried here: the user asked to play.
+    if (_restorePending && audioPlayer.sequence.isEmpty) {
+      _restorePending = false;
+      await restoreSongs();
+    }
     await audioPlayer.play();
   }
 
