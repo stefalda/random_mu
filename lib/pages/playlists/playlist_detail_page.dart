@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/main.dart';
@@ -43,20 +44,21 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
   Future<void> _play(List<Song> songs,
       {String? startAtSongId, bool? shuffle}) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     var tracks = songs;
     if (tracks.isEmpty) {
       try {
         tracks = await _songs;
       } catch (error) {
         messenger.showSnackBar(
-          SnackBar(content: Text('Impossibile caricare la playlist: $error')),
+          SnackBar(content: Text(l10n.playlistLoadFailed('$error'))),
         );
         return;
       }
     }
     if (tracks.isEmpty) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Questa playlist è vuota')),
+        SnackBar(content: Text(l10n.emptyPlaylist)),
       );
       return;
     }
@@ -78,7 +80,11 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
       messenger.showSnackBar(
         SnackBar(
           duration: const Duration(milliseconds: 1200),
-          content: Text('Riproduzione ${playerService.mode.label}'),
+          content: Text(
+            playerService.mode.isShuffle
+                ? l10n.playbackShuffled
+                : l10n.playbackSequential,
+          ),
         ),
       );
     } finally {
@@ -88,17 +94,18 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
 
   Future<void> _remove(List<Song> songs, int index) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     try {
       await ref
           .read(playerServiceProvider)
           .removeSongsFromPlaylist(widget.playlistId, [index]);
       messenger.showSnackBar(
-        SnackBar(content: Text('"${songs[index].title}" rimosso')),
+        SnackBar(content: Text(l10n.trackRemoved(songs[index].title))),
       );
       _reload();
     } catch (error) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Impossibile rimuovere il brano: $error')),
+        SnackBar(content: Text(l10n.trackRemoveFailed('$error'))),
       );
     }
   }
@@ -113,12 +120,12 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
         actions: [
           const PlaybackModeButton(),
           IconButton(
-            tooltip: 'Rinomina',
+            tooltip: context.l10n.rename,
             icon: const Icon(Icons.edit_outlined),
             onPressed: () async {
               final name = await showPlaylistNameDialog(
                 context,
-                title: 'Rinomina playlist',
+                title: context.l10n.renamePlaylist,
                 initialValue: _name,
               );
               if (name == null || name == _name || !context.mounted) return;
@@ -152,8 +159,8 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
-                child: Text('Impossibile caricare la playlist: '
-                    '${snapshot.error}'),
+                child: Text(
+                    context.l10n.playlistLoadFailed('${snapshot.error}')),
               ),
             );
           }
@@ -199,11 +206,11 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
                             children: [
                               FilledButton.icon(
                                 icon: const Icon(Icons.play_arrow),
-                                label: const Text('Riproduci'),
+                                label: Text(context.l10n.play),
                                 onPressed: () => _play(songs),
                               ),
                               IconButton(
-                                tooltip: 'Accoda',
+                                tooltip: context.l10n.queue,
                                 icon: const Icon(Icons.queue_music),
                                 onPressed: songs.isEmpty
                                     ? null
@@ -214,9 +221,9 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
                                         if (!context.mounted) return;
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                                'Playlist aggiunta alla coda'),
+                                          SnackBar(
+                                            content: Text(context
+                                                .l10n.playlistAddedToQueue),
                                           ),
                                         );
                                       },
@@ -237,14 +244,14 @@ class _PlaylistDetailPageState extends ConsumerState<PlaylistDetailPage> {
               const Divider(height: 1),
               Expanded(
                 child: songs.isEmpty
-                    ? const Center(child: Text('Playlist vuota'))
+                    ? Center(child: Text(context.l10n.emptyPlaylist))
                     : TrackList(
                         songs: songs,
                         showAlbum: true,
                         onPlay: (index) =>
                             _play(songs, startAtSongId: songs[index].id),
                         trailingBuilder: (context, song, index) => IconButton(
-                          tooltip: 'Rimuovi dalla playlist',
+                          tooltip: context.l10n.removeFromPlaylist,
                           icon: const Icon(Icons.remove_circle_outline),
                           onPressed: () => _remove(songs, index),
                         ),

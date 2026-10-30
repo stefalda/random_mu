@@ -1,0 +1,488 @@
+{
+  "@@locale": "en",
+  "cancel": "Cancel",
+  "save": "Save",
+  "create": "Create",
+  "delete": "Delete",
+  "rename": "Rename",
+  "retry": "Retry",
+  "reload": "Reload",
+  "remove": "Remove",
+  "close": "Close",
+  "navLibrary": "Library",
+  "navPlaylists": "Playlists",
+  "navDownloads": "Downloads",
+  "navSearch": "Search",
+  "tabArtists": "Artists",
+  "tabAlbums": "Albums",
+  "tabSongs": "Songs",
+  "tabFavorites": "Favorites",
+  "tabGenres": "Genres",
+  "searchArtistsHint": "Search artists…",
+  "searchAlbumsHint": "Search albums…",
+  "searchSongsHint": "Search songs…",
+  "searchPlaylistsHint": "Search playlists…",
+  "searchEverythingHint": "Search artists, albums, songs…",
+  "searchLibraryHint": "Search the library",
+  "searchingAlbums": "Searching albums…",
+  "searchingSongs": "Searching songs…",
+  "loadingSongs": "Loading songs…",
+  "loadingPlaylists": "Loading playlists…",
+  "emptyArtists": "No artists available",
+  "emptyAlbums": "No albums available",
+  "emptyAlbumsFor": "No albums for \"{query}\"",
+  "@emptyAlbumsFor": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "emptySongs": "No songs in the library",
+  "emptySongsFor": "No songs for \"{query}\"",
+  "@emptySongsFor": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "emptyGenres": "No genres",
+  "emptyFavorites": "No favorites yet",
+  "emptyResults": "No results",
+  "emptyPlaylist": "Empty playlist",
+  "emptyAlbum": "Album with no tracks",
+  "emptyArtist": "No albums for this artist",
+  "emptyGenre": "No tracks in this genre",
+  "noSongPlaying": "No song is currently playing",
+  "randomCommands": "Shuffle",
+  "randomCommandsTooltip": "One-off shuffle commands",
+  "allRandom": "All Random",
+  "randomByPlaying": "Random by Playing",
+  "randomByFavorites": "Random by Favorites",
+  "play": "Play",
+  "playAll": "Play all",
+  "playNow": "Play now",
+  "playNext": "Play next",
+  "queue": "Queue",
+  "addToPlaylist": "Add to playlist…",
+  "addTo": "Add to…",
+  "newPlaylist": "New playlist",
+  "newPlaylistEllipsis": "New playlist…",
+  "playlistName": "Playlist name",
+  "lyrics": "Lyrics",
+  "lyricsEmpty": "No lyrics available for this track.",
+  "lyricsError": "Cannot load the lyrics: {error}",
+  "@lyricsError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "modeSequential": "Sequential",
+  "modeShuffled": "Shuffled",
+  "playbackSequential": "Sequential playback",
+  "playbackShuffled": "Shuffled playback",
+  "playbackModeTooltip": "{mode} playback",
+  "@playbackModeTooltip": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "addedToQueue": "Added to the queue",
+  "playingNext": "Playing after the current track",
+  "albumAddedToQueue": "Album added to the queue",
+  "playlistAddedToQueue": "Playlist added to the queue",
+  "tracksAddedToQueue": "Tracks added to the queue",
+  "similarSongsQueue": "Queue replaced with similar songs",
+  "similarSongsTooltip": "Similar songs (Play Similar)",
+  "similarSongsError": "No similar songs found: {error}",
+  "@similarSongsError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "addToFavorites": "Add to favorites",
+  "removeFromFavorites": "Remove from favorites",
+  "favoriteAddFailed": "Cannot add to favorites: {error}",
+  "@favoriteAddFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "favoriteRemoveFailed": "Cannot remove from favorites: {error}",
+  "@favoriteRemoveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "albumAddedToFavorites": "Album added to favorites",
+  "albumRemovedFromFavorites": "Album removed from favorites",
+  "favoritesUpdateFailed": "Cannot update favorites: {error}",
+  "@favoritesUpdateFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistCreated": "\"{name}\" created",
+  "@playlistCreated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistDeleted": "\"{name}\" deleted",
+  "@playlistDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistRenamed": "Playlist renamed to \"{name}\"",
+  "@playlistRenamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistCreateFailed": "Cannot create the playlist: {error}",
+  "@playlistCreateFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistRenameFailed": "Cannot rename the playlist: {error}",
+  "@playlistRenameFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistDeleteFailed": "Cannot delete the playlist: {error}",
+  "@playlistDeleteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistAddFailed": "Cannot add to the playlist: {error}",
+  "@playlistAddFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistLoadFailed": "Cannot load the playlist: {error}",
+  "@playlistLoadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "deletePlaylistTitle": "Delete the playlist?",
+  "deletePlaylistBody": "\"{name}\" will be removed from Navidrome. The tracks stay in the library.",
+  "@deletePlaylistBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "renamePlaylist": "Rename playlist",
+  "removeFromPlaylist": "Remove from the playlist",
+  "trackRemoved": "\"{title}\" removed",
+  "@trackRemoved": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "trackRemoveFailed": "Cannot remove the track: {error}",
+  "@trackRemoveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistUnavailable": "Playlists unavailable: {error}",
+  "@playlistUnavailable": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "managePlaylist": "Manage playlist",
+  "tracksCount": "{count, plural, =1{1 track} other{{count} tracks}}",
+  "@tracksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "albumsCount": "{count, plural, =1{1 album} other{{count} albums}}",
+  "@albumsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "songsAndAlbums": "{songs} · {albums}",
+  "@songsAndAlbums": {
+    "placeholders": {
+      "songs": {
+        "type": "String"
+      },
+      "albums": {
+        "type": "String"
+      }
+    }
+  },
+  "allTracks": "All tracks",
+  "albumLoadFailed": "Cannot load the album: {error}",
+  "@albumLoadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "artistLoadFailed": "Cannot load the artist: {error}",
+  "@artistLoadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "songsLoadFailed": "Cannot load the songs: {error}",
+  "@songsLoadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "genresLoadFailed": "Cannot load the genres: {error}",
+  "@genresLoadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "favoritesLoadFailed": "Cannot load the favorites: {error}",
+  "@favoritesLoadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "searchFailed": "Search failed: {error}",
+  "@searchFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "unknownArtist": "Unknown artist",
+  "unknownAlbum": "Unknown album",
+  "yearAndTracks": "{year} · {tracks}",
+  "@yearAndTracks": {
+    "placeholders": {
+      "year": {
+        "type": "String"
+      },
+      "tracks": {
+        "type": "String"
+      }
+    }
+  },
+  "albumsLoadFailed": "Cannot load the albums: {error}",
+  "@albumsLoadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "artistsLoadFailed": "Cannot load the artists: {error}",
+  "@artistsLoadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "emptyArtistsFor": "No artists found for \"{query}\"",
+  "@emptyArtistsFor": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadsTitle": "Downloads",
+  "pauseDownloads": "Pause downloads",
+  "resumeDownloads": "Resume downloads",
+  "removeDownload": "Remove download",
+  "removeDownloadTitle": "Remove download?",
+  "removeDownloadBody": "Remove \"{title}\" and its downloaded files from this device?",
+  "@removeDownloadBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "clearAllDownloads": "Clear all downloads",
+  "clearAll": "Clear all",
+  "downloadQueued": "Queued",
+  "downloadingProgress": "Downloading {percent}% ({done}/{total})",
+  "@downloadingProgress": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      },
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadingPercent": "Downloading {percent}%",
+  "@downloadingPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadFailedWith": "Failed: {error}",
+  "@downloadFailedWith": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noDownloadsYet": "No downloads yet",
+  "storage": "Storage",
+  "storageLimit": "Storage limit",
+  "usedOfLimit": "Used: {used} / Limit: {limit}",
+  "@usedOfLimit": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "unlimited": "Unlimited",
+  "downloadForOffline": "Download for offline",
+  "downloadedTapToRemove": "Downloaded - tap to remove",
+  "downloadFailedTapToRetry": "Download failed - tap to retry",
+  "favoritesDownloaded": "Favorites downloaded",
+  "favoritesDownloadFailed": "Favorites download failed",
+  "offlineDownloadChannel": "Offline download progress and results",
+  "connectTitle": "Connect to Subsonic Server",
+  "serverUrl": "Server URL",
+  "username": "Username",
+  "password": "Password",
+  "connect": "Connect",
+  "pleaseEnterServerUrl": "Please enter the server URL",
+  "pleaseEnterUsername": "Please enter the username",
+  "pleaseEnterPassword": "Please enter the password",
+  "invalidUrlFormat": "Invalid URL format",
+  "invalidServerUrl": "Invalid server URL",
+  "pleaseEnterValidUrl": "Please enter a valid URL",
+  "storageLimitReached": "Storage limit reached. Free up space to download more.",
+  "retryDownload": "Retry",
+  "downloadsHeader": "Downloads",
+  "clearAllDownloadsBody": "This will remove all downloaded content and free up storage space.",
+  "unknownError": "Unknown error",
+  "clearAllDownloadsTitle": "Clear all downloads",
+  "tabPlaylists": "Playlists",
+  "downloadCompleted": "{type} '{title}' downloaded",
+  "@downloadCompleted": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadCompletedBatch": "{count, plural, =1{1 download completed} other{{count} downloads completed}}",
+  "@downloadCompletedBatch": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadFailed": "{type} '{title}' download failed",
+  "@downloadFailed": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "typePlaylist": "Playlist",
+  "typeAlbum": "Album",
+  "typeArtist": "Artist",
+  "typeFavorites": "Favorites",
+  "playlistsLoadFailed": "Cannot load the playlists: {error}",
+  "@playlistsLoadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "emptyPlaylists": "No playlists available",
+  "playlistsEmptyFor": "No playlists for \"{query}\"",
+  "@playlistsEmptyFor": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "allFieldsRequired": "All fields are required"
+}

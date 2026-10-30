@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/pages/download_button.dart';
 import 'package:random_mu/providers/download_provider.dart';
@@ -14,7 +15,7 @@ class DownloadsPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Downloads'),
+        title: Text(context.l10n.downloadsTitle),
         actions: [
           if (downloadService.queue.any((item) =>
               item.status == DownloadStatus.queued ||
@@ -23,21 +24,21 @@ class DownloadsPage extends ConsumerWidget {
               icon: Icon(
                   downloadService.isPaused ? Icons.play_arrow : Icons.pause),
               tooltip: downloadService.isPaused
-                  ? 'Resume downloads'
-                  : 'Pause downloads',
+                  ? context.l10n.resumeDownloads
+                  : context.l10n.pauseDownloads,
               onPressed: () => downloadService.isPaused
                   ? downloadService.resumeQueue()
                   : downloadService.pauseQueue(),
             ),
-          const DownloadButton(
+          DownloadButton(
             type: DownloadItemType.favorites,
             sourceId: 'favorites',
-            title: 'Favorites',
+            title: context.l10n.tabFavorites,
           ),
           if (downloadService.queue.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete_sweep),
-              tooltip: 'Clear All',
+              tooltip: context.l10n.clearAll,
               onPressed: () => _confirmClearAll(context, downloadService),
             ),
         ],
@@ -47,7 +48,7 @@ class DownloadsPage extends ConsumerWidget {
           _StorageLimitCard(downloadService: downloadService),
           Expanded(
             child: downloadService.queue.isEmpty
-                ? const Center(child: Text('No downloads yet'))
+                ? Center(child: Text(context.l10n.noDownloadsYet))
                 : ListView.builder(
                     itemCount: downloadService.queue.length,
                     itemBuilder: (context, index) {
@@ -67,20 +68,19 @@ class DownloadsPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Clear All Downloads'),
-        content: const Text(
-            'This will remove all downloaded content and free up storage space.'),
+        title: Text(context.l10n.clearAllDownloadsTitle),
+        content: Text(context.l10n.clearAllDownloadsBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () {
               ds.clearAll();
               Navigator.pop(ctx);
             },
-            child: const Text('Clear All'),
+            child: Text(context.l10n.clearAll),
           ),
         ],
       ),
@@ -107,12 +107,13 @@ class _StorageLimitCard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Storage',
+                context.l10n.storage,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
               Text(
-                'Used: ${info.usedFormatted} / Limit: ${info.limitFormatted}',
+                context.l10n.usedOfLimit(
+                    info.usedFormatted, info.limitFormatted),
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: 8),
@@ -129,7 +130,7 @@ class _StorageLimitCard extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    'Storage limit reached. Free up space to download more.',
+                    context.l10n.storageLimitReached,
                     style: TextStyle(color: Colors.red[300], fontSize: 12),
                   ),
                 ),
@@ -151,7 +152,7 @@ class _StorageLimitCard extends ConsumerWidget {
       50 * 1024 * 1024 * 1024, // 50 GB
     ];
     final labels = <String>[
-      'Unlimited',
+      context.l10n.unlimited,
       '1 GB',
       '2 GB',
       '5 GB',
@@ -163,7 +164,7 @@ class _StorageLimitCard extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => SimpleDialog(
-        title: const Text('Storage Limit'),
+        title: Text(context.l10n.storageLimit),
         children: List.generate(limits.length, (i) {
           final isSelected =
               ds.storageInfo.limitBytes == limits[i];
@@ -213,23 +214,29 @@ class _DownloadItemTile extends StatelessWidget {
     return ListTile(
       leading: Icon(_iconForType(item.type)),
       title: Text(item.title),
-      subtitle: _buildSubtitle(),
+      subtitle: _buildSubtitle(context),
       trailing: _buildTrailing(context),
     );
   }
 
-  Widget _buildSubtitle() {
+  Widget _buildSubtitle(BuildContext context) {
     switch (item.status) {
       case DownloadStatus.queued:
-        return const Text('Queued');
+        return Text(context.l10n.downloadQueued);
       case DownloadStatus.downloading:
         final pct = (item.progress * 100).toInt();
-        return Text('Downloading $pct% (${item.downloadedSongs}/${item.totalSongs})');
+        return Text(context.l10n.downloadingProgress(
+            '$pct', item.downloadedSongs, item.totalSongs));
       case DownloadStatus.completed:
-        return Text('${item.totalSongs} songs - ${item.downloadedSongs} downloaded');
+        return Text(context.l10n.downloadingProgress(
+          '100',
+          item.downloadedSongs,
+          item.totalSongs,
+        ));
       case DownloadStatus.failed:
         return Text(
-          'Failed: ${item.errorMessage ?? 'Unknown error'}',
+          context.l10n.downloadFailedWith(
+              item.errorMessage ?? context.l10n.unknownError),
           style: const TextStyle(color: Colors.red),
         );
     }
@@ -272,7 +279,7 @@ class _DownloadItemTile extends StatelessWidget {
           children: [
             IconButton(
               icon: const Icon(Icons.refresh),
-              tooltip: 'Retry',
+              tooltip: context.l10n.retry,
               onPressed: () => downloadService.retryItem(item.id),
             ),
             _deleteButton(context),
@@ -284,7 +291,7 @@ class _DownloadItemTile extends StatelessWidget {
   Widget _deleteButton(BuildContext context) {
     return IconButton(
       icon: const Icon(Icons.delete_outline),
-      tooltip: 'Remove download',
+      tooltip: context.l10n.removeDownload,
       onPressed: () => _confirmRemove(context),
     );
   }
@@ -293,16 +300,16 @@ class _DownloadItemTile extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Remove download'),
-        content: Text('Remove "${item.title}" and its downloaded files?'),
+        title: Text(context.l10n.removeDownloadTitle),
+        content: Text(context.l10n.removeDownloadBody(item.title)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Remove'),
+            child: Text(context.l10n.remove),
           ),
         ],
       ),

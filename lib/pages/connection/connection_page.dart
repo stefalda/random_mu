@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' hide ConnectionState;
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:random_mu/pages/connection/connection_notifier.dart';
@@ -51,7 +52,7 @@ class _SubsonicLoginScreenState extends ConsumerState<ConnectionPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Connect to Subsonic Server'),
+        title: Text(context.l10n.connectTitle),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -62,21 +63,21 @@ class _SubsonicLoginScreenState extends ConsumerState<ConnectionPage> {
             children: [
               TextFormField(
                 controller: _serverController,
-                decoration: const InputDecoration(
-                  labelText: 'Server URL',
+                decoration: InputDecoration(
+                  labelText: context.l10n.serverUrl,
                   hintText: 'https://your-server.com',
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter server URL';
+                    return context.l10n.pleaseEnterServerUrl;
                   }
                   try {
                     final uri = Uri.parse(value);
                     if (!uri.isAbsolute) {
-                      return 'Please enter a valid URL';
+                      return context.l10n.pleaseEnterValidUrl;
                     }
                   } catch (e) {
-                    return 'Invalid URL format';
+                    return context.l10n.invalidUrlFormat;
                   }
                   return null;
                 },
@@ -84,12 +85,12 @@ class _SubsonicLoginScreenState extends ConsumerState<ConnectionPage> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _usernameController,
-                decoration: const InputDecoration(
-                  labelText: 'Username',
+                decoration: InputDecoration(
+                  labelText: context.l10n.username,
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter username';
+                    return context.l10n.pleaseEnterUsername;
                   }
                   return null;
                 },
@@ -97,13 +98,13 @@ class _SubsonicLoginScreenState extends ConsumerState<ConnectionPage> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
+                decoration: InputDecoration(
+                  labelText: context.l10n.password,
                 ),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter password';
+                    return context.l10n.pleaseEnterPassword;
                   }
                   return null;
                 },
@@ -150,7 +151,7 @@ class _SubsonicLoginScreenState extends ConsumerState<ConnectionPage> {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Connect'),
+                    : Text(context.l10n.connect),
               ),
             ],
           ),

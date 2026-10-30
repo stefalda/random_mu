@@ -1,5 +1,6 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:random_mu/main.dart';
@@ -28,26 +29,27 @@ class PlayerPage extends ConsumerWidget {
           onPressed: () async {
             final playerService = ref.read(playerServiceProvider);
             final messenger = ScaffoldMessenger.of(context);
+            final l10n = context.l10n;
             ref.read(loadingProvider.notifier).setLoading(true);
             try {
               await playerService.randomByPlayingSong();
               messenger.showSnackBar(
-                const SnackBar(
-                  duration: Duration(milliseconds: 1200),
-                  content: Text('Coda sostituita con brani simili'),
+                SnackBar(
+                  duration: const Duration(milliseconds: 1200),
+                  content: Text(l10n.similarSongsQueue),
                 ),
               );
             } catch (e) {
               debugPrint('Error in randomByPlayingSong: $e');
               messenger.showSnackBar(
-                SnackBar(content: Text('Impossibile trovare brani simili: $e')),
+                SnackBar(content: Text(l10n.similarSongsError('$e'))),
               );
             } finally {
               ref.read(loadingProvider.notifier).setLoading(false);
             }
           },
           // Same glyph as the "Play Similar" action in Android Auto.
-          tooltip: 'Brani simili (Play Similar)',
+          tooltip: context.l10n.similarSongsTooltip,
           child: const Icon(
             Icons.auto_awesome,
             size: 32,
@@ -77,7 +79,7 @@ class _LyricsButton extends ConsumerWidget {
       builder: (context, snapshot) {
         final mediaItem = snapshot.data?.currentSource?.tag as MediaItem?;
         return IconButton(
-          tooltip: 'Testo',
+          tooltip: context.l10n.lyrics,
           icon: const Icon(Icons.lyrics_outlined),
           onPressed: mediaItem == null
               ? null

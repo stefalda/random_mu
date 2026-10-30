@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:random_mu/main.dart';
 import 'package:random_mu/pages/albums/albums_list.dart';
 import 'package:random_mu/pages/artists/artists_list.dart';
@@ -24,21 +25,21 @@ class LibraryPage extends ConsumerWidget {
             // The mode control lives here: everything else follows it.
             const PlaybackModeButton(),
             IconButton(
-              tooltip: 'Comandi casuali (una tantum)',
+              tooltip: context.l10n.randomCommandsTooltip,
               icon: const Icon(Icons.casino_outlined),
               onPressed: () => _showRandomSheet(context, ref),
             ),
             const SizedBox(width: 8),
           ],
-          bottom: const TabBar(
+          bottom: TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
             tabs: [
-              Tab(text: 'Artisti'),
-              Tab(text: 'Album'),
-              Tab(text: 'Brani'),
-              Tab(text: 'Preferiti'),
-              Tab(text: 'Generi'),
+              Tab(text: context.l10n.tabArtists),
+              Tab(text: context.l10n.tabAlbums),
+              Tab(text: context.l10n.tabSongs),
+              Tab(text: context.l10n.tabFavorites),
+              Tab(text: context.l10n.tabGenres),
             ],
           ),
         ),
@@ -67,25 +68,24 @@ class LibraryPage extends ConsumerWidget {
           children: [
             ListTile(
               title: Text(
-                'Casuale',
+                context.l10n.randomCommands,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
-              subtitle: const Text('Una tantum: non cambia la modalità'),
             ),
             const Divider(height: 1),
             ListTile(
               leading: const Icon(Icons.shuffle),
-              title: const Text('All Random'),
+              title: Text(context.l10n.allRandom),
               onTap: () => Navigator.of(context).pop('all'),
             ),
             ListTile(
               leading: const Icon(Icons.auto_awesome),
-              title: const Text('Random by Playing'),
+              title: Text(context.l10n.randomByPlaying),
               onTap: () => Navigator.of(context).pop('playing'),
             ),
             ListTile(
               leading: const Icon(Icons.favorite_outline),
-              title: const Text('Random by Favorites'),
+              title: Text(context.l10n.randomByFavorites),
               onTap: () => Navigator.of(context).pop('favorites'),
             ),
           ],

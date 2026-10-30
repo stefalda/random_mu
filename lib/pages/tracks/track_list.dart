@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/main.dart';
@@ -60,6 +61,7 @@ class _TrackListState extends ConsumerState<TrackList> {
   Future<void> _toggleStar(Song song) async {
     final playerService = ref.read(playerServiceProvider);
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     final target = !_isStarred(song);
     setState(() => _starred[song.id] = target);
     try {
@@ -71,8 +73,8 @@ class _TrackListState extends ConsumerState<TrackList> {
         SnackBar(
           content: Text(
             target
-                ? 'Impossibile aggiungere ai preferiti: $error'
-                : 'Impossibile rimuovere dai preferiti: $error',
+                ? l10n.favoriteAddFailed('$error')
+                : l10n.favoriteRemoveFailed('$error'),
           ),
         ),
       );
@@ -130,8 +132,8 @@ class _TrackListState extends ConsumerState<TrackList> {
               IconButton(
                 visualDensity: VisualDensity.compact,
                 tooltip: _isStarred(song)
-                    ? 'Rimuovi dai preferiti'
-                    : 'Aggiungi ai preferiti',
+                    ? context.l10n.removeFromFavorites
+                    : context.l10n.addToFavorites,
                 icon: Icon(
                   _isStarred(song) ? Icons.favorite : Icons.favorite_border,
                   size: 20,
@@ -174,6 +176,7 @@ Future<void> showTrackActions(
 }) async {
   final playerService = ref.read(playerServiceProvider);
   final messenger = ScaffoldMessenger.of(context);
+  final l10n = context.l10n;
 
   final action = await showModalBottomSheet<String>(
     context: context,
@@ -198,27 +201,27 @@ Future<void> showTrackActions(
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.play_arrow),
-            title: const Text('Riproduci ora'),
+            title: Text(l10n.playNow),
             onTap: () => Navigator.of(context).pop('now'),
           ),
           ListTile(
             leading: const Icon(Icons.playlist_play),
-            title: const Text('Riproduci dopo'),
+            title: Text(l10n.playNext),
             onTap: () => Navigator.of(context).pop('next'),
           ),
           ListTile(
             leading: const Icon(Icons.queue_music),
-            title: const Text('Accoda'),
+            title: Text(l10n.queue),
             onTap: () => Navigator.of(context).pop('queue'),
           ),
           ListTile(
             leading: const Icon(Icons.playlist_add),
-            title: const Text('Aggiungi a playlist…'),
+            title: Text(l10n.addToPlaylist),
             onTap: () => Navigator.of(context).pop('playlist'),
           ),
           ListTile(
             leading: const Icon(Icons.lyrics_outlined),
-            title: const Text('Testo'),
+            title: Text(l10n.lyrics),
             onTap: () => Navigator.of(context).pop('lyrics'),
           ),
         ],
@@ -234,12 +237,12 @@ Future<void> showTrackActions(
     case 'next':
       await playerService.playNext([song]);
       messenger.showSnackBar(
-        const SnackBar(content: Text('In riproduzione dopo questo brano')),
+        SnackBar(content: Text(l10n.playingNext)),
       );
     case 'queue':
       await playerService.appendToQueue([song]);
       messenger.showSnackBar(
-        const SnackBar(content: Text('Aggiunto alla coda')),
+        SnackBar(content: Text(l10n.addedToQueue)),
       );
     case 'playlist':
       if (!context.mounted) return;

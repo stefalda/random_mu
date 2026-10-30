@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/pages/header.dart';
 import 'package:random_mu/pages/playlist_actions.dart';
@@ -13,7 +14,7 @@ class PlaylistsPage extends ConsumerWidget {
     return Scaffold(
         appBar: AppBar(title: Header(title: "Playlists"), actions: [
           IconButton(
-            tooltip: 'Ricarica',
+            tooltip: context.l10n.reload,
             icon: const Icon(Icons.refresh),
             onPressed: () => ref.invalidate(playlistsProvider),
           ),
@@ -23,14 +24,14 @@ class PlaylistsPage extends ConsumerWidget {
           onPressed: () async {
             final name = await showPlaylistNameDialog(
               context,
-              title: 'Nuova playlist',
-              confirmLabel: 'Crea',
+              title: context.l10n.newPlaylist,
+              confirmLabel: context.l10n.create,
             );
             if (name == null || !context.mounted) return;
             await createPlaylist(context, ref, name: name);
           },
           icon: const Icon(Icons.add),
-          label: const Text('Nuova playlist'),
+          label: Text(context.l10n.newPlaylist),
         ),
         body: Padding(
           padding: const EdgeInsets.all(16.0),

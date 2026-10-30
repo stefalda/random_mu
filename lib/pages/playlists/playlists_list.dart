@@ -1,5 +1,6 @@
 // Create the ConsumerWidget
 import 'package:flutter/material.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/main.dart';
 import 'package:random_mu/pages/download_button.dart';
@@ -18,7 +19,7 @@ class PlaylistsList extends ConsumerWidget {
     return Column(
       children: [
         ListFilterField(
-          hint: 'Cerca playlist…',
+          hint: context.l10n.searchPlaylistsHint,
           onChanged: (value) =>
               ref.read(playlistsProvider.notifier).updateSearchQuery(value),
         ),
@@ -38,13 +39,13 @@ class PlaylistsList extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Error loading artists: ${error.toString()}',
+                    context.l10n.playlistsLoadFailed('$error'),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => ref.invalidate(artistsProvider),
-                    child: const Text('Retry'),
+                    child: Text(context.l10n.retry),
                   ),
                 ],
               ),
@@ -65,8 +66,9 @@ class PlaylistsList extends ConsumerWidget {
                       const SizedBox(height: 16),
                       Text(
                         state.searchQuery.isEmpty
-                            ? 'No artists available'
-                            : 'No artists found for "${state.searchQuery}"',
+                            ? context.l10n.emptyPlaylists
+                            : context.l10n.playlistsEmptyFor(
+                                state.searchQuery),
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ],
@@ -118,12 +120,12 @@ class PlaylistsList extends ConsumerWidget {
                               title: playlist.name,
                             ),
                             PopupMenuButton<String>(
-                              tooltip: 'Gestisci playlist',
+                              tooltip: context.l10n.managePlaylist,
                               onSelected: (value) async {
                                 if (value == 'rename') {
                                   final name = await showPlaylistNameDialog(
                                     context,
-                                    title: 'Rinomina playlist',
+                                    title: context.l10n.renamePlaylist,
                                     initialValue: playlist.name,
                                   );
                                   if (name == null || !context.mounted) return;
@@ -134,13 +136,13 @@ class PlaylistsList extends ConsumerWidget {
                                   await deletePlaylist(context, ref, playlist);
                                 }
                               },
-                              itemBuilder: (context) => const [
+                              itemBuilder: (context) => [
                                 PopupMenuItem(
                                   value: 'rename',
                                   child: ListTile(
                                     contentPadding: EdgeInsets.zero,
-                                    leading: Icon(Icons.edit_outlined),
-                                    title: Text('Rinomina'),
+                                    leading: const Icon(Icons.edit_outlined),
+                                    title: Text(context.l10n.rename),
                                   ),
                                 ),
                                 PopupMenuItem(
@@ -148,7 +150,7 @@ class PlaylistsList extends ConsumerWidget {
                                   child: ListTile(
                                     contentPadding: EdgeInsets.zero,
                                     leading: Icon(Icons.delete_outline),
-                                    title: Text('Elimina'),
+                                    title: Text(context.l10n.delete),
                                   ),
                                 ),
                               ],

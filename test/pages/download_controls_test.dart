@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:random_mu/l10n/generated/app_localizations.dart';
 import 'package:random_mu/client/subsonic_client.dart';
 import 'package:random_mu/pages/download_button.dart';
 import 'package:random_mu/pages/downloads_page.dart';
@@ -116,7 +117,11 @@ DownloadItem _item({
 Widget _wrap(Widget child, DownloadService service) {
   return ProviderScope(
     overrides: [downloadServiceProvider.overrideWithValue(service)],
-    child: MaterialApp(home: Scaffold(body: child)),
+    child: MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(body: child),
+    ),
   );
 }
 
@@ -184,7 +189,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.check_circle));
       await tester.pumpAndSettle();
 
-      expect(find.text('Remove download'), findsOneWidget);
+      expect(find.text('Remove download?'), findsOneWidget);
 
       // Cancelling keeps the download.
       await tester.tap(find.text('Cancel'));
@@ -239,7 +244,7 @@ void main() {
       expect(service.enqueued, isEmpty);
       expect(
         find.text(
-            'Storage limit reached. Free up space in Downloads to continue.'),
+            'Storage limit reached. Free up space to download more.'),
         findsOneWidget,
       );
       expect(find.text('Downloads'), findsOneWidget);
@@ -320,7 +325,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.delete_outline).first);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
-      expect(find.text('Remove download'), findsOneWidget);
+      expect(find.text('Remove download?'), findsOneWidget);
 
       await tester.tap(find.text('Remove'));
       await tester.pump();

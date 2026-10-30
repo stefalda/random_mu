@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:inject_x/inject_x.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:random_mu/client/audio_player_handler.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:random_mu/lifecycle_watched.dart';
 import 'package:random_mu/pages/home_page.dart';
 import 'package:random_mu/providers/artists_notifier.dart';
@@ -114,6 +115,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Random Muu(sic)',
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: ThemeData.dark().copyWith(
         primaryColor: Colors.indigo, // Customize primary color
         scaffoldBackgroundColor: Colors.black, // Background color

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/main.dart';
@@ -65,7 +66,7 @@ class _ArtistDetailPageState extends ConsumerState<ArtistDetailPage> {
         actions: [
           const PlaybackModeButton(),
           IconButton(
-            tooltip: 'Tutti i brani',
+            tooltip: context.l10n.allTracks,
             icon: const Icon(Icons.queue_music),
             onPressed: () => _showAllTracks(context),
           ),
@@ -83,12 +84,12 @@ class _ArtistDetailPageState extends ConsumerState<ArtistDetailPage> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
-                child: Text('Impossibile caricare l\'artista: ${snapshot.error}'),
+                child: Text(context.l10n.artistLoadFailed('${snapshot.error}')),
               ),
             );
           }
           if (albums.isEmpty) {
-            return const Center(child: Text('Nessun album per questo artista'));
+            return Center(child: Text(context.l10n.emptyArtist));
           }
 
           final client = ref.read(playerServiceProvider).client;
@@ -102,7 +103,7 @@ class _ArtistDetailPageState extends ConsumerState<ArtistDetailPage> {
                   children: [
                     FilledButton.icon(
                       icon: const Icon(Icons.play_arrow),
-                      label: const Text('Riproduci tutto'),
+                      label: Text(context.l10n.playAll),
                       onPressed: () => _playAll(),
                     ),
                     DownloadButton(
@@ -206,13 +207,13 @@ class _ArtistTracksPage extends ConsumerWidget {
         title: Header(title: artistName),
         actions: [
           IconButton(
-            tooltip: 'Accoda',
+            tooltip: context.l10n.queue,
             icon: const Icon(Icons.queue_music),
             onPressed: () async {
               await ref.read(playerServiceProvider).appendToQueue(songs);
               if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Brani aggiunti alla coda')),
+                SnackBar(content: Text(context.l10n.tracksAddedToQueue)),
               );
             },
           ),

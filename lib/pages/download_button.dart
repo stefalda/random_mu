@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/pages/downloads_page.dart';
 import 'package:random_mu/providers/download_provider.dart';
@@ -33,27 +34,28 @@ class DownloadButton extends ConsumerWidget {
           case null:
             return IconButton(
               icon: const Icon(Icons.cloud_download_outlined),
-              tooltip: 'Download for offline',
+              tooltip: context.l10n.downloadForOffline,
               onPressed: () => _enqueue(context, downloadService),
             );
           case DownloadStatus.queued:
-            return const _BusyIcon(tooltip: 'Queued');
+            return _BusyIcon(tooltip: context.l10n.downloadQueued);
           case DownloadStatus.downloading:
             return _BusyIcon(
-              tooltip: 'Downloading ${((item!.progress) * 100).toInt()}%',
+              tooltip: context.l10n
+                  .downloadingPercent('${(item!.progress * 100).toInt()}'),
               progress: item.progress,
             );
           case DownloadStatus.completed:
             return IconButton(
               icon: const Icon(Icons.check_circle, color: Colors.teal),
-              tooltip: 'Downloaded - tap to remove',
+              tooltip: context.l10n.downloadedTapToRemove,
               onPressed: () =>
                   _confirmDelete(context, downloadService, item!.id),
             );
           case DownloadStatus.failed:
             return IconButton(
               icon: const Icon(Icons.error_outline, color: Colors.red),
-              tooltip: 'Download failed - tap to retry',
+              tooltip: context.l10n.downloadFailedTapToRetry,
               onPressed: () => downloadService.retryItem(item!.id),
             );
         }
@@ -67,10 +69,9 @@ class DownloadButton extends ConsumerWidget {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text(
-              'Storage limit reached. Free up space in Downloads to continue.'),
+          content: Text(context.l10n.storageLimitReached),
           action: SnackBarAction(
-            label: 'Downloads',
+            label: context.l10n.downloadsTitle,
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const DownloadsPage()),
@@ -102,17 +103,16 @@ class DownloadButton extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Remove download'),
-        content: Text(
-            'Remove "$title" and its downloaded files from this device?'),
+        title: Text(context.l10n.removeDownloadTitle),
+        content: Text(context.l10n.removeDownloadBody(title)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Remove'),
+            child: Text(context.l10n.remove),
           ),
         ],
       ),

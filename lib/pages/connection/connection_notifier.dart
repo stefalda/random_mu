@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:random_mu/client/subsonic_client.dart';
+import 'package:random_mu/l10n/l10n_static.dart';
 import 'package:random_mu/pages/connection/connection_state.dart';
 
 class ConnectionNotifier extends StateNotifier<ConnectionState> {
@@ -13,12 +14,12 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
       // Validate URL format
       final uri = Uri.parse(serverUrl);
       if (!uri.isAbsolute) {
-        throw Exception('Invalid server URL');
+        throw Exception(appL10n.invalidServerUrl);
       }
 
       // For demonstration, we'll throw an error if any field is empty
       if (serverUrl.isEmpty || username.isEmpty || password.isEmpty) {
-        throw Exception('All fields are required');
+        throw Exception(appL10n.allFieldsRequired);
       }
 
       final client = SubsonicClient(

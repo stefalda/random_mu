@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:random_mu/client/subsonic_client.dart';
 import 'package:random_mu/client/subsonic_models.dart';
+import 'package:random_mu/l10n/l10n_static.dart';
 import 'package:random_mu/services/browse_cache.dart';
 import 'package:random_mu/services/playback_mode.dart';
 import 'package:random_mu/services/player_service.dart';
@@ -131,7 +132,9 @@ class AudioPlayerHandler extends BaseAudioHandler
           androidIcon: shuffled
               ? 'drawable/ic_playback_sequential'
               : 'drawable/ic_playback_shuffle',
-          label: shuffled ? 'Riproduzione sequenziale' : 'Riproduzione casuale',
+          label: shuffled
+              ? appL10n.playbackSequential
+              : appL10n.playbackShuffled,
           name: 'togglePlaybackMode',
         ),
         MediaControl.custom(
@@ -262,10 +265,22 @@ class AudioPlayerHandler extends BaseAudioHandler
 
   List<MediaItem> _buildRootCategories() {
     return [
-      MediaItem(id: playlistsCategoryId, title: 'Playlists', playable: false),
-      MediaItem(id: artistsCategoryId, title: 'Artists', playable: false),
-      MediaItem(id: albumsCategoryId, title: 'Albums', playable: false),
-      MediaItem(id: favoritesCategoryId, title: 'Favorites', playable: false),
+      MediaItem(
+          id: playlistsCategoryId,
+          title: appL10n.tabPlaylists,
+          playable: false),
+      MediaItem(
+          id: artistsCategoryId,
+          title: appL10n.tabArtists,
+          playable: false),
+      MediaItem(
+          id: albumsCategoryId,
+          title: appL10n.tabAlbums,
+          playable: false),
+      MediaItem(
+          id: favoritesCategoryId,
+          title: appL10n.tabFavorites,
+          playable: false),
     ];
   }
 

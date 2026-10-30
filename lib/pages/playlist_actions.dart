@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/main.dart';
@@ -8,7 +9,7 @@ Future<String?> showPlaylistNameDialog(
   BuildContext context, {
   required String title,
   String initialValue = '',
-  String confirmLabel = 'Salva',
+  String? confirmLabel,
 }) {
   return showDialog<String>(
     context: context,
@@ -31,7 +32,7 @@ class _PlaylistNameDialog extends StatefulWidget {
 
   final String title;
   final String initialValue;
-  final String confirmLabel;
+  final String? confirmLabel;
 
   @override
   State<_PlaylistNameDialog> createState() => _PlaylistNameDialogState();
@@ -60,17 +61,17 @@ class _PlaylistNameDialogState extends State<_PlaylistNameDialog> {
         controller: _controller,
         autofocus: true,
         textCapitalization: TextCapitalization.sentences,
-        decoration: const InputDecoration(labelText: 'Nome playlist'),
+        decoration: InputDecoration(labelText: context.l10n.playlistName),
         onSubmitted: (_) => _submit(),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Annulla'),
+          child: Text(context.l10n.cancel),
         ),
         FilledButton(
           onPressed: _submit,
-          child: Text(widget.confirmLabel),
+          child: Text(widget.confirmLabel ?? context.l10n.save),
         ),
       ],
     );
@@ -85,18 +86,19 @@ Future<Playlist?> createPlaylist(
   List<String> songIds = const [],
 }) async {
   final messenger = ScaffoldMessenger.of(context);
+  final l10n = context.l10n;
   final playerService = ref.read(playerServiceProvider);
   try {
     final playlist =
         await playerService.createPlaylist(name, songIds: songIds);
     ref.invalidate(playlistsProvider);
     messenger.showSnackBar(
-      SnackBar(content: Text('Playlist "${playlist.name}" creata')),
+      SnackBar(content: Text(l10n.playlistCreated(playlist.name))),
     );
     return playlist;
   } catch (error) {
     messenger.showSnackBar(
-      SnackBar(content: Text('Impossibile creare la playlist: $error')),
+      SnackBar(content: Text(l10n.playlistCreateFailed('$error'))),
     );
     return null;
   }
@@ -110,16 +112,17 @@ Future<void> renamePlaylist(
   required String name,
 }) async {
   final messenger = ScaffoldMessenger.of(context);
+  final l10n = context.l10n;
   final playerService = ref.read(playerServiceProvider);
   try {
     await playerService.renamePlaylist(playlist.id, name);
     ref.invalidate(playlistsProvider);
     messenger.showSnackBar(
-      SnackBar(content: Text('Playlist rinominata in "$name"')),
+      SnackBar(content: Text(l10n.playlistRenamed(name))),
     );
   } catch (error) {
     messenger.showSnackBar(
-      SnackBar(content: Text('Impossibile rinominare la playlist: $error')),
+      SnackBar(content: Text(l10n.playlistRenameFailed('$error'))),
     );
   }
 }
@@ -133,19 +136,16 @@ Future<void> deletePlaylist(
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('Eliminare la playlist?'),
-      content: Text(
-        '"${playlist.name}" verrà eliminata da Navidrome. I brani restano nella '
-        'libreria.',
-      ),
+      title: Text(context.l10n.deletePlaylistTitle),
+      content: Text(context.l10n.deletePlaylistBody(playlist.name)),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Annulla'),
+          child: Text(context.l10n.cancel),
         ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('Elimina'),
+          child: Text(context.l10n.delete),
         ),
       ],
     ),
@@ -153,16 +153,17 @@ Future<void> deletePlaylist(
   if (confirmed != true || !context.mounted) return;
 
   final messenger = ScaffoldMessenger.of(context);
+  final l10n = context.l10n;
   final playerService = ref.read(playerServiceProvider);
   try {
     await playerService.deletePlaylist(playlist.id);
     ref.invalidate(playlistsProvider);
     messenger.showSnackBar(
-      SnackBar(content: Text('Playlist "${playlist.name}" eliminata')),
+      SnackBar(content: Text(l10n.playlistDeleted(playlist.name))),
     );
   } catch (error) {
     messenger.showSnackBar(
-      SnackBar(content: Text('Impossibile eliminare la playlist: $error')),
+      SnackBar(content: Text(l10n.playlistDeleteFailed('$error'))),
     );
   }
 }
@@ -175,6 +176,7 @@ Future<void> showAddToPlaylistSheet(
   required String songTitle,
 }) async {
   final messenger = ScaffoldMessenger.of(context);
+  final l10n = context.l10n;
   final playerService = ref.read(playerServiceProvider);
 
   final selected = await showModalBottomSheet<_AddTarget>(
@@ -192,8 +194,8 @@ Future<void> showAddToPlaylistSheet(
     if (!context.mounted) return;
     final name = await showPlaylistNameDialog(
       context,
-      title: 'Nuova playlist',
-      confirmLabel: 'Crea',
+      title: context.l10n.newPlaylist,
+      confirmLabel: context.l10n.create,
     );
     if (name == null) return;
     if (!context.mounted) return;
@@ -215,7 +217,7 @@ Future<void> showAddToPlaylistSheet(
     );
   } catch (error) {
     messenger.showSnackBar(
-      SnackBar(content: Text('Impossibile aggiungere alla playlist: $error')),
+      SnackBar(content: Text(l10n.playlistAddFailed('$error'))),
     );
   }
 }
@@ -254,7 +256,7 @@ class _AddToPlaylistSheet extends ConsumerWidget {
               songIds.length == 1 ? songTitle : '${songIds.length} brani',
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            subtitle: const Text('Aggiungi a…'),
+            subtitle: Text(context.l10n.addTo),
           ),
           const Divider(height: 1),
           Flexible(
@@ -263,25 +265,25 @@ class _AddToPlaylistSheet extends ConsumerWidget {
               children: [
                 ListTile(
                   leading: const Icon(Icons.playlist_add),
-                  title: const Text('Nuova playlist…'),
+                  title: Text(context.l10n.newPlaylistEllipsis),
                   onTap: () =>
                       Navigator.of(context).pop(const _AddTarget.create()),
                 ),
                 ...playlistsAsync.when(
-                  loading: () => const [
+                  loading: () => [
                     ListTile(
-                      leading: SizedBox(
+                      leading: const SizedBox(
                         width: 24,
                         height: 24,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
-                      title: Text('Caricamento playlist…'),
+                      title: Text(context.l10n.loadingPlaylists),
                     ),
                   ],
                   error: (error, _) => [
                     ListTile(
                       leading: const Icon(Icons.error_outline),
-                      title: Text('Playlist non disponibili: $error'),
+                      title: Text(context.l10n.playlistUnavailable('$error')),
                     ),
                   ],
                   data: (state) => [
@@ -289,7 +291,8 @@ class _AddToPlaylistSheet extends ConsumerWidget {
                       ListTile(
                         leading: const Icon(Icons.queue_music),
                         title: Text(playlist.name),
-                        subtitle: Text('${playlist.songCount} brani'),
+                        subtitle: Text(
+                            context.l10n.tracksCount(playlist.songCount)),
                         onTap: () => Navigator.of(context)
                             .pop(_AddTarget.existing(playlist.id)),
                       ),

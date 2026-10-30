@@ -1,5 +1,6 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:random_mu/pages/artwork_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,7 +27,7 @@ class MusicPlayerScreen extends ConsumerWidget {
         final mediaItem = source?.tag as MediaItem?;
 
         if (mediaItem == null) {
-          return Center(child: Text('No song is currently playing'));
+          return Center(child: Text(context.l10n.noSongPlaying));
         }
         playerService.updatePlayingInfo(mediaItem);
         return Padding(
@@ -89,11 +90,11 @@ class MusicPlayerScreen extends ConsumerWidget {
                         SizedBox(height: 10),
                         // Display artist name
                         Text(
-                          mediaItem.artist ?? 'Unknown Artist',
+                          mediaItem.artist ?? context.l10n.unknownArtist,
                           style: TextStyle(fontSize: 18, color: Colors.grey),
                         ),
                         Text(
-                          mediaItem.album ?? 'Unknown Album',
+                          mediaItem.album ?? context.l10n.unknownAlbum,
                           style: TextStyle(fontSize: 18, color: Colors.grey),
                         ),
                         SizedBox(height: 20),
@@ -133,11 +134,11 @@ class MusicPlayerScreen extends ConsumerWidget {
                 SizedBox(height: 10),
                 // Display artist name
                 Text(
-                  mediaItem.artist ?? 'Unknown Artist',
+                  mediaItem.artist ?? context.l10n.unknownArtist,
                   style: TextStyle(fontSize: 18, color: Colors.grey),
                 ),
                 Text(
-                  mediaItem.album ?? 'Unknown Album',
+                  mediaItem.album ?? context.l10n.unknownAlbum,
                   style: TextStyle(fontSize: 18, color: Colors.grey),
                 ),
                 PlayerControls()

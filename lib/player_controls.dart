@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:random_mu/l10n/playback_mode_l10n.dart';
 import 'package:random_mu/main.dart';
 import 'package:random_mu/services/player_service.dart';
 
@@ -115,7 +117,7 @@ class PlayerControls extends ConsumerWidget {
             builder: (context, _) {
               final shuffled = playerService.mode.isShuffle;
               return IconButton(
-                tooltip: 'Riproduzione: ${playerService.mode.label}',
+                tooltip: context.l10n.playbackModeTooltip(playerService.mode.localizedLabel(context)),
                 icon: Icon(
                   // Same glyph pair as the Android Auto mode action.
                   shuffled ? Icons.shuffle : Icons.playlist_play,
@@ -131,7 +133,8 @@ class PlayerControls extends ConsumerWidget {
                         SnackBar(
                           duration: const Duration(milliseconds: 1200),
                           content: Text(
-                            'Riproduzione ${playerService.mode.label}',
+                            playerService.mode
+                                .localizedPlaybackMessage(context),
                           ),
                         ),
                       );

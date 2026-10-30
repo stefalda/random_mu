@@ -1,5 +1,6 @@
 // Create the ConsumerWidget
 import 'package:flutter/material.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/main.dart';
 import 'package:random_mu/pages/artists/artist_detail_page.dart';
@@ -17,7 +18,7 @@ class ArtistList extends ConsumerWidget {
     return Column(
       children: [
         ListFilterField(
-          hint: 'Cerca artisti…',
+          hint: context.l10n.searchArtistsHint,
           onChanged: (value) =>
               ref.read(artistsProvider.notifier).updateSearchQuery(value),
         ),
@@ -37,13 +38,13 @@ class ArtistList extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Error loading artists: ${error.toString()}',
+                    context.l10n.artistsLoadFailed('$error'),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => ref.invalidate(artistsProvider),
-                    child: const Text('Retry'),
+                    child: Text(context.l10n.retry),
                   ),
                 ],
               ),
@@ -64,8 +65,9 @@ class ArtistList extends ConsumerWidget {
                       const SizedBox(height: 16),
                       Text(
                         state.searchQuery.isEmpty
-                            ? 'No artists available'
-                            : 'No artists found for "${state.searchQuery}"',
+                            ? context.l10n.emptyArtists
+                            : context.l10n.emptyArtistsFor(
+                                state.searchQuery),
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ],

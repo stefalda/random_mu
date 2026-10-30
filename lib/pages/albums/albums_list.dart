@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/pages/albums/album_detail_page.dart';
@@ -44,7 +45,7 @@ class _AlbumsListState extends ConsumerState<AlbumsList> {
     return Column(
       children: [
         ListFilterField(
-          hint: 'Cerca album…',
+          hint: context.l10n.searchAlbumsHint,
           onChanged: (value) =>
               ref.read(pagedAlbumsProvider.notifier).setFilter(value),
         ),
@@ -58,13 +59,13 @@ class _AlbumsListState extends ConsumerState<AlbumsList> {
                   const Icon(Icons.error_outline, color: Colors.red, size: 60),
                   const SizedBox(height: 16),
                   Text(
-                    'Errore nel caricamento degli album: $error',
+                    context.l10n.albumsLoadFailed('$error'),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => ref.invalidate(pagedAlbumsProvider),
-                    child: const Text('Riprova'),
+                    child: Text(context.l10n.retry),
                   ),
                 ],
               ),
@@ -73,13 +74,13 @@ class _AlbumsListState extends ConsumerState<AlbumsList> {
               final albums = state.items;
 
               if (albums.isEmpty && state.loadingMore) {
-                return const Center(
+                return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('Cerco album…'),
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(context.l10n.searchingAlbums),
                     ],
                   ),
                 );
@@ -89,8 +90,8 @@ class _AlbumsListState extends ConsumerState<AlbumsList> {
                 return Center(
                   child: Text(
                     state.filter.isEmpty
-                        ? 'Nessun album disponibile'
-                        : 'Nessun album per "${state.filter}"',
+                        ? context.l10n.emptyAlbums
+                        : context.l10n.emptyAlbumsFor(state.filter),
                   ),
                 );
               }

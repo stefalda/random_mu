@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:random_mu/pages/downloads_page.dart';
 import 'package:random_mu/pages/library/library_page.dart';
 import 'package:random_mu/pages/playlists/playlists_page.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:random_mu/pages/search/search_tab.dart';
 
 /// Top level destinations of the app.
@@ -36,26 +37,26 @@ class LibraryShell extends ConsumerWidget {
         onDestinationSelected: (index) => ref
             .read(selectedDestinationProvider.notifier)
             .state = LibraryDestination.values[index],
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.library_music_outlined),
-            selectedIcon: Icon(Icons.library_music),
-            label: 'Libreria',
+            icon: const Icon(Icons.library_music_outlined),
+            selectedIcon: const Icon(Icons.library_music),
+            label: context.l10n.navLibrary,
           ),
           NavigationDestination(
-            icon: Icon(Icons.queue_music_outlined),
-            selectedIcon: Icon(Icons.queue_music),
-            label: 'Playlist',
+            icon: const Icon(Icons.queue_music_outlined),
+            selectedIcon: const Icon(Icons.queue_music),
+            label: context.l10n.navPlaylists,
           ),
           NavigationDestination(
-            icon: Icon(Icons.download_outlined),
-            selectedIcon: Icon(Icons.download),
-            label: 'Downloads',
+            icon: const Icon(Icons.download_outlined),
+            selectedIcon: const Icon(Icons.download),
+            label: context.l10n.navDownloads,
           ),
           NavigationDestination(
-            icon: Icon(Icons.search_outlined),
-            selectedIcon: Icon(Icons.search),
-            label: 'Cerca',
+            icon: const Icon(Icons.search_outlined),
+            selectedIcon: const Icon(Icons.search),
+            label: context.l10n.navSearch,
           ),
         ],
       ),

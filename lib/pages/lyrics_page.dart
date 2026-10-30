@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/main.dart';
@@ -114,7 +115,7 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Testo'),
+            Text(context.l10n.lyrics),
             if (widget.title != null)
               Text(
                 widget.title!,
@@ -131,14 +132,12 @@ class _LyricsPageState extends ConsumerState<LyricsPage> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return _Message(text: 'Impossibile caricare il testo: ${snapshot.error}');
+            return _Message(text: context.l10n.lyricsError('${snapshot.error}'));
           }
           final result = snapshot.data;
           _result = result;
           if (result == null || result.isEmpty) {
-            return const _Message(
-              text: 'Nessun testo disponibile per questo brano.',
-            );
+            return _Message(text: context.l10n.lyricsEmpty);
           }
 
           final lines = result.lines;

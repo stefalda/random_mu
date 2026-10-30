@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/main.dart';
@@ -9,6 +10,7 @@ import 'package:random_mu/pages/player_page.dart';
 import 'package:random_mu/pages/tracks/track_list.dart';
 import 'package:random_mu/services/download_models.dart';
 import 'package:random_mu/providers/starred_provider.dart';
+import 'package:random_mu/l10n/playback_mode_l10n.dart';
 import 'package:random_mu/services/playback_mode.dart';
 import 'package:random_mu/widgets/playback_mode_button.dart';
 
@@ -46,6 +48,7 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
 
   Future<void> _toggleStarred() async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     final target = !_albumStarred;
     setState(() => _starred = target);
     try {
@@ -57,14 +60,16 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
         SnackBar(
           duration: const Duration(milliseconds: 1200),
           content: Text(
-            target ? 'Album aggiunto ai preferiti' : 'Album rimosso dai preferiti',
+            target
+                ? l10n.albumAddedToFavorites
+                : l10n.albumRemovedFromFavorites,
           ),
         ),
       );
     } catch (error) {
       if (mounted) setState(() => _starred = !target);
       messenger.showSnackBar(
-        SnackBar(content: Text('Impossibile aggiornare i preferiti: $error')),
+        SnackBar(content: Text(l10n.favoritesUpdateFailed('$error'))),
       );
     }
   }
@@ -80,20 +85,21 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
     bool? shuffle,
   }) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     var tracks = songs;
     if (tracks.isEmpty) {
       try {
         tracks = _cachedSongs ?? (await _album).songs;
       } catch (error) {
         messenger.showSnackBar(
-          SnackBar(content: Text('Impossibile caricare l\'album: $error')),
+          SnackBar(content: Text(l10n.albumLoadFailed('$error'))),
         );
         return;
       }
     }
     if (tracks.isEmpty) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Questo album non ha brani')),
+        SnackBar(content: Text(l10n.emptyAlbum)),
       );
       return;
     }
@@ -112,7 +118,7 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
       SnackBar(
         duration: const Duration(milliseconds: 1200),
         content: Text(
-          'Riproduzione ${(mode ?? playerService.mode).label}',
+          (mode ?? playerService.mode).localizedPlaybackMessage(context),
         ),
       ),
     );
@@ -133,12 +139,12 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Header(title: widget.albumName ?? 'Album'),
+        title: Header(title: widget.albumName ?? context.l10n.tabAlbums),
         actions: [
           IconButton(
             tooltip: _albumStarred
-                ? 'Rimuovi dai preferiti'
-                : 'Aggiungi ai preferiti',
+                ? context.l10n.removeFromFavorites
+                : context.l10n.addToFavorites,
             icon: Icon(
               _albumStarred ? Icons.favorite : Icons.favorite_border,
             ),
@@ -159,7 +165,7 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
-                child: Text('Impossibile caricare l\'album: ${snapshot.error}'),
+                child: Text(context.l10n.albumLoadFailed('${snapshot.error}')),
               ),
             );
           }
@@ -201,7 +207,7 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
                           Text(
                             [
                               if (album.year != null) '${album.year}',
-                              '${songs.length} brani',
+                              context.l10n.tracksCount(songs.length),
                             ].join(' · '),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
@@ -211,12 +217,12 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
                             children: [
                               FilledButton.icon(
                                 icon: const Icon(Icons.play_arrow),
-                                label: const Text('Riproduci'),
+                                label: Text(context.l10n.play),
                                 // Follows the title bar mode toggle.
                                 onPressed: () => _play(songs),
                               ),
                               IconButton(
-                                tooltip: 'Accoda',
+                                tooltip: context.l10n.queue,
                                 icon: const Icon(Icons.queue_music),
                                 onPressed: songs.isEmpty
                                     ? null
@@ -227,9 +233,9 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
                                         if (!context.mounted) return;
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
-                                          const SnackBar(
-                                            content:
-                                                Text('Album aggiunto alla coda'),
+                                          SnackBar(
+                                            content: Text(
+                                                context.l10n.albumAddedToQueue),
                                           ),
                                         );
                                       },
@@ -250,7 +256,7 @@ class _AlbumDetailPageState extends ConsumerState<AlbumDetailPage> {
               const Divider(height: 1),
               Expanded(
                 child: songs.isEmpty
-                    ? const Center(child: Text('Album senza brani'))
+                    ? Center(child: Text(context.l10n.emptyAlbum))
                     : TrackList(
                         songs: songs,
                         onPlay: (index) =>

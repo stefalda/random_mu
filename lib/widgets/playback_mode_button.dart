@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:random_mu/l10n/l10n.dart';
+import 'package:random_mu/l10n/playback_mode_l10n.dart';
 import 'package:random_mu/main.dart';
 
 /// The single control for the playback mode, shown in the title bar.
@@ -32,7 +34,7 @@ class PlaybackModeButton extends ConsumerWidget {
         final theme = Theme.of(context);
 
         final button = IconButton(
-          tooltip: 'Riproduzione ${mode.label}',
+          tooltip: context.l10n.playbackModeTooltip(mode.localizedLabel(context)),
           // Same glyph pair as the Android Auto mode action.
           icon: Icon(
             shuffled ? Icons.shuffle : Icons.playlist_play,
@@ -47,7 +49,9 @@ class PlaybackModeButton extends ConsumerWidget {
               ..showSnackBar(
                 SnackBar(
                   duration: const Duration(milliseconds: 1200),
-                  content: Text('Riproduzione ${playerService.mode.label}'),
+                  content: Text(
+                    playerService.mode.localizedPlaybackMessage(context),
+                  ),
                 ),
               );
           },
@@ -60,7 +64,7 @@ class PlaybackModeButton extends ConsumerWidget {
           children: [
             button,
             Text(
-              mode.label,
+              mode.localizedLabel(context),
               style: theme.textTheme.bodySmall,
             ),
           ],

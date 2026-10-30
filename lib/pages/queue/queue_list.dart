@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:random_mu/pages/artwork_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
@@ -71,7 +72,7 @@ class QueueList extends ConsumerWidget {
                       isCurrentItem ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
-              subtitle: Text(metadata.artist ?? 'Unknown Artist'),
+              subtitle: Text(metadata.artist ?? context.l10n.unknownArtist),
               onTap: () {
                 audioPlayer.seek(Duration.zero, index: index);
               },

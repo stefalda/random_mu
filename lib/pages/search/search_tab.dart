@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/main.dart';
@@ -25,21 +26,21 @@ class FavoritesTab extends ConsumerWidget {
           error: (error, _) => Center(
             child: Padding(
               padding: const EdgeInsets.all(32),
-              child: Text('Impossibile caricare i preferiti: $error'),
+              child: Text(context.l10n.favoritesLoadFailed('$error')),
             ),
           ),
           data: (starred) {
             if (starred.songs.isEmpty &&
                 starred.albums.isEmpty &&
                 starred.artists.isEmpty) {
-              return const Center(child: Text('Nessun preferito'));
+              return Center(child: Text(context.l10n.emptyFavorites));
             }
             return RefreshIndicator(
             onRefresh: () async => ref.invalidate(starredProvider),
             child: ListView(
             children: [
               if (starred.songs.isNotEmpty) ...[
-                const _SectionHeader('Brani'),
+                _SectionHeader(context.l10n.tabSongs),
                 TrackList(
                   songs: starred.songs,
                   showAlbum: true,
@@ -49,7 +50,7 @@ class FavoritesTab extends ConsumerWidget {
                 ),
               ],
               if (starred.albums.isNotEmpty) ...[
-                const _SectionHeader('Album'),
+                _SectionHeader(context.l10n.tabAlbums),
                 for (final album in starred.albums)
                   ListTile(
                     leading: SizedBox(
@@ -83,7 +84,7 @@ class FavoritesTab extends ConsumerWidget {
                   ),
               ],
               if (starred.artists.isNotEmpty) ...[
-                const _SectionHeader('Artisti'),
+                _SectionHeader(context.l10n.tabArtists),
                 for (final artist in starred.artists)
                   ListTile(
                     leading: const CircleAvatar(child: Icon(Icons.person)),
@@ -144,12 +145,12 @@ class _GenresTabState extends ConsumerState<GenresTab> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
-                child: Text('Impossibile caricare i generi: ${snapshot.error}'),
+                child: Text(context.l10n.genresLoadFailed('${snapshot.error}')),
               ),
             );
           }
           if (genres.isEmpty) {
-            return const Center(child: Text('Nessun genere'));
+            return Center(child: Text(context.l10n.emptyGenres));
           }
           genres.sort((a, b) => a.name.compareTo(b.name));
           return RefreshIndicator(
@@ -163,8 +164,12 @@ class _GenresTabState extends ConsumerState<GenresTab> {
               final genre = genres[index];
               return ListTile(
                 title: Text(genre.name),
-                subtitle: Text('${genre.songCount} brani · '
-                    '${genre.albumCount} album'),
+                subtitle: Text(
+                  context.l10n.songsAndAlbums(
+                    context.l10n.tracksCount(genre.songCount),
+                    context.l10n.albumsCount(genre.albumCount),
+                  ),
+                ),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => Navigator.push(
                   context,
@@ -208,7 +213,7 @@ class _GenreTracksPageState extends ConsumerState<GenreTracksPage> {
           }
           final songs = snapshot.data ?? const <Song>[];
           if (songs.isEmpty) {
-            return const Center(child: Text('Nessun brano per questo genere'));
+            return Center(child: Text(context.l10n.emptyGenre));
           }
           return TrackList(
             songs: songs,
@@ -273,7 +278,7 @@ class _SearchTabState extends ConsumerState<SearchTab> {
     final client = ref.read(playerServiceProvider).client;
     return Scaffold(
       appBar: AppBar(
-        title: const Header(title: 'Cerca'),
+        title: Header(title: context.l10n.navSearch),
         actions: const [SizedBox(width: 8)],
       ),
       body: Column(
@@ -284,7 +289,7 @@ class _SearchTabState extends ConsumerState<SearchTab> {
               controller: _controller,
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
-                hintText: 'Cerca artisti, album, brani…',
+                hintText: context.l10n.searchEverythingHint,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _controller.text.isEmpty
                     ? null
@@ -308,8 +313,8 @@ class _SearchTabState extends ConsumerState<SearchTab> {
               future: _results,
               builder: (context, snapshot) {
                 if (_results == null) {
-                  return const Center(
-                    child: Text('Cerca nella libreria'),
+                  return Center(
+                    child: Text(context.l10n.searchLibraryHint),
                   );
                 }
                 if (snapshot.connectionState != ConnectionState.done) {
@@ -319,7 +324,7 @@ class _SearchTabState extends ConsumerState<SearchTab> {
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.all(32),
-                      child: Text('Ricerca fallita: ${snapshot.error}'),
+                      child: Text(context.l10n.searchFailed('${snapshot.error}')),
                     ),
                   );
                 }
@@ -329,13 +334,13 @@ class _SearchTabState extends ConsumerState<SearchTab> {
                 if (result.artists.isEmpty &&
                     result.albums.isEmpty &&
                     result.songs.isEmpty) {
-                  return const Center(child: Text('Nessun risultato'));
+                  return Center(child: Text(context.l10n.emptyResults));
                 }
 
                 return ListView(
                   children: [
                     if (result.artists.isNotEmpty) ...[
-                      const _SectionHeader('Artisti'),
+                      _SectionHeader(context.l10n.tabArtists),
                       for (final artist in result.artists)
                         ListTile(
                           leading: const CircleAvatar(
@@ -354,7 +359,7 @@ class _SearchTabState extends ConsumerState<SearchTab> {
                         ),
                     ],
                     if (result.albums.isNotEmpty) ...[
-                      const _SectionHeader('Album'),
+                      _SectionHeader(context.l10n.tabAlbums),
                       for (final album in result.albums)
                         ListTile(
                           leading: SizedBox(
@@ -388,7 +393,7 @@ class _SearchTabState extends ConsumerState<SearchTab> {
                         ),
                     ],
                     if (result.songs.isNotEmpty) ...[
-                      const _SectionHeader('Brani'),
+                      _SectionHeader(context.l10n.tabSongs),
                       for (final song in result.songs)
                         ListTile(
                           leading: SizedBox(

@@ -1,0 +1,382 @@
+{
+  "@@locale": "it",
+  "cancel": "Annulla",
+  "save": "Salva",
+  "create": "Crea",
+  "delete": "Elimina",
+  "rename": "Rinomina",
+  "retry": "Riprova",
+  "reload": "Ricarica",
+  "remove": "Rimuovi",
+  "close": "Chiudi",
+  "navLibrary": "Libreria",
+  "navPlaylists": "Playlist",
+  "navDownloads": "Downloads",
+  "navSearch": "Cerca",
+  "tabArtists": "Artisti",
+  "tabAlbums": "Album",
+  "tabSongs": "Brani",
+  "tabFavorites": "Preferiti",
+  "tabGenres": "Generi",
+  "searchArtistsHint": "Cerca artisti…",
+  "searchAlbumsHint": "Cerca album…",
+  "searchSongsHint": "Cerca brani…",
+  "searchPlaylistsHint": "Cerca playlist…",
+  "searchEverythingHint": "Cerca artisti, album, brani…",
+  "searchLibraryHint": "Cerca nella libreria",
+  "searchingAlbums": "Cerco album…",
+  "searchingSongs": "Cerco brani…",
+  "loadingSongs": "Carico i brani…",
+  "loadingPlaylists": "Caricamento playlist…",
+  "emptyArtists": "Nessun artista disponibile",
+  "emptyAlbums": "Nessun album disponibile",
+  "emptyAlbumsFor": "Nessun album per \"{query}\"",
+  "@emptyAlbumsFor": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "emptySongs": "Nessun brano nella libreria",
+  "emptySongsFor": "Nessun brano per \"{query}\"",
+  "@emptySongsFor": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "emptyGenres": "Nessun genere",
+  "emptyFavorites": "Nessun preferito",
+  "emptyResults": "Nessun risultato",
+  "emptyPlaylist": "Playlist vuota",
+  "emptyAlbum": "Album senza brani",
+  "emptyArtist": "Nessun album per questo artista",
+  "emptyGenre": "Nessun brano per questo genere",
+  "noSongPlaying": "Nessun brano in riproduzione",
+  "randomCommands": "Casuale",
+  "randomCommandsTooltip": "Comandi casuali una-tantum",
+  "allRandom": "Tutto casuale",
+  "randomByPlaying": "Casuale dal brano",
+  "randomByFavorites": "Casuale dai preferiti",
+  "play": "Riproduci",
+  "playAll": "Riproduci tutto",
+  "playNow": "Riproduci ora",
+  "playNext": "Riproduci dopo",
+  "queue": "Accoda",
+  "addToPlaylist": "Aggiungi a playlist…",
+  "addTo": "Aggiungi a…",
+  "newPlaylist": "Nuova playlist",
+  "newPlaylistEllipsis": "Nuova playlist…",
+  "playlistName": "Nome playlist",
+  "lyrics": "Testo",
+  "lyricsEmpty": "Nessun testo disponibile per questo brano.",
+  "lyricsError": "Impossibile caricare il testo: {error}",
+  "@lyricsError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "modeSequential": "Sequenziale",
+  "modeShuffled": "Casuale",
+  "playbackSequential": "Riproduzione sequenziale",
+  "playbackShuffled": "Riproduzione casuale",
+  "playbackModeTooltip": "Riproduzione {mode}",
+  "@playbackModeTooltip": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "addedToQueue": "Aggiunto alla coda",
+  "playingNext": "In riproduzione dopo questo brano",
+  "albumAddedToQueue": "Album aggiunto alla coda",
+  "playlistAddedToQueue": "Playlist aggiunta alla coda",
+  "tracksAddedToQueue": "Brani aggiunti alla coda",
+  "similarSongsQueue": "Coda sostituita con brani simili",
+  "similarSongsTooltip": "Brani simili (Play Similar)",
+  "similarSongsError": "Impossibile trovare brani simili: {error}",
+  "@similarSongsError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "addToFavorites": "Aggiungi ai preferiti",
+  "removeFromFavorites": "Rimuovi dai preferiti",
+  "favoriteAddFailed": "Impossibile aggiungere ai preferiti: {error}",
+  "@favoriteAddFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "favoriteRemoveFailed": "Impossibile rimuovere dai preferiti: {error}",
+  "@favoriteRemoveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "albumAddedToFavorites": "Album aggiunto ai preferiti",
+  "albumRemovedFromFavorites": "Album rimosso dai preferiti",
+  "favoritesUpdateFailed": "Impossibile aggiornare i preferiti: {error}",
+  "@favoritesUpdateFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistCreated": "\"{name}\" creata",
+  "@playlistCreated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistDeleted": "\"{name}\" eliminata",
+  "@playlistDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistRenamed": "Playlist rinominata in \"{name}\"",
+  "@playlistRenamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistCreateFailed": "Impossibile creare la playlist: {error}",
+  "@playlistCreateFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistRenameFailed": "Impossibile rinominare la playlist: {error}",
+  "@playlistRenameFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistDeleteFailed": "Impossibile eliminare la playlist: {error}",
+  "@playlistDeleteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistAddFailed": "Impossibile aggiungere alla playlist: {error}",
+  "@playlistAddFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistLoadFailed": "Impossibile caricare la playlist: {error}",
+  "@playlistLoadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "deletePlaylistTitle": "Eliminare la playlist?",
+  "deletePlaylistBody": "\"{name}\" verrà eliminata da Navidrome. I brani restano nella libreria.",
+  "@deletePlaylistBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "renamePlaylist": "Rinomina playlist",
+  "removeFromPlaylist": "Rimuovi dalla playlist",
+  "trackRemoved": "\"{title}\" rimosso",
+  "@trackRemoved": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "trackRemoveFailed": "Impossibile rimuovere il brano: {error}",
+  "@trackRemoveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistUnavailable": "Playlist non disponibili: {error}",
+  "@playlistUnavailable": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "managePlaylist": "Gestisci playlist",
+  "tracksCount": "{count, plural, =1{1 brano} other{{count} brani}}",
+  "@tracksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "albumsCount": "{count, plural, =1{1 album} other{{count} album}}",
+  "@albumsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "songsAndAlbums": "{songs} · {albums}",
+  "@songsAndAlbums": {
+    "placeholders": {
+      "songs": {
+        "type": "String"
+      },
+      "albums": {
+        "type": "String"
+      }
+    }
+  },
+  "allTracks": "Tutti i brani",
+  "albumLoadFailed": "Impossibile caricare l'album: {error}",
+  "@albumLoadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "artistLoadFailed": "Impossibile caricare l'artista: {error}",
+  "@artistLoadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "songsLoadFailed": "Impossibile caricare i brani: {error}",
+  "@songsLoadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "genresLoadFailed": "Impossibile caricare i generi: {error}",
+  "@genresLoadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "favoritesLoadFailed": "Impossibile caricare i preferiti: {error}",
+  "@favoritesLoadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "searchFailed": "Ricerca fallita: {error}",
+  "@searchFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "unknownArtist": "Artista sconosciuto",
+  "unknownAlbum": "Album sconosciuto",
+  "yearAndTracks": "{year} · {tracks}",
+  "@yearAndTracks": {
+    "placeholders": {
+      "year": {
+        "type": "String"
+      },
+      "tracks": {
+        "type": "String"
+      }
+    }
+  },
+  "albumsLoadFailed": "Impossibile caricare gli album: {error}",
+  "artistsLoadFailed": "Impossibile caricare gli artisti: {error}",
+  "emptyArtistsFor": "Nessun artista per \"{query}\"",
+  "downloadsTitle": "Downloads",
+  "pauseDownloads": "Metti in pausa i download",
+  "resumeDownloads": "Riprendi i download",
+  "removeDownload": "Rimuovi download",
+  "removeDownloadTitle": "Rimuovere il download?",
+  "removeDownloadBody": "Rimuovere \"{title}\" e i suoi file scaricati da questo dispositivo?",
+  "clearAllDownloads": "Rimuovi tutti i download",
+  "clearAll": "Rimuovi tutto",
+  "downloadQueued": "In coda",
+  "downloadingProgress": "Download {percent}% ({done}/{total})",
+  "downloadingPercent": "Download {percent}%",
+  "downloadFailedWith": "Fallito: {error}",
+  "noDownloadsYet": "Nessun download",
+  "storage": "Spazio",
+  "storageLimit": "Limite di spazio",
+  "usedOfLimit": "Usati: {used} / Limite: {limit}",
+  "unlimited": "Illimitato",
+  "downloadForOffline": "Scarica per l'offline",
+  "downloadedTapToRemove": "Scaricato - tocca per rimuovere",
+  "downloadFailedTapToRetry": "Download fallito - tocca per riprovare",
+  "favoritesDownloaded": "Preferiti scaricati",
+  "favoritesDownloadFailed": "Download dei preferiti fallito",
+  "offlineDownloadChannel": "Avanzamento e risultati dei download offline",
+  "connectTitle": "Connettiti al server Subsonic",
+  "serverUrl": "URL del server",
+  "username": "Nome utente",
+  "password": "Password",
+  "connect": "Connetti",
+  "pleaseEnterServerUrl": "Inserisci l'URL del server",
+  "pleaseEnterUsername": "Inserisci il nome utente",
+  "pleaseEnterPassword": "Inserisci la password",
+  "invalidUrlFormat": "Formato URL non valido",
+  "invalidServerUrl": "URL del server non valido",
+  "pleaseEnterValidUrl": "Inserisci un URL valido",
+  "storageLimitReached": "Limite di spazio raggiunto. Libera spazio per scaricare altro.",
+  "retryDownload": "Riprova",
+  "downloadsHeader": "Downloads",
+  "clearAllDownloadsBody": "Rimuoverà tutti i contenuti scaricati e libererà spazio.",
+  "unknownError": "Errore sconosciuto",
+  "clearAllDownloadsTitle": "Rimuovi tutti i download",
+  "tabPlaylists": "Playlist",
+  "downloadCompleted": "{type} '{title}' scaricato",
+  "downloadCompletedBatch": "{count, plural, =1{1 download completato} other{{count} download completati}}",
+  "downloadFailed": "Download di {type} '{title}' fallito",
+  "typePlaylist": "Playlist",
+  "typeAlbum": "Album",
+  "typeArtist": "Artista",
+  "typeFavorites": "Preferiti",
+  "playlistsLoadFailed": "Impossibile caricare le playlist: {error}",
+  "emptyPlaylists": "Nessuna playlist disponibile",
+  "playlistsEmptyFor": "Nessuna playlist per \"{query}\"",
+  "allFieldsRequired": "Tutti i campi sono obbligatori"
+}

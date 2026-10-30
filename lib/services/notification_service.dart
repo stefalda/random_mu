@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:random_mu/l10n/l10n_static.dart';
 import 'package:random_mu/services/download_models.dart';
 import 'package:random_mu/services/permissions.dart';
 
@@ -11,9 +12,8 @@ import 'package:random_mu/services/permissions.dart';
 /// notification permission is unavailable, downloads keep working silently.
 class NotificationService {
   static const String channelId = 'random_mu_downloads';
-  static const String channelName = 'Downloads';
-  static const String channelDescription =
-      'Offline download progress and results';
+  static String get channelName => appL10n.downloadsTitle;
+  static String get channelDescription => appL10n.offlineDownloadChannel;
 
   /// Completions arriving inside this window collapse into one summary.
   final Duration batchWindow;
@@ -47,7 +47,7 @@ class NotificationService {
       final android = _plugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
       await android?.createNotificationChannel(
-        const AndroidNotificationChannel(
+        AndroidNotificationChannel(
           channelId,
           channelName,
           description: channelDescription,
@@ -108,7 +108,7 @@ class NotificationService {
         id: _nextId++,
         title: title,
         body: body,
-        notificationDetails: const NotificationDetails(
+        notificationDetails: NotificationDetails(
           android: AndroidNotificationDetails(
             channelId,
             channelName,
@@ -128,31 +128,32 @@ class NotificationService {
   static String typeLabel(DownloadItemType type) {
     switch (type) {
       case DownloadItemType.playlist:
-        return 'Playlist';
+        return appL10n.typePlaylist;
       case DownloadItemType.album:
-        return 'Album';
+        return appL10n.typeAlbum;
       case DownloadItemType.artist:
-        return 'Artist';
+        return appL10n.typeArtist;
       case DownloadItemType.favorites:
-        return 'Favorites';
+        return appL10n.typeFavorites;
     }
   }
 
   static String completionMessage(DownloadItem item) {
-    if (item.type == DownloadItemType.favorites) return 'Favorites downloaded';
-    return "${typeLabel(item.type)} '${item.title}' downloaded";
+    if (item.type == DownloadItemType.favorites) {
+      return appL10n.favoritesDownloaded;
+    }
+    return appL10n.downloadCompleted(typeLabel(item.type), item.title);
   }
 
   static String batchMessage(int count) {
-    if (count == 1) return '1 download completed';
-    return '$count downloads completed';
+    return appL10n.downloadCompletedBatch(count);
   }
 
   static String failureMessage(DownloadItem item) {
     if (item.type == DownloadItemType.favorites) {
-      return 'Favorites download failed';
+      return appL10n.favoritesDownloadFailed;
     }
-    return "${typeLabel(item.type)} '${item.title}' download failed";
+    return appL10n.downloadFailed(typeLabel(item.type), item.title);
   }
 
   static String batchBody(List<DownloadItem> items) {

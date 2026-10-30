@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_mu/l10n/l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:random_mu/main.dart';
 import 'package:random_mu/pages/list_filter_field.dart';
@@ -46,19 +47,19 @@ class _SongsTabState extends ConsumerState<SongsTab> {
     return Column(
       children: [
         ListFilterField(
-          hint: 'Cerca brani…',
+          hint: context.l10n.searchSongsHint,
           onChanged: (value) =>
               ref.read(pagedSongsProvider.notifier).setFilter(value),
         ),
         Expanded(
           child: songsAsync.when(
-            loading: () => const Center(
+            loading: () => Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Carico i brani…'),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(context.l10n.loadingSongs),
                 ],
               ),
             ),
@@ -72,13 +73,13 @@ class _SongsTabState extends ConsumerState<SongsTab> {
                         size: 48, color: Colors.red),
                     const SizedBox(height: 16),
                     Text(
-                      'Impossibile caricare i brani: $error',
+                      context.l10n.songsLoadFailed('$error'),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () => ref.invalidate(pagedSongsProvider),
-                      child: const Text('Riprova'),
+                      child: Text(context.l10n.retry),
                     ),
                   ],
                 ),
@@ -89,13 +90,13 @@ class _SongsTabState extends ConsumerState<SongsTab> {
 
               // A query is in flight: the previous results were cleared.
               if (songs.isEmpty && state.loadingMore) {
-                return const Center(
+                return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('Cerco brani…'),
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(context.l10n.searchingSongs),
                     ],
                   ),
                 );
@@ -105,8 +106,8 @@ class _SongsTabState extends ConsumerState<SongsTab> {
                 return Center(
                   child: Text(
                     state.filter.isEmpty
-                        ? 'Nessun brano nella libreria'
-                        : 'Nessun brano per "${state.filter}"',
+                        ? context.l10n.emptySongs
+                        : context.l10n.emptySongsFor(state.filter),
                   ),
                 );
               }
