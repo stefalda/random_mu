@@ -102,6 +102,13 @@ void main() async {
       // alive while paused is more useful for resuming from the car/notification.
       androidNotificationOngoing: false,
       androidStopForegroundOnPause: false,
+      // The now-playing artwork is decoded into a bitmap and put into the
+      // media metadata and the notification: at full resolution a cover is
+      // several megabytes of pixels, re-sent to the car and rebuilt into the
+      // notification on every metadata update. 512 px is enough for the car,
+      // the lock screen and the notification large icon.
+      artDownscaleWidth: 512,
+      artDownscaleHeight: 512,
       // Root extras the car reads: without SEARCH_SUPPORTED Android Auto hides
       // its search affordance even when the handler implements search().
       androidBrowsableRootExtras: {

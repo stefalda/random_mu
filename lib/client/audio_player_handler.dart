@@ -53,6 +53,20 @@ class AudioPlayerHandler extends BaseAudioHandler
   /// Song lists behind the current search results, keyed by `search-<query>`.
   final Map<String, List<Song>> _searchContainers = {};
 
+  /// The sequence whose items were last published to the car.
+  ///
+  /// `just_audio` re-emits [SequenceState] on every playback event (about twice
+  /// a second while streaming) and keeps the same sequence list instance when
+  /// only the current index changes, so comparing by identity avoids sending
+  /// the whole queue again on every buffer update.
+  List<IndexedAudioSource>? _publishedSequence;
+
+  /// The item last published to the car as the now-playing one.
+  ///
+  /// Comparing the tag instance (not the id) also republishes when the same
+  /// song gets new metadata, e.g. a cover art URI resolved from the download.
+  MediaItem? _publishedMediaItem;
+
   /// Global reference so providers can wire the PlayerService after init.
   static AudioPlayerHandler? instance;
 
@@ -67,6 +81,9 @@ class AudioPlayerHandler extends BaseAudioHandler
   void setPlayerService(PlayerService service) {
     _playerService = service;
     _cancelListeners();
+    // A new player starts from an empty sequence, so publish it again.
+    _publishedSequence = null;
+    _publishedMediaItem = null;
     _setupPlayerListeners();
   }
 
@@ -111,16 +128,25 @@ class AudioPlayerHandler extends BaseAudioHandler
       ));
     });
 
+    // The car receives the whole queue and the now-playing item, so these are
+    // published only when they really change: sending them on every playback
+    // event floods the Android Auto host with binder traffic (500 items are
+    // ~170 KiB per publish), which makes the car UI stutter while scrolling.
     _sequenceSubscription =
         ps.audioPlayer.sequenceStateStream.listen((seqState) {
-      final queue = seqState.sequence
-          .map((source) => source.tag as MediaItem)
-          .toList();
-      this.queue.add(queue);
-      final currentIndex = seqState.currentIndex;
-      if (currentIndex != null) {
-        mediaItem.add(queue[currentIndex]);
+      final sequence = seqState.sequence;
+      if (!identical(sequence, _publishedSequence)) {
+        _publishedSequence = sequence;
+        queue.add(
+          sequence.map((source) => source.tag as MediaItem).toList(),
+        );
       }
+      final currentIndex = seqState.currentIndex;
+      if (currentIndex == null) return;
+      final item = sequence[currentIndex].tag as MediaItem;
+      if (identical(item, _publishedMediaItem)) return;
+      _publishedMediaItem = item;
+      mediaItem.add(item);
     });
   }
 

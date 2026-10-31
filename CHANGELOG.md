@@ -3,6 +3,24 @@
 All notable changes to Random Muu(sic) are documented here. The version follows
 `pubspec.yaml`; releases are published on GitHub with the APK attached.
 
+## [0.0.25] - 2026-10-31
+
+A performance release for the car: browsing Artists, Songs and the other nodes no
+longer fights the playback updates for the Android Auto host's main thread.
+
+### Fixed
+
+- **Android Auto scrolling is smooth again**: the whole queue and the
+  now-playing item were republished to the `MediaSession` on *every* playback
+  event (about twice a second while streaming) because `just_audio` re-emits its
+  sequence state on every buffer update. With 500 tracks that was ~170 KiB of
+  binder traffic plus a notification rebuild and N queue items for the car,
+  twice a second, on the same thread that scrolls the car list. They are now
+  published only when the queue or the playing item actually changes.
+- **Now-playing artwork is downscaled to 512 px** before it goes into the media
+  metadata and the notification, instead of shipping the original cover
+  (megabytes of pixels) on every metadata update.
+
 ## [0.0.24] - 2026-10-30
 
 A library release: the app is browsable, the playback mode is yours, playlists
