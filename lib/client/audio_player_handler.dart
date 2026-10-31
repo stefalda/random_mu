@@ -7,6 +7,7 @@ import 'package:random_mu/client/subsonic_client.dart';
 import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/l10n/l10n_static.dart';
 import 'package:random_mu/services/browse_cache.dart';
+import 'package:random_mu/services/cover_art_uri.dart';
 import 'package:random_mu/services/offline_library.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:random_mu/services/playback_mode.dart';
@@ -165,16 +166,17 @@ class AudioPlayerHandler extends BaseAudioHandler
     });
   }
 
-  /// The queue shown by the car, with its rows reduced to text.
+  /// The queue shown by the car.
   ///
-  /// Android Auto renders the session queue as one list and resolves each row's
-  /// artwork: handing it a remote, full-size cover URI makes it fetch and
-  /// decode an image per row while scrolling, which is what makes the queue
-  /// screen unresponsive. The platform contract asks for a local `content://`
-  /// URI anyway, so the queue rows carry no artwork at all (the now-playing
-  /// metadata keeps its own).
-  static MediaItem _queueItem(MediaItem item) =>
-      item.copyWith(artUri: null, extras: null);
+  /// Rows carry the cached, resized artwork from the local provider: a remote
+  /// URL would be ignored by Android Auto (it only accepts local artwork URIs)
+  /// and would make the car decode a full-size cover per row, which is what
+  /// made the queue screen unresponsive.
+  static MediaItem _queueItem(MediaItem item) {
+    final artUri = carCoverArtUri(item.extras?['coverArt'] as String?) ??
+        (item.artUri?.isScheme('content') ?? false ? item.artUri : null);
+    return item.copyWith(artUri: artUri, extras: null);
+  }
 
   /// Publishes the queue, coalescing bursts of changes into one update.
   void _publishQueue(List<MediaItem> items) {
@@ -406,9 +408,7 @@ class AudioPlayerHandler extends BaseAudioHandler
         return MediaItem(
           id: 'playlist-${p.id}',
           title: p.name,
-          artUri: p.coverArt != null
-              ? Uri.parse(ps.client.getCoverArtUrl(p.coverArt))
-              : null,
+          artUri: carCoverArtUri(p.coverArt),
           playable: false,
         );
       }).toList();
@@ -424,6 +424,8 @@ class AudioPlayerHandler extends BaseAudioHandler
         return MediaItem(
           id: 'artist-${a.id}',
           title: a.name,
+          // Subsonic exposes artist pictures as an external URL, not as a cover
+          // id, so the local artwork provider cannot serve them.
           artUri: a.artistImageUrl != null
               ? Uri.parse(a.artistImageUrl!)
               : null,
@@ -446,7 +448,8 @@ class AudioPlayerHandler extends BaseAudioHandler
           id: 'album-${a.id}',
           title: a.name,
           artist: a.artist,
-          artUri: a.coverArt != null ? Uri.parse(a.coverArt!) : null,
+          // `getAlbumList` already expanded the cover id into a URL.
+          artUri: carCoverArtUri(coverArtIdOf(a.coverArt)),
           playable: false,
         );
       }).toList();
@@ -541,9 +544,7 @@ class AudioPlayerHandler extends BaseAudioHandler
       album: song.album ?? '',
       duration:
           song.duration != null ? Duration(seconds: song.duration!) : null,
-      artUri: song.coverArt != null
-          ? Uri.parse(client.getCoverArtUrl(song.coverArt))
-          : null,
+      artUri: carCoverArtUri(song.coverArt),
       extras: song.coverArt != null ? {'coverArt': song.coverArt!} : null,
       playable: true,
     );

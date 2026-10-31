@@ -3,6 +3,24 @@
 All notable changes to Random Muu(sic) are documented here. The version follows
 `pubspec.yaml`; releases are published on GitHub with the APK attached.
 
+## [0.0.28] - 2026-10-31
+
+Covers in the car, from a local provider.
+
+### Added
+
+- **Artwork in Android Auto**: the browse tree and the queue now publish a
+  `content://` URI served by a new `CoverArtProvider`, which fetches each cover
+  once at 512 px, caches it in `cacheDir/aa_covers` and reuses the cover file of
+  downloaded songs when there is no connection. Android Auto only accepts local
+  artwork URIs, so the remote cover URL the tree used to publish was ignored by
+  the car — and it carried the Subsonic credentials in the query string.
+
+### Changed
+
+- The Android Auto queue rows carry their thumbnail again: it now comes from the
+  local provider (a cached, resized JPEG), not from a full-size remote image.
+
 ## [0.0.27] - 2026-10-31
 
 The car lists stop fighting the user: scrolling the queue works with music

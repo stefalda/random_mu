@@ -7,6 +7,10 @@ import 'package:flutter/material.dart';
 ImageProvider? artworkImageProvider(Uri? uri) {
   if (uri == null) return null;
   if (uri.isScheme('file')) return FileImage(io.File(uri.toFilePath()));
+  // `content://` URIs are served to Android Auto by the app's provider
+  // (`CoverArtProvider`), which Flutter cannot decode: show the placeholder
+  // instead of failing on an unsupported scheme.
+  if (uri.isScheme('content')) return null;
   return NetworkImage(uri.toString());
 }
 

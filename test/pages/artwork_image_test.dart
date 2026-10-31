@@ -25,6 +25,15 @@ void main() {
     test('is null without artwork', () {
       expect(artworkImageProvider(null), isNull);
     });
+
+    test('ignores the content URIs served to Android Auto', () {
+      expect(
+        artworkImageProvider(
+          Uri.parse('content://com.babisoft.random_mu.art/al-1'),
+        ),
+        isNull,
+      );
+    });
   });
 
   testWidgets('shows the fallback when there is no artwork', (tester) async {

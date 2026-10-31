@@ -21,6 +21,9 @@ MediaItem createMediaItem(Song song, SubsonicClient client) {
         'contentType': song.contentType,
         'size': song.size,
         'path': song.path,
-        'songJson': jsonEncode(song)
+        // Lets the Android Auto queue publish the local artwork provider URI
+        // (the car cannot read the remote cover URL).
+        'coverArt': song.coverArt,
+        'songJson': jsonEncode(song),
       });
 }

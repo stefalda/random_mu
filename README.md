@@ -175,6 +175,14 @@ Behaviour:
   songs and starts from the current one.
 - Now playing shows title, artist, album, artwork and progress; play/pause,
   skip and seek use the `MediaSession` managed by `audio_service`.
+- **Artwork** is served by a local `content://` provider (`CoverArtProvider`,
+  `android/app/src/main/kotlin/com/babisoft/random_mu/CoverArtProvider.kt`):
+  Android Auto only accepts local artwork URIs, so the browse tree and the queue
+  publish `content://com.babisoft.random_mu.art/<cover id>` instead of the remote
+  cover URL (which the car ignored, and which carried the Subsonic credentials).
+  The provider reduces each cover once to 512 px, caches it in
+  `cacheDir/aa_covers` and — when the song was downloaded — reuses the local
+  cover file, so the car never decodes an original image while scrolling.
 - Browsing works **offline** for content that was downloaded: metadata and
   artwork are cached (see below), the **Downloads** node always works without a
   connection, and playback falls back to the local files.
@@ -301,6 +309,8 @@ existing file.
 | Android Auto browse tree + media session | `lib/client/audio_player_handler.dart` |
 | Offline browse metadata cache | `lib/services/browse_cache.dart` |
 | Local file/artwork resolution | `lib/services/offline_source.dart` |
+| Android Auto artwork (`content://` URI + size) | `lib/services/cover_art_uri.dart` |
+| Artwork content provider (resize + cache) | `android/app/src/main/kotlin/com/babisoft/random_mu/CoverArtProvider.kt` |
 | Download queue, retries, storage limit | `lib/services/download_service.dart` |
 | Download foreground service bridge | `lib/services/download_foreground_service.dart` |
 | Download notifications | `lib/services/notification_service.dart` |

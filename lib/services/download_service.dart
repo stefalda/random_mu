@@ -12,9 +12,9 @@ import 'package:random_mu/client/audio_player_handler.dart';
 import 'package:random_mu/client/subsonic_client.dart';
 import 'package:random_mu/client/subsonic_models.dart';
 import 'package:random_mu/services/browse_cache.dart';
+import 'package:random_mu/services/cover_art_uri.dart';
 import 'package:random_mu/services/download_models.dart';
 import 'package:random_mu/services/notification_service.dart';
-import 'package:random_mu/services/offline_source.dart';
 
 /// Raised when the item being downloaded is deleted mid-flight.
 class _DownloadCancelled implements Exception {
@@ -533,18 +533,15 @@ class DownloadService extends ChangeNotifier {
 
     final categoryId = _browseCategoryId(item);
     if (categoryId != null) {
-      // Use the first song's artwork as the container artwork.
+      // Use the first song's artwork as the container artwork. The provider
+      // serves it from the downloaded cover when offline.
       final coverId = songs.isEmpty ? null : songs.first.coverArt;
       await browseCache.upsertInCategory(
         categoryId,
         MediaItem(
           id: nodeId,
           title: item.title,
-          artUri: resolveArtUri(
-            remoteUrl:
-                coverId != null ? client.getCoverArtUrl(coverId) : null,
-            localPath: localCoverPath(coverId),
-          ),
+          artUri: carCoverArtUri(coverId),
           playable: false,
         ),
       );
@@ -599,12 +596,9 @@ class DownloadService extends ChangeNotifier {
       album: song.album ?? '',
       duration:
           song.duration != null ? Duration(seconds: song.duration!) : null,
-      artUri: resolveArtUri(
-        remoteUrl: song.coverArt != null
-            ? client.getCoverArtUrl(song.coverArt)
-            : null,
-        localPath: localCoverPath(song.coverArt),
-      ),
+      // The car reads the artwork through the local provider, which falls back
+      // to the downloaded cover file, so the node works with no connection.
+      artUri: carCoverArtUri(song.coverArt),
       extras: song.coverArt != null ? {'coverArt': song.coverArt!} : null,
       playable: true,
     );

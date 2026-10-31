@@ -70,6 +70,16 @@
         android:exported="false"
         android:stopWithTask="false" />
 
+    <!-- Serves the Android Auto artwork through content:// URIs: the car only
+         accepts local artwork URIs, and reading them from a cached, resized
+         file is what keeps the browse lists and the queue scrolling.
+         Exported (like the UAMP sample) because Android Auto runs in another
+         process; it only ever returns cover images. -->
+    <provider
+        android:name=".CoverArtProvider"
+        android:authorities="com.babisoft.random_mu.art"
+        android:exported="true" />
+
     <!-- ADD THIS "RECEIVER" element -->
     <receiver android:name="com.ryanheise.audioservice.MediaButtonReceiver"
         android:exported="true" tools:ignore="Instantiatable">
