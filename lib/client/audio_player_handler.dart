@@ -67,6 +67,17 @@ class AudioPlayerHandler extends BaseAudioHandler
   /// song gets new metadata, e.g. a cover art URI resolved from the download.
   MediaItem? _publishedMediaItem;
 
+  /// Minimum delay between two queue publications.
+  ///
+  /// Reordering the queue moves its sources one by one (a playback mode toggle
+  /// does one `moveAudioSource` per track), so a fast car would receive the
+  /// whole queue hundreds of times in a few seconds.
+  static const Duration queuePublishInterval = Duration(milliseconds: 400);
+
+  Timer? _queuePublishTimer;
+  List<MediaItem>? _pendingQueue;
+  DateTime? _lastQueuePublishAt;
+
   /// Global reference so providers can wire the PlayerService after init.
   static AudioPlayerHandler? instance;
 
@@ -92,6 +103,9 @@ class AudioPlayerHandler extends BaseAudioHandler
     _positionSubscription?.cancel();
     _bufferedSubscription?.cancel();
     _sequenceSubscription?.cancel();
+    _queuePublishTimer?.cancel();
+    _queuePublishTimer = null;
+    _pendingQueue = null;
     _playerService?.removeListener(_onPlaybackModeChanged);
   }
 
@@ -137,9 +151,10 @@ class AudioPlayerHandler extends BaseAudioHandler
       final sequence = seqState.sequence;
       if (!identical(sequence, _publishedSequence)) {
         _publishedSequence = sequence;
-        queue.add(
-          sequence.map((source) => source.tag as MediaItem).toList(),
-        );
+        _publishQueue([
+          for (final source in sequence)
+            _queueItem(source.tag as MediaItem),
+        ]);
       }
       final currentIndex = seqState.currentIndex;
       if (currentIndex == null) return;
@@ -148,6 +163,40 @@ class AudioPlayerHandler extends BaseAudioHandler
       _publishedMediaItem = item;
       mediaItem.add(item);
     });
+  }
+
+  /// The queue shown by the car, with its rows reduced to text.
+  ///
+  /// Android Auto renders the session queue as one list and resolves each row's
+  /// artwork: handing it a remote, full-size cover URI makes it fetch and
+  /// decode an image per row while scrolling, which is what makes the queue
+  /// screen unresponsive. The platform contract asks for a local `content://`
+  /// URI anyway, so the queue rows carry no artwork at all (the now-playing
+  /// metadata keeps its own).
+  static MediaItem _queueItem(MediaItem item) =>
+      item.copyWith(artUri: null, extras: null);
+
+  /// Publishes the queue, coalescing bursts of changes into one update.
+  void _publishQueue(List<MediaItem> items) {
+    _pendingQueue = items;
+    final last = _lastQueuePublishAt;
+    final now = DateTime.now();
+    if (last == null || now.difference(last) >= queuePublishInterval) {
+      _flushQueue();
+      return;
+    }
+    _queuePublishTimer ??=
+        Timer(queuePublishInterval - now.difference(last), _flushQueue);
+  }
+
+  void _flushQueue() {
+    _queuePublishTimer?.cancel();
+    _queuePublishTimer = null;
+    final items = _pendingQueue;
+    _pendingQueue = null;
+    if (items == null) return;
+    _lastQueuePublishAt = DateTime.now();
+    queue.add(items);
   }
 
   PlaybackState stateToPlaybackState(PlayerState state) {

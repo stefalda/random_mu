@@ -3,6 +3,22 @@
 All notable changes to Random Muu(sic) are documented here. The version follows
 `pubspec.yaml`; releases are published on GitHub with the APK attached.
 
+## [0.0.26] - 2026-10-31
+
+The car's queue screen is usable again.
+
+### Fixed
+
+- **The Android Auto queue screen no longer freezes**: every queue row carried
+  a cover art URI, so the car fetched and decoded a full-size image for each
+  track it scrolled past. The queue rows now ship text only (id, title, artist,
+  album, duration) — which also cuts the payload from ~139 KiB to ~76 KiB for a
+  500-track queue — while the now-playing screen keeps its artwork.
+- **Queue updates are coalesced**: reordering the queue publishes it once per
+  moved track (a playback mode toggle does one move per song), so the car used
+  to receive the whole list hundreds of times in a few seconds. It now receives
+  at most one update every 400 ms.
+
 ## [0.0.25] - 2026-10-31
 
 A performance release for the car: browsing Artists, Songs and the other nodes no
