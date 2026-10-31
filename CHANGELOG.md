@@ -3,6 +3,23 @@
 All notable changes to Random Muu(sic) are documented here. The version follows
 `pubspec.yaml`; releases are published on GitHub with the APK attached.
 
+## [0.0.27] - 2026-10-31
+
+The car lists stop fighting the user: scrolling the queue works with music
+playing.
+
+### Fixed
+
+- **Android Auto lists no longer snap back to the top**: the car resets the
+  scroll position of its lists on every playback state change (a known Android
+  Auto bug — see androidx/media#2192; the Media3 workaround is disabling
+  periodic position updates). The app published a new state on every position
+  and buffered-position tick — up to 5 times a second while playing — so the
+  queue (and any long list) kept jumping back to the first row instead of
+  scrolling. The state is now published only on real transitions: play/pause,
+  buffering, seeks and track changes. The car extrapolates the progress from the
+  state's `updateTime`, so the progress bar stays correct.
+
 ## [0.0.26] - 2026-10-31
 
 The car's queue screen is usable again.

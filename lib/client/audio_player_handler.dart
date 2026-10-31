@@ -30,8 +30,8 @@ class AudioPlayerHandler extends BaseAudioHandler
     with QueueHandler, SeekHandler {
   PlayerService? _playerService;
   StreamSubscription<PlayerState>? _playerStateSubscription;
-  StreamSubscription<Duration>? _positionSubscription;
-  StreamSubscription<Duration>? _bufferedSubscription;
+  StreamSubscription<PositionDiscontinuity>?
+      _positionDiscontinuitySubscription;
   StreamSubscription<SequenceState?>? _sequenceSubscription;
 
   /// Cached browse metadata for offline AA browsing.
@@ -100,8 +100,7 @@ class AudioPlayerHandler extends BaseAudioHandler
 
   void _cancelListeners() {
     _playerStateSubscription?.cancel();
-    _positionSubscription?.cancel();
-    _bufferedSubscription?.cancel();
+    _positionDiscontinuitySubscription?.cancel();
     _sequenceSubscription?.cancel();
     _queuePublishTimer?.cancel();
     _queuePublishTimer = null;
@@ -128,18 +127,19 @@ class AudioPlayerHandler extends BaseAudioHandler
       playbackState.add(stateToPlaybackState(state));
     });
 
-    _positionSubscription =
-        ps.audioPlayer.positionStream.listen((position) {
-      playbackState.add(playbackState.value.copyWith(
-        updatePosition: position,
-      ));
-    });
-
-    _bufferedSubscription =
-        ps.audioPlayer.bufferedPositionStream.listen((buffered) {
-      playbackState.add(playbackState.value.copyWith(
-        bufferedPosition: buffered,
-      ));
+    // Seeks and track changes move the position discontinuously: publish a new
+    // state so the car's progress bar restarts from the right place.
+    //
+    // Periodic position updates (positionStream ticks at up to 5 Hz) are
+    // deliberately NOT published: Android Auto resets the scroll position of
+    // its lists on every playback state change, so a progress update makes the
+    // queue and browse lists jump back to the top while scrolling (a known AA
+    // bug, https://github.com/androidx/media/issues/2192 — the Media3 workaround
+    // is disabling periodic position updates). The state carries `updateTime`
+    // and speed, so the car extrapolates the progress by itself.
+    _positionDiscontinuitySubscription =
+        ps.audioPlayer.positionDiscontinuityStream.listen((_) {
+      playbackState.add(stateToPlaybackState(ps.audioPlayer.playerState));
     });
 
     // The car receives the whole queue and the now-playing item, so these are
@@ -203,8 +203,14 @@ class AudioPlayerHandler extends BaseAudioHandler
     final isPlaying = state.playing;
     final processingState = state.processingState;
     final shuffled = _playerService?.mode.isShuffle ?? false;
+    final player = _playerService?.audioPlayer;
     return PlaybackState(
       playing: isPlaying,
+      // The state is published only on real transitions, so it must carry the
+      // position reached so far: the car computes the rest from `updateTime`
+      // and the speed.
+      updatePosition: player?.position ?? Duration.zero,
+      bufferedPosition: player?.bufferedPosition ?? Duration.zero,
       controls: [
         MediaControl.skipToPrevious,
         MediaControl.play,
